@@ -105,6 +105,15 @@ pub(crate) fn mpris_set_metadata(
     // (ImageIO) decodes WebP fine, so other platforms pass through unchanged.
     let cover_url = smtc_cover_url(cover_url);
 
+    // souvlaki's iOS backend loads the cover with `fs::read(url).unwrap()` on a
+    // background queue: anything but a plain path to an existing file aborts the
+    // app. Strip `file://` and drop remote URLs there.
+    #[cfg(target_os = "ios")]
+    let cover_url = cover_url.and_then(|url| {
+        let path = url.strip_prefix("file://").unwrap_or(&url).to_owned();
+        std::path::Path::new(&path).is_file().then_some(path)
+    });
+
     ctrl.set_metadata(MediaMetadata {
         title: title.as_deref(),
         artist: artist.as_deref(),
