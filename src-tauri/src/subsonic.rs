@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::player::{client, request_error};
+use crate::player::{client, request_error, send};
 
 const API_VERSION: &str = "1.16.1";
 const CLIENT: &str = "kestrelbay";
@@ -49,9 +49,8 @@ pub fn random_songs(
 ) -> Result<Vec<Song>, String> {
     let url = format!("{}/rest/getRandomSongs.view", server.trim_end_matches('/'));
     let size = size.to_string();
-    let response = client()
-        .get(url)
-        .query(&[
+    let (response, _) = send(|| {
+        client().get(&url).query(&[
             ("u", user),
             ("t", token),
             ("s", salt),
@@ -60,9 +59,7 @@ pub fn random_songs(
             ("f", "json"),
             ("size", size.as_str()),
         ])
-        .send()
-        .and_then(|r| r.error_for_status())
-        .map_err(request_error)?;
+    })?;
     let text = response.text().map_err(request_error)?;
     let body: Value = serde_json::from_str(&text).map_err(|e| format!("invalid response: {e}"))?;
     let root = &body["subsonic-response"];

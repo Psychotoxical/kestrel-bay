@@ -41,9 +41,31 @@ pub fn client() -> &'static reqwest::blocking::Client {
     CLIENT.get_or_init(|| {
         reqwest::blocking::Client::builder()
             .connect_timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(10))
             .build()
             .unwrap_or_else(|_| reqwest::blocking::Client::new())
     })
+}
+
+/// Sends a request. A transport failure (not an HTTP status) is retried once,
+/// which opens a fresh connection; the first failure is returned alongside.
+pub fn send(
+    build: impl Fn() -> reqwest::blocking::RequestBuilder,
+) -> Result<(reqwest::blocking::Response, Option<String>), String> {
+    match build().send() {
+        Ok(response) => response
+            .error_for_status()
+            .map(|r| (r, None))
+            .map_err(request_error),
+        Err(first) => {
+            let first = request_error(first);
+            build()
+                .send()
+                .and_then(|r| r.error_for_status())
+                .map(|r| (r, Some(first.clone())))
+                .map_err(|e| format!("{} (retried after: {first})", request_error(e)))
+        }
+    }
 }
 
 /// Drops the query string of every URL in `text`, so tokens never reach logs or the UI.
@@ -187,12 +209,8 @@ impl Seek for StreamReader {
 fn open_stream(
     client: &reqwest::blocking::Client,
     url: &str,
-) -> Result<(StreamReader, Arc<Shared>), String> {
-    let mut response = client
-        .get(url)
-        .send()
-        .and_then(|r| r.error_for_status())
-        .map_err(request_error)?;
+) -> Result<(StreamReader, Arc<Shared>, Option<String>), String> {
+    let (mut response, retried) = send(|| client.get(url))?;
     let len = response.content_length();
     let shared = Arc::new(Shared {
         state: Mutex::new(Download {
@@ -225,7 +243,7 @@ fn open_stream(
         pos: 0,
         len,
     };
-    Ok((reader, shared))
+    Ok((reader, shared, retried))
 }
 
 struct Current {
@@ -276,7 +294,18 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
                 current = None;
                 let started = Instant::now();
                 let (reader, stream) = match open_stream(client, &url) {
-                    Ok(opened) => opened,
+                    Ok((reader, stream, retried)) => {
+                        if let Some(first) = retried {
+                            let secs = started.elapsed().as_secs_f64();
+                            emit(
+                                "retry",
+                                id,
+                                secs,
+                                format!("ok after {secs:.1} s, first: {first}"),
+                            );
+                        }
+                        (reader, stream)
+                    }
                     Err(err) => {
                         emit("error", id, 0.0, format!("stream: {err}"));
                         continue;
@@ -371,11 +400,7 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
 }
 
 pub fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
-    let response = client()
-        .get(url)
-        .send()
-        .and_then(|r| r.error_for_status())
-        .map_err(request_error)?;
+    let (response, _) = send(|| client().get(url))?;
     response.bytes().map(|b| b.to_vec()).map_err(request_error)
 }
 

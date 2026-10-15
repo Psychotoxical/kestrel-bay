@@ -125,7 +125,7 @@ async function renderLog() {
       const what = item ? `${e.kind} „${item.title}“` : e.kind;
       li.textContent = `${relative(e.at)}  ${what}${e.detail ? ` – ${e.detail}` : ""}`;
       if (e.kind === "error" || e.kind === "cover-error") li.className = "error";
-      if (e.kind === "remote") li.className = "remote";
+      if (e.kind === "remote" || e.kind === "retry") li.className = "remote";
       return li;
     }),
   );
