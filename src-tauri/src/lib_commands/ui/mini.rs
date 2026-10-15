@@ -239,6 +239,7 @@ pub(crate) fn build_mini_player_window(
     app: &tauri::AppHandle,
     visible: bool,
 ) -> Result<tauri::WebviewWindow, String> {
+    #[cfg(desktop)]
     let use_always_on_top = {
         #[cfg(target_os = "linux")]
         {
@@ -294,11 +295,11 @@ pub(crate) fn build_mini_player_window(
             .min_inner_size(320.0, 240.0)
             .resizable(true);
     #[cfg(desktop)]
-    let builder = builder.decorations(use_decorations);
-    let mut builder = builder
+    let builder = builder
+        .decorations(use_decorations)
         .always_on_top(use_always_on_top)
-        .skip_taskbar(false)
-        .visible(visible);
+        .skip_taskbar(false);
+    let mut builder = builder.visible(visible);
 
     // Cap width so horizontal drag can't stretch the layout across a whole
     // monitor. Height is intentionally left effectively unlimited so users
@@ -394,7 +395,6 @@ pub(crate) fn open_mini_player(app: tauri::AppHandle) -> Result<(), String> {
             let _ = win.set_position(p);
         }
         #[cfg(desktop)]
-        #[cfg(desktop)]
         if let Some(main) = app.get_webview_window("main") {
             let _ = main.minimize();
         }
@@ -462,12 +462,15 @@ pub(crate) fn set_mini_player_always_on_top(
     app: tauri::AppHandle,
     on_top: bool,
 ) -> Result<(), String> {
+    #[cfg(desktop)]
     if let Some(win) = app.get_webview_window("mini") {
         if on_top {
             let _ = win.set_always_on_top(false);
         }
         win.set_always_on_top(on_top).map_err(|e| e.to_string())?;
     }
+    #[cfg(mobile)]
+    let _ = (app, on_top);
     Ok(())
 }
 

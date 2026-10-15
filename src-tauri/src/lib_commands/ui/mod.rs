@@ -1,11 +1,13 @@
 pub(crate) mod mini;
 
 pub(crate) use mini::{
-    close_mini_player, hide_main_window, open_mini_player, pause_rendering,
-    persist_mini_pos_throttled, preload_mini_player, resize_mini_player, restore_main_window,
-    resume_rendering, set_mini_player_always_on_top, set_mini_player_decorations, show_main_window,
-    PAUSE_RENDERING_JS, RESUME_RENDERING_JS,
+    close_mini_player, open_mini_player, pause_rendering, persist_mini_pos_throttled,
+    preload_mini_player, resize_mini_player, resume_rendering, set_mini_player_always_on_top,
+    set_mini_player_decorations, show_main_window, PAUSE_RENDERING_JS, RESUME_RENDERING_JS,
 };
+// Only the desktop tray hides and restores the main window through these.
+#[cfg(desktop)]
+pub(crate) use mini::{hide_main_window, restore_main_window};
 // Pre-create-on-startup is a Windows-only path (see `lib.rs:setup`); other
 // platforms create the mini-player webview lazily on first invoke. The
 // re-export is gated to match so non-Windows builds don't warn on an
