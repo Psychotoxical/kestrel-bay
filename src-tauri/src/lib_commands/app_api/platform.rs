@@ -201,6 +201,7 @@ fn apply_window_decorations(
     if win.is_decorated().ok() == Some(enabled) {
         return Ok(());
     }
+    #[cfg(desktop)]
     win.set_decorations(enabled)
         .map_err(|error| error.to_string())?;
     // Re-enabling native decorations on GTK causes the window manager to

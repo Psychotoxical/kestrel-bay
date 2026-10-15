@@ -1,0 +1,71 @@
+name: iOS TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check = compile this branch for iOS"
+        type: choice
+        options: [check]
+        default: check
+
+concurrency:
+  group: psysonic-ios-${{ inputs.mode }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  check:
+    if: inputs.mode == 'check'
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Placeholder frontend
+        run: |
+          mkdir -p dist
+          echo '<!doctype html><title>check</title>' > dist/index.html
+
+      - name: cargo check for iOS
+        working-directory: src-tauri
+        run: |
+          set +e
+          cargo check --workspace --target aarch64-apple-ios --keep-going --message-format short 2>&1 | tee "$GITHUB_WORKSPACE/ios-check.log"
+          echo "cargo exit code: ${PIPESTATUS[0]}" | tee -a "$GITHUB_WORKSPACE/ios-check.log"
+
+      - name: Summary
+        run: |
+          log=ios-check.log
+          {
+            echo "## psysonic-ios on aarch64-apple-ios"
+            echo
+            tail -n 1 "$log"
+            echo
+            echo "### Errors"
+            grep -E "^[^ ]+\.rs:[0-9]+:[0-9]+: error" "$log" || true
+            echo
+            echo "### Warnings per file"
+            grep -E "^[^ ]+\.rs:[0-9]+:[0-9]+: warning" "$log" | cut -d: -f1 | sort | uniq -c | sort -rn || true
+            echo
+            echo "### Crates that could not compile"
+            grep -E "could not compile" "$log" | sort -u || true
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: psysonic-ios-check-log
+          path: ios-check.log

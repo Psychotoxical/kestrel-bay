@@ -190,6 +190,19 @@ fn run_restore_main_window_actions(
     focus()
 }
 
+/// Windows on mobile cannot be minimized; there is nothing to undo there.
+fn unminimize<R: tauri::Runtime>(win: &tauri::WebviewWindow<R>) -> Result<(), String> {
+    #[cfg(desktop)]
+    {
+        win.unminimize().map_err(|e| e.to_string())
+    }
+    #[cfg(mobile)]
+    {
+        let _ = win;
+        Ok(())
+    }
+}
+
 pub(crate) fn restore_main_window<R: tauri::Runtime>(
     main: &tauri::WebviewWindow<R>,
 ) -> Result<(), String> {
@@ -197,7 +210,7 @@ pub(crate) fn restore_main_window<R: tauri::Runtime>(
         .apply_native_visibility(true, || {
             run_restore_main_window_actions(
                 || main.eval(RESUME_RENDERING_JS).map_err(|e| e.to_string()),
-                || main.unminimize().map_err(|e| e.to_string()),
+                || unminimize(main),
                 || main.show().map_err(|e| e.to_string()),
                 || main.set_focus().map_err(|e| e.to_string()),
             )
@@ -271,18 +284,21 @@ pub(crate) fn build_mini_player_window(
     // macOS + Windows keep the native titlebar (traffic lights / caption
     // buttons + system look). Linux uses a custom in-page titlebar so the
     // mini fits a tighter visual style across all WMs (incl. tiling).
+    #[cfg(desktop)]
     let use_decorations = !cfg!(target_os = "linux");
 
-    let mut builder =
+    let builder =
         tauri::WebviewWindowBuilder::new(app, "mini", tauri::WebviewUrl::App("index.html".into()))
             .title("Psysonic Mini")
             .inner_size(340.0, 260.0)
             .min_inner_size(320.0, 240.0)
-            .resizable(true)
-            .decorations(use_decorations)
-            .always_on_top(use_always_on_top)
-            .skip_taskbar(false)
-            .visible(visible);
+            .resizable(true);
+    #[cfg(desktop)]
+    let builder = builder.decorations(use_decorations);
+    let mut builder = builder
+        .always_on_top(use_always_on_top)
+        .skip_taskbar(false)
+        .visible(visible);
 
     // Cap width so horizontal drag can't stretch the layout across a whole
     // monitor. Height is intentionally left effectively unlimited so users
@@ -377,6 +393,8 @@ pub(crate) fn open_mini_player(app: tauri::AppHandle) -> Result<(), String> {
         if let Some(p) = target {
             let _ = win.set_position(p);
         }
+        #[cfg(desktop)]
+        #[cfg(desktop)]
         if let Some(main) = app.get_webview_window("main") {
             let _ = main.minimize();
         }
@@ -471,10 +489,13 @@ pub(crate) fn set_mini_player_decorations(
     app: tauri::AppHandle,
     decorations: bool,
 ) -> Result<(), String> {
+    #[cfg(desktop)]
     if let Some(win) = app.get_webview_window("mini") {
         win.set_decorations(decorations)
             .map_err(|e| e.to_string())?;
     }
+    #[cfg(mobile)]
+    let _ = (app, decorations);
     Ok(())
 }
 

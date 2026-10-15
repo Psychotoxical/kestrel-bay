@@ -1,3 +1,7 @@
+#[cfg(desktop)]
+pub(crate) mod tray;
+#[cfg(mobile)]
+#[path = "tray_mobile.rs"]
 pub(crate) mod tray;
 
 pub(crate) use tray::{
@@ -7,7 +11,9 @@ pub(crate) use tray::{
 // Internal helpers consumed elsewhere in the shell crate:
 #[cfg(target_os = "linux")]
 pub(crate) use tray::is_tiling_wm;
-pub(crate) use tray::{stop_audio_engine, try_build_tray_icon};
+pub(crate) use tray::stop_audio_engine;
+#[cfg(desktop)]
+pub(crate) use tray::try_build_tray_icon;
 
 // Sync commands now live in `psysonic_syncfs::sync::*` — invoke_handler!
 // in lib.rs registers them with the full path so Tauri's `__cmd__*` magic

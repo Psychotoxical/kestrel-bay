@@ -25,8 +25,10 @@ pub use psysonic_core::{app_deprintln, app_eprintln};
 pub use psysonic_syncfs::{sync_cancel_flags, DownloadSemaphore};
 #[cfg(target_os = "windows")]
 mod taskbar_win;
+#[cfg(desktop)]
 mod tray_runtime;
 
+#[cfg(desktop)]
 pub(crate) use tray_runtime::*;
 
 use std::collections::HashMap;
@@ -461,26 +463,40 @@ pub fn run() {
         ))
         .manage(ShortcutMap::default())
         .manage(discord::DiscordState::new())
-        .manage(Arc::new(tokio::sync::Semaphore::new(MAX_DL_CONCURRENCY)) as DownloadSemaphore)
+        .manage(Arc::new(tokio::sync::Semaphore::new(MAX_DL_CONCURRENCY)) as DownloadSemaphore);
+
+    // Tray, window-state and global-shortcut exist on desktop only. The chain is
+    // split so the desktop registration order stays exactly as before.
+    #[cfg(desktop)]
+    let builder = builder
         .manage(TrayState::default())
         .manage(TrayTooltip::default())
         .manage(TrayPlaybackState::default())
         .manage(TrayMenuItemsState::default())
-        .manage(TrayMenuLabelsState::default())
+        .manage(TrayMenuLabelsState::default());
+
+    let builder = builder
         .manage(MainWindowLifecycleState::default())
         .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(
-            tauri_plugin_window_state::Builder::default()
-                .with_state_flags(
-                    tauri_plugin_window_state::StateFlags::all()
-                        & !tauri_plugin_window_state::StateFlags::VISIBLE,
-                )
-                .with_denylist(&["mini"])
-                .build(),
-        )
-        .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_updater::Builder::new().build());
+
+    #[cfg(desktop)]
+    let builder = builder.plugin(
+        tauri_plugin_window_state::Builder::default()
+            .with_state_flags(
+                tauri_plugin_window_state::StateFlags::all()
+                    & !tauri_plugin_window_state::StateFlags::VISIBLE,
+            )
+            .with_denylist(&["mini"])
+            .build(),
+    );
+
+    let builder = builder.plugin(tauri_plugin_shell::init());
+
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_global_shortcut::Builder::new().build());
+
+    let builder = builder
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init());
@@ -542,6 +558,7 @@ pub fn run() {
             // Always build on startup when possible; the frontend calls toggle_tray_icon(false)
             // immediately after load if the user has disabled the tray icon.
             // May be skipped if Ayatana/AppIndicator libraries are missing (no panic).
+            #[cfg(desktop)]
             {
                 if let Some(tray) = try_build_tray_icon(app.handle()) {
                     *app.state::<TrayState>().lock().unwrap() = Some(tray);
