@@ -2024,7 +2024,13 @@ dependencies = [
 name = "kestrel-bay"
 version = "0.1.0"
 dependencies = [
+ "block2",
+ "objc2",
  "objc2-avf-audio",
+ "objc2-core-foundation",
+ "objc2-foundation",
+ "objc2-media-player",
+ "objc2-ui-kit",
  "reqwest",
  "rodio",
  "serde",
@@ -2554,6 +2560,19 @@ dependencies = [
  "bitflags 2.13.2",
  "objc2",
  "objc2-core-foundation",
+]
+
+[[package]]
+name = "objc2-media-player"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85f2a98483f6e76313cb85a5a185eaa3cda86a177b13a8852d56cbd0085bf635"
+dependencies = [
+ "bitflags 2.13.2",
+ "block2",
+ "objc2",
+ "objc2-core-foundation",
+ "objc2-foundation",
 ]
 
 [[package]]

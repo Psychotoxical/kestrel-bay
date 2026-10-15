@@ -5,11 +5,16 @@ type PlayerEvent = {
   at: number;
   kind: string;
   id: number;
+  seconds: number;
   detail: string;
 };
 
-const TONE_BASE = "https://raw.githubusercontent.com/Psychotoxical/kestrel-bay/main/tones";
-const TRACKS = [1, 2, 3];
+const BASE = "https://raw.githubusercontent.com/Psychotoxical/kestrel-bay/main";
+const TRACKS = [
+  { id: 1, title: "Ton 1 · ein Piep" },
+  { id: 2, title: "Ton 2 · zwei Pieps" },
+  { id: 3, title: "Ton 3 · drei Pieps" },
+];
 
 let running = false;
 let index = 0;
@@ -30,9 +35,10 @@ function setStatus(text: string) {
 }
 
 async function playTrack(i: number) {
-  index = i;
-  setStatus(`Ton ${TRACKS[i]} wird geladen …`);
-  await invoke("play", { id: TRACKS[i], url: `${TONE_BASE}/${TRACKS[i]}.wav` });
+  index = (i + TRACKS.length) % TRACKS.length;
+  const track = TRACKS[index];
+  setStatus(`${track.title} wird geladen …`);
+  await invoke("play", { id: track.id, url: `${BASE}/tones/${track.id}.wav` });
 }
 
 async function renderLog() {
@@ -44,6 +50,7 @@ async function renderLog() {
       const what = e.id ? `${e.kind} ${e.id}` : e.kind;
       li.textContent = `${relative(e.at)}  ${what}${e.detail ? ` – ${e.detail}` : ""}`;
       if (e.kind === "error") li.className = "error";
+      if (e.kind === "remote") li.className = "remote";
       return li;
     }),
   );
@@ -60,21 +67,35 @@ function renderHeartbeat() {
 }
 
 async function onEvent(e: PlayerEvent) {
-  if (e.kind === "started") setStatus(`Ton ${e.id} läuft.`);
-  if (e.kind === "error") setStatus(`Fehler: ${e.detail}`);
-  if (e.kind === "ended" && running) {
-    if (index + 1 < TRACKS.length) {
-      await playTrack(index + 1);
-    } else {
-      running = false;
-      setStatus("Fertig. Alle drei Töne gespielt.");
-    }
+  const track = TRACKS.find((t) => t.id === e.id);
+  if (e.kind === "started" && track) {
+    setStatus(`${track.title} läuft.`);
+    await invoke("now_playing", {
+      id: track.id,
+      title: track.title,
+      artist: "Kestrel Bay",
+      album: "Testtöne",
+      duration: e.seconds,
+      coverUrl: `${BASE}/covers/${track.id}.png`,
+    });
   }
+  if (e.kind === "paused" && track) setStatus(`${track.title} pausiert.`);
+  if (e.kind === "resumed" && track) setStatus(`${track.title} läuft.`);
+  if (e.kind === "error") setStatus(`Fehler: ${e.detail}`);
+  if (e.kind === "ended" && running) await playTrack(index + 1);
+  await renderLog();
+}
+
+async function onRemote(action: string) {
+  if (!running) return;
+  if (action === "next") await playTrack(index + 1);
+  if (action === "previous") await playTrack(index - 1);
   await renderLog();
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
   await listen<PlayerEvent>("kb:event", (event) => onEvent(event.payload));
+  await listen<string>("kb:remote", (event) => onRemote(event.payload));
 
   setInterval(() => {
     const now = Date.now();
@@ -95,6 +116,8 @@ window.addEventListener("DOMContentLoaded", async () => {
     renderHeartbeat();
     await playTrack(0);
   });
+
+  $("toggle").addEventListener("click", () => invoke("toggle"));
 
   $("stop").addEventListener("click", async () => {
     running = false;

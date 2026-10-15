@@ -25,7 +25,13 @@ rodio = { version = "0.22", default-features = false, features = ["playback", "w
 reqwest = { version = "0.13", default-features = false, features = ["blocking", "native-tls"] }
 
 [target.'cfg(target_os = "ios")'.dependencies]
+objc2 = "0.6"
+block2 = "0.6"
 objc2-avf-audio = { version = "0.3", default-features = false, features = ["std", "AVAudioSession", "AVAudioSessionTypes"] }
+objc2-core-foundation = { version = "0.3", default-features = false, features = ["std", "objc2", "CFCGTypes"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "NSString", "NSValue", "NSDictionary", "NSData"] }
+objc2-ui-kit = { version = "0.3", default-features = false, features = ["std", "objc2-core-foundation", "UIImage", "UIApplication", "UIResponder"] }
+objc2-media-player = { version = "0.3", default-features = false, features = ["std", "block2", "objc2-core-foundation", "MPMediaEntity", "MPMediaItem", "MPNowPlayingInfoCenter", "MPRemoteCommand", "MPRemoteCommandCenter", "MPRemoteCommandEvent"] }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration

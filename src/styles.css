@@ -65,6 +65,7 @@ button {
   font-weight: 600;
 }
 
+button#toggle,
 button#stop {
   background: var(--muted);
 }
@@ -88,6 +89,11 @@ button.small {
   padding-left: 20px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
   font-size: 14px;
+}
+
+#log li.remote {
+  color: var(--accent);
+  font-weight: 600;
 }
 
 #log li.error {
