@@ -3,6 +3,8 @@ import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { lazyLoadAlbumsPage } from '@/features/album/utils/albumBrowseRoutePrefetch';
 import { lazyLoadArtistsPage } from '@/features/artist/utils/artistBrowseRoutePrefetch';
 import MobilePlayerView from '@/features/nowPlaying/components/MobilePlayerView';
+import { MobilePlayer } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { useSidebarStore } from '@/features/sidebar';
 import { useAuthStore } from '../store/authStore';
@@ -47,6 +49,8 @@ const GenreDetail = lazy(() => import('@/features/genre/pages/GenreDetail'));
 const Moods = lazy(() => import('@/features/mood/pages/Moods'));
 const MoodDetail = lazy(() =>import('@/features/mood/pages/MoodDetail'));
 const Shared = lazy(() => import('@/features/share/pages/Shared'));
+const MobileLibraryHub = lazy(() => import('@/features/mobileShell/pages/MobileLibraryHub'));
+const MobileOrbitHub = lazy(() => import('@/features/mobileShell/pages/MobileOrbitHub'));
 
 /**
  * Index route ("/") = Mainstage. When the user has hidden Mainstage from the
@@ -114,7 +118,12 @@ export default function AppRoutes() {
       <Route path="/player-stats" element={<Statistics />} />
       <Route path="/most-played" element={<MostPlayed />} />
       <Route path="/lossless-albums" element={<LosslessAlbums />} />
-      <Route path="/now-playing" element={isMobile ? <MobilePlayerView /> : <NowPlayingPage />} />
+      <Route
+        path="/now-playing"
+        element={IS_MOBILE_SHELL ? <MobilePlayer /> : isMobile ? <MobilePlayerView /> : <NowPlayingPage />}
+      />
+      {IS_MOBILE_SHELL && <Route path="/library" element={<MobileLibraryHub />} />}
+      {IS_MOBILE_SHELL && <Route path="/orbit" element={<MobileOrbitHub />} />}
       <Route path="/settings" element={<Settings />} />
       <Route path="/whats-new" element={<WhatsNew />} />
       <Route path="/help" element={<Help />} />

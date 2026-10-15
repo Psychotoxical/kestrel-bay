@@ -27,6 +27,8 @@ import { useQueueLufsTgtPopover } from '@/features/queue/hooks/useQueueLufsTgtPo
 import { QueueToolbar } from '@/features/queue/components/QueueToolbar';
 import { QueueList } from '@/features/queue/components/QueueList';
 import { QueueTabBar } from '@/features/queue/components/QueueTabBar';
+import { QueueTouchHeader } from '@/features/queue/components/QueueTouchHeader';
+import { QueueTouchNowPlaying } from '@/features/queue/components/QueueTouchNowPlaying';
 import { useQueueAutoScroll } from '@/features/queue/hooks/useQueueAutoScroll';
 import { useQueueShare } from '@/features/queue/hooks/useQueueShare';
 import { useTimelineBootstrapOnMode, useTimelineHistoryResolver, useTimelinePlayHistory } from '@/features/playback/hooks/useTimelinePlayHistory';
@@ -34,19 +36,26 @@ import { buildTimelineDisplayRows } from '@/features/playback/utils/buildTimelin
 import { queueTrackIdsForServerProfile } from '@/features/playback';
 import { isActivePublicShareQueue } from '@/lib/share/navidromePublicSharePlayback';
 
-export default function QueuePanel() {
+interface QueuePanelProps {
+  /** Touch layout for the mobile queue sheet: touch header, no tab bar. */
+  touch?: boolean;
+  /** Close button in the touch header. */
+  onClose?: () => void;
+}
+
+export default function QueuePanel({ touch = false, onClose }: QueuePanelProps = {}) {
   const orbitRole = useOrbitStore(s => s.role);
   if (orbitRole === 'guest') {
     return (
-      <aside className="queue-panel queue-panel--orbit-guest">
+      <aside className={`queue-panel queue-panel--orbit-guest${touch ? ' queue-panel--touch' : ''}`}>
         <OrbitGuestQueue />
       </aside>
     );
   }
-  return <QueuePanelHostOrSolo />;
+  return <QueuePanelHostOrSolo touch={touch} onClose={onClose} />;
 }
 
-function QueuePanelHostOrSolo() {
+function QueuePanelHostOrSolo({ touch, onClose }: QueuePanelProps) {
   const { t } = useTranslation();
   const navigatePlaybackLibrary = usePlaybackLibraryNavigate();
   const orbitRole = useOrbitStore(s => s.role);
@@ -266,7 +275,7 @@ function QueuePanelHostOrSolo() {
   return (
     <aside
       ref={asideRef}
-      className={`queue-panel${isQueueDrag ? ' queue-drop-active' : ''}`}
+      className={`queue-panel${isQueueDrag ? ' queue-drop-active' : ''}${touch ? ' queue-panel--touch' : ''}`}
       onMouseMove={e => {
         if (!isQueueDrag || !queueListRef.current) return;
         const items = queueListRef.current.querySelectorAll<HTMLElement>('[data-queue-idx]');
@@ -298,6 +307,28 @@ function QueuePanelHostOrSolo() {
           <HostApprovalQueue />
         </>
       )}
+      {touch ? (
+        <>
+          <QueueTouchHeader
+            activePlaylist={activePlaylist}
+            saveState={saveState}
+            shuffleMode={shuffleMode}
+            toggleShuffleMode={toggleShuffleMode}
+            handleSave={handleSave}
+            handleLoad={handleLoad}
+            handleClear={handleClear}
+            queueShare={queueShare}
+            publicShareQueueActive={publicShareQueueActive}
+            infiniteQueueEnabled={infiniteQueueEnabled}
+            setInfiniteQueueEnabled={setInfiniteQueueEnabled}
+            queueDisplayMode={queueDisplayMode}
+            setQueueDisplayMode={setQueueDisplayMode}
+            onClose={onClose}
+            t={t}
+          />
+          {currentTrack && queueDisplayMode === 'queue' && <QueueTouchNowPlaying track={currentTrack} t={t} />}
+        </>
+      ) : (<>
       <QueueHeader
         queue={queueItems}
         queueIndex={queueIndex}
@@ -355,9 +386,10 @@ function QueuePanelHostOrSolo() {
           </span>
         </button>
       )}
+      </>)}
 
-      {activeTab === 'queue' ? (<>
-        {!isNowPlayingCollapsed && toolbarButtons.some(b => b.visible && b.id !== 'separator') && (
+      {(touch || activeTab === 'queue') ? (<>
+        {!touch && !isNowPlayingCollapsed && toolbarButtons.some(b => b.visible && b.id !== 'separator') && (
           <QueueToolbar
             activePlaylist={activePlaylist}
             saveState={saveState}
@@ -384,7 +416,10 @@ function QueuePanelHostOrSolo() {
       {/* "Next Tracks" only labels the upcoming-only list in queue mode. In
           playlist mode the list also holds the current + played rows, so the
           divider would be misleading — hide it. */}
-      {queueDisplayMode === 'queue' && displayItems.length > 0 && <div className="queue-divider"><span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{t('queue.nextTracks')}</span></div>}
+      {touch && queueDisplayMode === 'queue' && displayItems.length > 0 && (
+        <span className="queue-touch-label queue-touch-label--next">{t('queue.nextTracks')}</span>
+      )}
+      {!touch && queueDisplayMode === 'queue' && displayItems.length > 0 && <div className="queue-divider"><span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>{t('queue.nextTracks')}</span></div>}
 
       <QueueList
         queue={displayItems}
@@ -413,7 +448,7 @@ function QueuePanelHostOrSolo() {
         <NowPlayingInfo />
       )}
 
-      <QueueTabBar activeTab={activeTab} setTab={setTab} t={t} />
+      {!touch && <QueueTabBar activeTab={activeTab} setTab={setTab} t={t} />}
 
       {saveModalOpen && (
         <SavePlaylistModal

@@ -2,52 +2,13 @@ import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Settings, HardDriveDownload } from 'lucide-react';
-import { useSidebarStore } from '@/features/sidebar';
-import { useAuthStore } from '@/store/authStore';
-import { ALL_NAV_ITEMS } from '@/config/navItems';
-import { useLuckyMixAvailable } from '@/features/randomMix';
-import { isOfflineSidebarNavAllowed } from '@/features/offline';
-import { useReactiveOfflineBrowseContext } from '@/features/sidebar/hooks/useReactiveOfflineBrowseContext';
-import { offlineBrowseNavFlags } from '@/features/offline';
-import { useShareSettingsStore } from '@/features/share';
+import { useMobileNavItems } from '@/features/sidebar/hooks/useMobileNavItems';
 
 const BOTTOM_NAV_ROUTES = new Set(['/', '/albums', '/now-playing']);
 
 export default function MobileMoreOverlay({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const sidebarItems = useSidebarStore(s => s.items);
-  const randomNavMode = useAuthStore(s => s.randomNavMode);
-  const offlineCtx = useReactiveOfflineBrowseContext();
-  const offlineNav = offlineBrowseNavFlags(offlineCtx.capabilities);
-  const isServerOffline = offlineCtx.active;
-  const hasOfflineContent = offlineCtx.capabilities.manualPins;
-  const luckyMixBase = useLuckyMixAvailable();
-  const luckyMixAvailable = luckyMixBase && randomNavMode === 'separate';
-  const navidromeSharingEnabled = useShareSettingsStore(s => s.navidromeSharingEnabled);
-
-  const items = sidebarItems
-    .filter(cfg => {
-      if (!cfg?.visible) return false;
-      const item = ALL_NAV_ITEMS[cfg.id];
-      if (!item) return false;
-      if (BOTTOM_NAV_ROUTES.has(item.to)) return false;
-      if (randomNavMode === 'hub' && (cfg.id === 'randomMix' || cfg.id === 'randomAlbums')) return false;
-      if (randomNavMode === 'separate' && cfg.id === 'randomPicker') return false;
-      if (cfg.id === 'luckyMix' && !luckyMixAvailable) return false;
-      if (cfg.id === 'shared' && !navidromeSharingEnabled) return false;
-      if (cfg.id === 'shared') return true;
-      if (isServerOffline && !isOfflineSidebarNavAllowed(
-        cfg.id,
-        offlineNav.favoritesOfflineBrowse,
-        offlineNav.localLibraryBrowse,
-        offlineNav.playerStatsBrowse,
-        offlineNav.playlistsOfflineBrowse,
-      )) {
-        return false;
-      }
-      return true;
-    })
-    .map(cfg => ALL_NAV_ITEMS[cfg.id]);
+  const { items, hasOfflineContent } = useMobileNavItems(BOTTOM_NAV_ROUTES);
 
   return createPortal(
     <>

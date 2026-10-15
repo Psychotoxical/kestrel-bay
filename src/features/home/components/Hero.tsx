@@ -384,6 +384,9 @@ export default function Hero({ albums: albumsProp }: HeroProps = {}) {
       if (albumId) playAlbumShuffled(albumId, albumServerId ? { serverId: albumServerId } : undefined);
     },
   });
+  // Touch: a horizontal swipe flips the carousel instead of opening the album.
+  const swipeStartXRef = useRef<number | null>(null);
+  const swipedRef = useRef(false);
 
   if (!album) return <div className="hero-placeholder" />;
 
@@ -393,9 +396,30 @@ export default function Hero({ albums: albumsProp }: HeroProps = {}) {
       className="hero"
       role="banner"
       aria-label={t('hero.eyebrow')}
-      onClick={() => navigateToAlbum(album.id, {
-        search: appendServerQuery(undefined, album.serverId),
-      })}
+      onTouchStart={e => {
+        swipeStartXRef.current = e.touches[0]?.clientX ?? null;
+        swipedRef.current = false;
+      }}
+      onTouchEnd={e => {
+        const startX = swipeStartXRef.current;
+        swipeStartXRef.current = null;
+        const endX = e.changedTouches[0]?.clientX;
+        if (startX === null || endX === undefined || albums.length < 2) return;
+        const dx = endX - startX;
+        if (Math.abs(dx) < 40) return;
+        swipedRef.current = true;
+        if (dx > 0) goPrev();
+        else goNext();
+      }}
+      onClick={() => {
+        if (swipedRef.current) {
+          swipedRef.current = false;
+          return;
+        }
+        navigateToAlbum(album.id, {
+          search: appendServerQuery(undefined, album.serverId),
+        });
+      }}
       style={{ cursor: 'pointer' }}
     >
       {showHeroBackdrop && <HeroBg url={heroBackdrop.url} position={heroBackdrop.position} />}

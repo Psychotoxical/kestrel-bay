@@ -2,6 +2,10 @@ import { defineConfig } from 'vitest/config';
 import path from 'node:path';
 
 export default defineConfig({
+  // Mirrors vite.config.mts; tests render the desktop shell.
+  define: {
+    __PSY_MOBILE_SHELL__: 'false',
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

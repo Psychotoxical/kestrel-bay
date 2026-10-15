@@ -3,6 +3,8 @@
  * and row-height estimates derived from measured cell width (TanStack virtual rows).
  */
 
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+
 // Library grid column config. Owned here (pure layout math) and re-exported by
 // authStoreDefaults, which clamps/defaults the user's libraryGridMaxColumns
 // setting against them — keeps this module store-free so ui/ + cover/ can use it.
@@ -74,8 +76,17 @@ const VARIANT: Record<CardGridRowHeightVariant, { extra: number; min: number; ma
   },
 };
 
+/**
+ * Touch shell (`IS_MOBILE_SHELL`): album tiles drop the card padding and the
+ * year line (`styles/mobile`), so only the title, the artist and the row gap
+ * sit under the cover.
+ */
+const MOBILE_SHELL_VARIANT: Partial<Record<CardGridRowHeightVariant, { extra: number; min: number; max?: number }>> = {
+  album: { extra: 66, min: 150 },
+};
+
 export function estimateRowHeightPx(cellWidthPx: number, variant: CardGridRowHeightVariant): number {
-  const { extra, min, max } = VARIANT[variant];
+  const { extra, min, max } = (IS_MOBILE_SHELL ? MOBILE_SHELL_VARIANT[variant] : undefined) ?? VARIANT[variant];
   const height = Math.ceil(cellWidthPx + extra);
   return max === undefined ? Math.max(min, height) : Math.max(min, Math.min(max, height));
 }

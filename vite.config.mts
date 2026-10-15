@@ -6,6 +6,11 @@ import { createRequire } from "node:module";
 import path from "node:path";
 
 const host = process.env.TAURI_DEV_HOST;
+// iOS/Android builds swap the desktop shell for the touch shell
+// (`src/features/mobileShell`). `PSY_MOBILE_SHELL=1` forces it for a preview.
+const mobileShell = process.env.TAURI_ENV_PLATFORM === "ios"
+  || process.env.TAURI_ENV_PLATFORM === "android"
+  || process.env.PSY_MOBILE_SHELL === "1";
 
 const require = createRequire(import.meta.url);
 const kuromojiPackageDirectory = path.dirname(require.resolve("kuromoji/package.json"));
@@ -94,6 +99,9 @@ export default defineConfig({
     },
   },
   envPrefix: ["VITE_", "TAURI_ENV_*"],
+  define: {
+    __PSY_MOBILE_SHELL__: JSON.stringify(mobileShell),
+  },
   build: {
     // licenses.json + auth persist payload exceed 1 MB; expected for a desktop app.
     chunkSizeWarningLimit: 1600,

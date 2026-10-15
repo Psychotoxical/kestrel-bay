@@ -126,7 +126,11 @@ jobs:
 
       - run: npx tauri icon src-tauri/icons/ios-app-icon.png
 
-      - run: npx tauri ios build --ci --export-method app-store-connect --build-number ${{ github.run_number }}
+      - name: Build iOS app
+        env:
+          # Touch shell; TAURI_ENV_PLATFORM=ios selects it too, this keeps it explicit.
+          PSY_MOBILE_SHELL: '1'
+        run: npx tauri ios build --ci --export-method app-store-connect --build-number ${{ github.run_number }}
 
       - name: Upload to TestFlight
         run: |

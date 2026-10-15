@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Back',
   orbitDoubleClickHint: 'Double-click to add this track to the Orbit queue',
   playAll: 'Play All',
+  shuffle: 'Shuffle',
   shareAlbum: 'Share album',
   enqueue: 'Enqueue',
   enqueueTooltip: 'Add entire album to queue',

@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Warteschlange umschalten',
   collapseQueueResize: 'Warteschlange einklappen, Breite ändern',
   moreOptions: 'Weitere Optionen',
+  seek: 'Position im Titel',
   equalizer: 'Equalizer',
   playbackRate: 'Geschwindigkeit',
   miniPlayer: 'Mini-Player',

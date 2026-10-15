@@ -30,6 +30,8 @@ import { useZipDownloadStore } from '@/features/offline';
 import AlbumCard from '@/features/album/components/AlbumCard';
 import SimilarAlbumsRail from '@/features/album/components/SimilarAlbumsRail';
 import AlbumHeader from '@/features/album/components/AlbumHeader';
+import AlbumDetailMobile from '@/features/album/components/AlbumDetailMobile';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import AlbumTrackList from '@/features/album/components/AlbumTrackList';
 import { AlbumDetailToolbar } from '@/features/album/components/AlbumDetailToolbar';
 import { useCoverArt } from '@/cover/useCoverArt';
@@ -544,6 +546,33 @@ const handleShuffleAll = () => {
   const songs = resolvedBpmSongs;
   const headerArtistRefs = deriveAlbumHeaderArtistRefs(info, songs);
   const hasVariousArtists = songs.some(s => s.artist !== info.artist);
+  // Name the artist the related grid was loaded for (`info.artistId`), not the
+  // joined credit string and not simply the first ref — the server's `artists`
+  // order is arbitrary, so the first entry can be a guest.
+  const moreByArtistName = headerArtistRefs.find(ref => ref.id && ref.id === info.artistId)?.name
+    ?? headerArtistRefs[0]?.name
+    ?? info.artist;
+
+  if (IS_MOBILE_SHELL) {
+    return (
+      <AlbumDetailMobile
+        info={info}
+        serverId={albumOwnerServerId}
+        artistRefs={headerArtistRefs}
+        songs={displayedSongs}
+        coverUrl={resolvedCoverUrl}
+        isStarred={isStarred}
+        currentTrack={currentTrack}
+        isPlaying={isPlaying}
+        relatedAlbums={relatedAlbums}
+        relatedTitle={t('albumDetail.moreByArtist', { artist: moreByArtistName })}
+        onToggleStar={toggleStar}
+        onPlayAll={handlePlayAll}
+        onShuffleAll={handleShuffleAll}
+        onPlaySong={handlePlaySong}
+      />
+    );
+  }
 
   return (
     <div className="album-detail animate-fade-in">
@@ -620,16 +649,8 @@ const handleShuffleAll = () => {
       {relatedAlbums.length > 0 && (
         <div className="album-related">
           <div className="album-related-divider" />
-          {/* Name the artist this grid was actually loaded for (`info.artistId`), not
-              the joined credit string and not simply the first ref — the server's
-              `artists` order is arbitrary, so the first entry can be a guest while the
-              related albums belong to the album artist. */}
           <h2 className="section-title album-related-title">
-            {t('albumDetail.moreByArtist', {
-              artist: headerArtistRefs.find(ref => ref.id && ref.id === info.artistId)?.name
-                ?? headerArtistRefs[0]?.name
-                ?? info.artist,
-            })}
+            {t('albumDetail.moreByArtist', { artist: moreByArtistName })}
           </h2>
           <VirtualCardGrid
             items={relatedAlbums}

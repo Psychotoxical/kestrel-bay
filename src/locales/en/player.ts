@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Toggle Queue',
   collapseQueueResize: 'Collapse queue, resize',
   moreOptions: 'More options',
+  seek: 'Position in track',
   equalizer: 'Equalizer',
   playbackRate: 'Playback speed',
   miniPlayer: 'Mini Player',

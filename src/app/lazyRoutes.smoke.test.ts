@@ -49,6 +49,8 @@ const ROUTE_LOADERS: Array<[string, () => Promise<{ default: unknown }>]> = [
   ['@/features/mood/pages/Moods', () => import('@/features/mood/pages/Moods')],
   ['@/features/mood/pages/MoodDetail', () => import('@/features/mood/pages/MoodDetail')],
   ['@/features/share/pages/Shared', () => import('@/features/share/pages/Shared')],
+  ['@/features/mobileShell/pages/MobileLibraryHub', () => import('@/features/mobileShell/pages/MobileLibraryHub')],
+  ['@/features/mobileShell/pages/MobileOrbitHub', () => import('@/features/mobileShell/pages/MobileOrbitHub')],
   ['@/features/auth/pages/Login', () => import('@/features/auth/pages/Login')],
 ];
 

@@ -57,7 +57,14 @@ import { useNowPlayingPrewarm } from '@/features/nowPlaying';
 import { useOfflineAutoNav } from '@/features/offline';
 import { useOfflineLibraryFilterSuspend } from '@/features/offline';
 import { AppShellQueueResizerSeam } from '@/app/AppShellQueueResizerSeam';
-import { IS_LINUX, IS_MACOS } from '@/lib/util/platform';
+import { IS_LINUX, IS_MACOS, IS_MOBILE_SHELL } from '@/lib/util/platform';
+import {
+  MobileMiniPlayer,
+  MobileRadioBridge,
+  MobileTabBar,
+  MobileTopBar,
+  MobileTouchContextMenu,
+} from '@/features/mobileShell';
 import { useConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import { useIdlePlayQueuePull } from '@/app/hooks/useIdlePlayQueuePull';
 import { useShareBootstrap } from '@/features/share';
@@ -242,7 +249,18 @@ export function AppShell() {
   useAppActivityTracking();
   useFsAutoOpen();
 
-  const isMobilePlayer = isMobile && location.pathname === '/now-playing';
+  const isMobilePlayer = (isMobile || IS_MOBILE_SHELL) && location.pathname === '/now-playing';
+
+  useEffect(() => {
+    if (!IS_MOBILE_SHELL) return;
+    // Portaled overlays (search, sheets, modals) live outside `.app-shell`.
+    document.documentElement.setAttribute('data-mobile-app', 'true');
+    // iOS zooms into inputs below 16px on focus; an app shell never wants that.
+    document.querySelector('meta[name="viewport"]')?.setAttribute(
+      'content',
+      'width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover',
+    );
+  }, []);
 
   // Custom in-page titlebar. Linux: opt-in, native decorations off. macOS:
   // always on — `titleBarStyle: Overlay` lets the webview reach the top edge
@@ -255,6 +273,70 @@ export function AppShell() {
     && !isTilingWm;
   const showMacTitlebar = IS_MACOS && !isWindowFullscreen;
   const showTitlebar = showLinuxTitlebar || showMacTitlebar;
+
+  const globalOverlays = (
+    <>
+      {isFullscreenOpen && (
+        fullscreenPlayerStyle === 'immersive'
+          ? <FullscreenPlayerImmersive onClose={toggleFullscreen} />
+          : fullscreenPlayerStyle === 'prism'
+            ? <FullscreenPlayerPrism onClose={toggleFullscreen} />
+            : <FullscreenPlayer onClose={toggleFullscreen} />
+      )}
+      <ContextMenu />
+      <SongInfoModal />
+      <PlaybackAlternativeModal />
+      <DownloadFolderModal />
+      <GlobalConfirmModal />
+      <ThemeMigrationNotice />
+      <OrbitAccountPicker />
+      <OrbitHelpModal />
+      {!perfFlags.disableTooltipPortal && <TooltipPortal />}
+      {/* App-store builds update through the store, not the GitHub updater. */}
+      {!IS_MOBILE_SHELL && <AppUpdater />}
+    </>
+  );
+
+  if (IS_MOBILE_SHELL) {
+    return (
+      <div
+        className="app-shell"
+        data-mobile
+        data-mobile-app
+        data-mobile-player={isMobilePlayer || undefined}
+        onContextMenu={e => e.preventDefault()}
+      >
+        <main className="main-content">
+          <div className="main-content-zoom">
+            <OrbitSessionBar />
+            {connStatus === 'disconnected' && (
+              <OfflineBanner onRetry={connRetry} isChecking={connRetrying} showSettingsLink={!hasOfflineBrowse} serverName={serverName} />
+            )}
+            <div className="content-body app-shell-route-host">
+              <OverlayScrollArea
+                className="app-shell-route-scroll"
+                viewportClassName="app-shell-route-scroll__viewport"
+                viewportId={APP_MAIN_SCROLL_VIEWPORT_ID}
+                measureDeps={[location.pathname]}
+                railInset="panel"
+              >
+                {!isMobilePlayer && <MobileTopBar serverName={serverName} connStatus={connStatus} isLan={isLan} />}
+                <Suspense fallback={null}>
+                  <AppRoutes />
+                </Suspense>
+                {!isMobilePlayer && <div className="mobile-shell-bottom-spacer" aria-hidden="true" />}
+              </OverlayScrollArea>
+            </div>
+          </div>
+        </main>
+        <MobileRadioBridge />
+        <MobileTouchContextMenu />
+        {!isMobilePlayer && <MobileMiniPlayer />}
+        {!isMobilePlayer && <MobileTabBar />}
+        {globalOverlays}
+      </div>
+    );
+  }
 
   return (
     <div
@@ -346,23 +428,7 @@ export function AppShell() {
       {!isMobile && !perfFlags.disableQueuePanelMount && <QueuePanel />}
       {isMobile && !isMobilePlayer && <BottomNav />}
       {!isMobilePlayer && <PlayerBar />}
-      {isFullscreenOpen && (
-        fullscreenPlayerStyle === 'immersive'
-          ? <FullscreenPlayerImmersive onClose={toggleFullscreen} />
-          : fullscreenPlayerStyle === 'prism'
-            ? <FullscreenPlayerPrism onClose={toggleFullscreen} />
-            : <FullscreenPlayer onClose={toggleFullscreen} />
-      )}
-      <ContextMenu />
-      <SongInfoModal />
-      <PlaybackAlternativeModal />
-      <DownloadFolderModal />
-      <GlobalConfirmModal />
-      <ThemeMigrationNotice />
-      <OrbitAccountPicker />
-      <OrbitHelpModal />
-      {!perfFlags.disableTooltipPortal && <TooltipPortal />}
-      <AppUpdater />
+      {globalOverlays}
     </div>
   );
 }

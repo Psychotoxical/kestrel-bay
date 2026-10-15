@@ -17,6 +17,7 @@ const ENTRY_RELS = [
   'layout/index.css',
   'components/index.css',
   'tracks/index.css',
+  'mobile/index.css',
 ];
 
 /** Quoted path in @import '...' or "..." (postcss-import style in this repo). */

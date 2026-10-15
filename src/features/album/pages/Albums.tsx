@@ -23,7 +23,10 @@ import { downloadZip } from '@/lib/api/downloadZip';
 import { join } from '@tauri-apps/api/path';
 import { showToast } from '@/lib/dom/toast';
 import { useZipDownloadStore } from '@/features/offline';
-import { Download, HardDriveDownload, Disc3, ListPlus } from 'lucide-react';
+import { Download, HardDriveDownload, Disc3, ListPlus, Search } from 'lucide-react';
+import { MobileBackButton } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { requestOpenSearch } from '@/lib/dom/openSearch';
 import SelectionToggleButton from '@/ui/SelectionToggleButton';
 import FilterQuickClear from '@/ui/FilterQuickClear';
 import { usePerfProbeFlags } from '@/lib/perf/perfFlags';
@@ -481,7 +484,58 @@ export default function Albums() {
           </button>
         </div>
       )}
-      {!perfFlags.disableMainstageStickyHeader && (
+      {IS_MOBILE_SHELL ? (
+        <div className="mobile-browse-header">
+          <div className="mobile-browse-header__top">
+            <MobileBackButton />
+            <SortDropdown
+              value={sort}
+              options={sortOptions}
+              onChange={value => onSortChange(pickedSort(sort, value))}
+              tooltip={t('albums.sortTooltip')}
+              ariaLabel={t('albums.sortTooltip')}
+              iconOnly
+              align="right"
+            />
+          </div>
+          <h1 className="mobile-large-title">{t('albums.title')}</h1>
+          <button type="button" className="mobile-search-field" onClick={() => requestOpenSearch()}>
+            <Search size={18} aria-hidden="true" />
+            <span>{t('search.title')}</span>
+          </button>
+          <div className="mobile-chip-row">
+            <button
+              type="button"
+              className={`btn btn-surface${!starredOnly && !losslessOnly && !genreFiltered && !yearFilterActive ? ' btn-sort-active' : ''}`}
+              onClick={() => {
+                setStarredOnly(false);
+                setLosslessOnly(false);
+                setSelectedGenres([]);
+                setYearFrom('');
+                setYearTo('');
+              }}
+            >
+              {t('artists.all')}
+            </button>
+            <StarFilterButton active={starredOnly} onChange={setStarredOnly} />
+            {indexEnabled && (
+              <LosslessFilterButton active={losslessOnly} onChange={setLosslessOnly} />
+            )}
+            <YearFilterButton
+              from={yearFrom}
+              to={yearTo}
+              catalogMinYear={catalogYears.min}
+              catalogMaxYear={catalogYears.max}
+              onChange={(from, to) => { setYearFrom(from); setYearTo(to); }}
+            />
+            <GenreFilterBar
+              selected={selectedGenres}
+              catalogGenres={browseData.genreCatalogActive ? browseData.genreCatalogOptions : undefined}
+              onSelectionChange={setSelectedGenres}
+            />
+          </div>
+        </div>
+      ) : !perfFlags.disableMainstageStickyHeader && (
         <div className="mainstage-inpage-toolbar">
           <div className="page-sticky-header mainstage-inpage-toolbar-row">
             <h1 className="page-title" style={{ marginBottom: 0 }}>
