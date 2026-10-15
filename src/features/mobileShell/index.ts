@@ -6,6 +6,7 @@ export { default as MobileMiniPlayer } from './components/MobileMiniPlayer';
 export { default as MobileTopBar } from './components/MobileTopBar';
 export { default as MobileRadioBridge } from './components/MobileRadioBridge';
 export { default as MobileTouchContextMenu } from './components/MobileTouchContextMenu';
+export { default as MobileSwipeNavigation } from './components/MobileSwipeNavigation';
 export { default as MobilePlayer } from './components/MobilePlayer';
 export { default as MobileBackButton } from './components/MobileBackButton';
 export { useMobileBack } from './hooks/useMobileBack';

@@ -26,6 +26,10 @@ import { useWaveformInterpolation } from '@/features/waveform/hooks/useWaveformI
 
 interface Props {
   trackId: string | undefined;
+  /** Canvas height in CSS px (player bar: 24). */
+  height?: number;
+  /** Touch seeking (drag with a finger) for the touch shell. */
+  touch?: boolean;
 }
 
 const SEEK_COMMIT_GUARD_MS = 900;
@@ -34,7 +38,10 @@ const SEEK_COMMIT_PROGRESS_EPS = 0.02;
 const WHEEL_SEEK_STEP_SECONDS = 10;
 const WHEEL_SEEK_DEBOUNCE_MS = 350;
 
-export default function WaveformSeek({ trackId }: Props) {
+/** A finger tap is followed by compatibility mouse events; ignore those. */
+const TOUCH_MOUSE_COMPAT_MS = 800;
+
+export default function WaveformSeek({ trackId, height = 24, touch = false }: Props) {
   const canvasRef    = useRef<HTMLCanvasElement>(null);
   const heightsRef   = useRef<Float32Array | null>(null);
   const progressRef  = useRef(getPlaybackProgressSnapshot().progress);
@@ -286,6 +293,7 @@ export default function WaveformSeek({ trackId }: Props) {
   const queuedWheelSeekFractionRef = useRef<number | null>(null);
   const wheelPreviewFractionRef = useRef<number | null>(null);
   const wheelPreviewUntilRef = useRef(0);
+  const lastTouchAtRef = useRef(0);
 
   useWaveformInterpolation({
     duration, isPlaying, previewFreezesMainSeekbar,
@@ -366,7 +374,37 @@ export default function WaveformSeek({ trackId }: Props) {
       )}
       <canvas
         ref={canvasRef}
-        style={{ width: '100%', height: '24px', cursor: trackId ? 'pointer' : 'default', display: 'block' }}
+        style={{
+          width: '100%',
+          height: `${height}px`,
+          cursor: trackId ? 'pointer' : 'default',
+          display: 'block',
+          ...(touch ? { touchAction: 'none' } : null),
+        }}
+        onPointerDown={touch ? e => {
+          if (e.pointerType === 'mouse' || !trackIdRef.current) return;
+          lastTouchAtRef.current = performance.now();
+          isDragging.current = true;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          const rect = e.currentTarget.getBoundingClientRect();
+          previewFraction(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
+        } : undefined}
+        onPointerMove={touch ? e => {
+          if (e.pointerType === 'mouse' || !isDragging.current) return;
+          const rect = e.currentTarget.getBoundingClientRect();
+          previewFraction(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));
+        } : undefined}
+        onPointerUp={touch ? e => {
+          if (e.pointerType === 'mouse' || !isDragging.current) return;
+          lastTouchAtRef.current = performance.now();
+          isDragging.current = false;
+          commitSeek();
+        } : undefined}
+        onPointerCancel={touch ? e => {
+          if (e.pointerType === 'mouse' || !isDragging.current) return;
+          isDragging.current = false;
+          pendingSeekRef.current = null;
+        } : undefined}
         onWheel={e => {
           if (!trackIdRef.current || duration <= 0 || isDragging.current) return;
           e.preventDefault();
@@ -418,6 +456,7 @@ export default function WaveformSeek({ trackId }: Props) {
           }, WHEEL_SEEK_DEBOUNCE_MS);
         }}
         onMouseDown={e => {
+          if (touch && performance.now() - lastTouchAtRef.current < TOUCH_MOUSE_COMPAT_MS) return;
           isDragging.current = true;
           const rect = e.currentTarget.getBoundingClientRect();
           previewFraction(Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)));

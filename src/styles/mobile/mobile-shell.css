@@ -571,9 +571,20 @@ html[data-mobile-app] .mobile-search-overlay {
   align-items: center;
 }
 
+/* Eyebrow and title span the bar; artist + year/genre sit left of the buttons. */
 .app-shell[data-mobile-app] .hero-text > * {
-  grid-column: 1;
+  grid-column: 1 / -1;
   min-width: 0;
+}
+
+.app-shell[data-mobile-app] .hero-text > .hero-artist {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.app-shell[data-mobile-app] .hero-text > .hero-meta {
+  grid-column: 1;
+  grid-row: 4;
 }
 
 .app-shell[data-mobile-app] .hero-eyebrow {
@@ -622,18 +633,19 @@ html[data-mobile-app] .mobile-search-overlay {
   margin: 0 6px;
 }
 
-.app-shell[data-mobile-app] .hero-actions-mobile {
+.app-shell[data-mobile-app] .hero-text > .hero-actions-mobile {
   grid-column: 2;
-  grid-row: 1 / span 4;
+  grid-row: 3 / span 2;
+  align-self: end;
   margin: 0;
   flex-direction: row-reverse;
-  gap: 10px;
+  gap: 8px;
 }
 
 .app-shell[data-mobile-app] .hero-actions-mobile .album-icon-btn {
-  width: 48px;
-  height: 48px;
-  border-radius: 24px;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
 }
 
 .app-shell[data-mobile-app] .hero-actions-mobile .album-icon-btn--queue {
@@ -1990,4 +2002,202 @@ html[data-mobile-app] ::-webkit-scrollbar {
   padding: 0 11px;
   gap: 5px;
   white-space: nowrap;
+}
+
+/* Waveform seekbar (desktop component, touch mode) in the player. */
+.mobile-player__waveform {
+  touch-action: none;
+  margin: -6px 0 -4px;
+}
+
+/* Crossfade length (shown while crossfade is the active transition). */
+.mobile-player__modes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-crossfade-length {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 36px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.mobile-crossfade-length input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent);
+  touch-action: pan-x;
+}
+
+.mobile-crossfade-length__value {
+  flex: none;
+  min-width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+/* The mini player owns vertical swipes (swipe up opens the player). */
+.mobile-miniplayer {
+  touch-action: none;
+}
+
+/* ─── Most Played: iOS list rows (title gets the full width) ─── */
+.app-shell[data-mobile-app] .content-body > .mp-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.app-shell[data-mobile-app] .mp-title {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 36px;
+  letter-spacing: -0.3px;
+}
+
+.app-shell[data-mobile-app] .mp-sort-btn,
+.app-shell[data-mobile-app] .mp-filter-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 17px;
+  font-size: 14px;
+  opacity: 1;
+}
+
+.app-shell[data-mobile-app] .mp-section-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  text-transform: none;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+
+.app-shell[data-mobile-app] .mp-artist-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+
+.app-shell[data-mobile-app] .mp-artist-card {
+  min-height: 60px;
+  padding: 0 4px;
+  gap: 12px;
+  border: none;
+  border-bottom: 1px solid var(--mobile-row-border);
+  border-radius: 0;
+  background: none;
+}
+
+.app-shell[data-mobile-app] .mp-rank,
+.app-shell[data-mobile-app] .mp-album-rank {
+  min-width: 22px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: right;
+}
+
+.app-shell[data-mobile-app] .mp-artist-avatar {
+  width: 46px;
+  height: 46px;
+}
+
+.app-shell[data-mobile-app] .mp-artist-name {
+  font-size: 16px;
+}
+
+.app-shell[data-mobile-app] .mp-artist-plays {
+  font-size: 13px;
+}
+
+.app-shell[data-mobile-app] .mp-album-list {
+  gap: 0;
+}
+
+.app-shell[data-mobile-app] .mp-album-row {
+  grid-template-columns: 22px 56px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 72px;
+  padding: 0 4px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--mobile-row-border);
+}
+
+.app-shell[data-mobile-app] .mp-album-row > .mp-album-cover,
+.app-shell[data-mobile-app] .mp-album-row img {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+}
+
+.app-shell[data-mobile-app] .mp-album-actions,
+.app-shell[data-mobile-app] .mp-album-year {
+  display: none;
+}
+
+/* Title alone on line one; artist and play count share line two. */
+.app-shell[data-mobile-app] .mp-album-meta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "name name"
+    "artist plays";
+  column-gap: 10px;
+  row-gap: 2px;
+  min-width: 0;
+}
+
+.app-shell[data-mobile-app] .mp-album-name-row {
+  display: contents;
+}
+
+.app-shell[data-mobile-app] .mp-album-name {
+  grid-area: name;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.app-shell[data-mobile-app] .mp-album-artist {
+  grid-area: artist;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.app-shell[data-mobile-app] .mp-album-plays-pill {
+  grid-area: plays;
+  padding: 0;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ─── Mainstage pull-to-refresh ─── */
+.mobile-ptr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: -14px; /* the header gap closes around the empty indicator */
+  overflow: hidden;
+  color: var(--accent);
+  transition: height 0.25s ease;
+}
+
+.mobile-ptr.is-pulling {
+  transition: none;
+}
+
+.mobile-ptr.is-refreshing .mobile-ptr__icon {
+  animation: mobile-ptr-spin 0.9s linear infinite;
+}
+
+@keyframes mobile-ptr-spin {
+  to { transform: rotate(360deg); }
 }

@@ -3,6 +3,7 @@ import type { TFunction } from 'i18next';
 import { Check, FolderOpen, Infinity as InfinityIcon, Link, MoreHorizontal, Save, Shuffle, Trash2 } from 'lucide-react';
 import type { QueueDisplayMode } from '@/store/authStoreTypes';
 import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
+import CrossfadeLengthSlider from '@/features/mobileShell/components/CrossfadeLengthSlider';
 import { QueueShareButton } from '@/features/queue/components/QueueShareButton';
 import type { QueueShareController } from '@/features/queue/hooks/useQueueShare';
 
@@ -132,6 +133,7 @@ export function QueueTouchHeader({
           <span>{t('queue.infiniteQueue')}</span>
         </button>
       </TransitionModeChips>
+      <CrossfadeLengthSlider />
 
       <div className="mobile-segmented" role="tablist" aria-label={t('queue.title')}>
         {MODES.map(({ mode, labelKey }) => (

@@ -3,6 +3,8 @@ import { resolveAlbum, resolveMediaServerId } from '@/features/offline';
 import type { SubsonicAlbum } from '@/lib/api/subsonicTypes';
 import { songToTrack } from '@/lib/media/songToTrack';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useFitTextToWidth } from '@/lib/hooks/useFitTextToWidth';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useNavigateToAlbum } from '@/features/album';
 import { Play, ListPlus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { CoverArtImage } from '@/cover/CoverArtImage';
@@ -387,6 +389,8 @@ export default function Hero({ albums: albumsProp }: HeroProps = {}) {
   // Touch: a horizontal swipe flips the carousel instead of opening the album.
   const swipeStartXRef = useRef<number | null>(null);
   const swipedRef = useRef(false);
+  // Touch shell: a long title shrinks to the card width before it ellipsizes.
+  const fitTitleRef = useFitTextToWidth(IS_MOBILE_SHELL, 23, 15);
 
   if (!album) return <div className="hero-placeholder" />;
 
@@ -439,7 +443,7 @@ export default function Hero({ albums: albumsProp }: HeroProps = {}) {
         )}
         <div className="hero-text">
           <span className="hero-eyebrow">{t('hero.eyebrow')}</span>
-          <h2 className="hero-title">{album.name}</h2>
+          <h2 className="hero-title" ref={fitTitleRef}>{album.name}</h2>
           <p className="hero-artist">{heroArtistLabel}</p>
           <div className="hero-meta">
             {album.year && <span className="badge">{album.year}</span>}

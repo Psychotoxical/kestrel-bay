@@ -63,6 +63,7 @@ import {
   MobileRadioBridge,
   MobileTabBar,
   MobileTopBar,
+  MobileSwipeNavigation,
   MobileTouchContextMenu,
 } from '@/features/mobileShell';
 import { useConnectionStatus } from '@/lib/hooks/useConnectionStatus';
@@ -335,6 +336,7 @@ export function AppShell() {
         </main>
         <MobileRadioBridge />
         <MobileTouchContextMenu />
+        <MobileSwipeNavigation />
         {!isMobilePlayer && <MobileMiniPlayer />}
         {!isMobilePlayer && <MobileTabBar />}
         {globalOverlays}

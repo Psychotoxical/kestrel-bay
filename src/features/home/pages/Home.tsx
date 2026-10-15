@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { NavLink, useNavigate } from 'react-router';
 import { ChevronRight } from 'lucide-react';
 import { useHomeStore } from '@/features/home/store/homeStore';
+import { useHomeRefreshStore } from '@/features/home/store/homeRefreshStore';
 import { useAuthStore } from '@/store/authStore';
 import {
   filterAlbumsByMixRatingsAcrossServers,
@@ -194,6 +195,8 @@ export default function Home() {
   const feedLoadVersionRef = useRef(0);
   const appliedSyncRevisionRef = useRef(librarySyncRevision);
   const previousConnStatusRef = useRef(connStatus);
+  const manualRefreshToken = useHomeRefreshStore(s => s.token);
+  const appliedManualRefreshRef = useRef(manualRefreshToken);
   const activeScopeRef = useRef({ scopeKey, scopeVersion });
 
   useEffect(() => {
@@ -274,6 +277,12 @@ export default function Home() {
     appliedSyncRevisionRef.current = librarySyncRevision;
     const reconnectRefresh = previousConnStatusRef.current !== 'connected' && connStatus === 'connected';
     previousConnStatusRef.current = connStatus;
+    // Pull-to-refresh: load a fresh feed and show it right away.
+    const manualRefresh = appliedManualRefreshRef.current !== manualRefreshToken;
+    appliedManualRefreshRef.current = manualRefreshToken;
+    const finishManualRefresh = () => {
+      if (manualRefresh) useHomeRefreshStore.getState().finish();
+    };
     const startFreshHomeFeed = () => {
       const mixCfg = getMixMinRatingsConfigFromAuth();
       const albumMix =
@@ -404,7 +413,7 @@ export default function Home() {
       }
       // Keep this visit stable, but prepare a fresh snapshot so the next visit
       // is instant. Sync/reconnect refreshes also update the currently visible feed.
-      if (!offlineBrowseActive || syncRefresh || reconnectRefresh) {
+      if (!offlineBrowseActive || syncRefresh || reconnectRefresh || manualRefresh) {
         void (async () => {
           try {
             const freshLoad = startFreshHomeFeed();
@@ -415,19 +424,25 @@ export default function Home() {
               displayedSnapshotRef.current,
               getEffectiveEnabledSections(),
             );
-            if (isHomeFeedSnapshotEmpty(fresh)) return;
+            if (isHomeFeedSnapshotEmpty(fresh)) {
+              finishManualRefresh();
+              return;
+            }
             writeHomeFeedCache(fresh);
-            const applyCurrentRefresh = syncRefresh || reconnectRefresh;
+            const applyCurrentRefresh = syncRefresh || reconnectRefresh || manualRefresh;
             if (applyCurrentRefresh) applyFeedSnapshot(fresh);
+            finishManualRefresh();
             void patchChronologicalFeeds(freshLoad.chronological, applyCurrentRefresh);
             void warmHomeMainstageCovers(homeSnapshotForEnabledCoverWarm(
               fresh,
               getEffectiveEnabledSections(),
             ));
           } catch {
-            /* ignore */
+            finishManualRefresh();
           }
         })();
+      } else {
+        finishManualRefresh();
       }
       return () => {
         cancelled = true;
@@ -438,6 +453,7 @@ export default function Home() {
     if (stale) {
       applyFeedSnapshot(stale);
       setLoading(false);
+      finishManualRefresh();
       return () => { cancelled = true; };
     }
 
@@ -474,6 +490,7 @@ export default function Home() {
         /* ignore */
       } finally {
         if (!cancelled) setLoading(false);
+        finishManualRefresh();
       }
     })();
     return () => { cancelled = true; };
@@ -492,6 +509,7 @@ export default function Home() {
     libraryMasterEnabled,
     migrationReady,
     connStatus,
+    manualRefreshToken,
   ]);
 
   /** When offline toggles without a library-filter bump, re-apply stale cache if the feed was cleared. */

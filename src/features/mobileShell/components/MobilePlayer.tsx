@@ -19,6 +19,7 @@ import { useCachedUrl } from '@/ui/CachedImage';
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import { useCoverAccentColor } from '@/features/nowPlaying/hooks/useCoverAccentColor';
 import { LyricsPane } from '@/features/lyrics';
+import { WaveformSeek } from '@/features/waveform';
 import { effectiveAudioFormat } from '@/lib/media/streamFormat';
 import { formatTrackTime } from '@/lib/format/formatDuration';
 import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
@@ -26,6 +27,7 @@ import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';
 import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet';
 import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
+import CrossfadeLengthSlider from '@/features/mobileShell/components/CrossfadeLengthSlider';
 
 /** Finger travel before a downward swipe takes over. */
 const SWIPE_START_PX = 12;
@@ -40,11 +42,16 @@ function usePlaybackProgress() {
   );
 }
 
-/** Seek bar with drag preview; the seek is sent once on release. */
+/**
+ * Seek bar with drag preview; the seek is sent once on release. Once the
+ * track's waveform is analysed, the desktop waveform seekbar (in the user's
+ * seekbar style) replaces the plain bar.
+ */
 function Scrubber({ duration, formatLabel }: { duration: number; formatLabel: string | null }) {
   const { t } = useTranslation();
   const seek = usePlayerStore(s => s.seek);
   const currentTrackId = usePlayerStore(s => s.currentTrack?.id);
+  const hasWaveform = usePlayerStore(s => (s.waveformBins?.length ?? 0) > 0);
   const { progress, currentTime } = usePlaybackProgress();
   const barRef = useRef<HTMLDivElement>(null);
   const [preview, setPreview] = useState<number | null>(null);
@@ -68,6 +75,26 @@ function Scrubber({ duration, formatLabel }: { duration: number; formatLabel: st
 
   return (
     <div className="mobile-player__scrubber">
+      {hasWaveform ? (
+        <div
+          className="mobile-player__waveform"
+          role="slider"
+          tabIndex={0}
+          aria-label={t('player.seek')}
+          aria-valuemin={0}
+          aria-valuemax={Math.round(duration)}
+          aria-valuenow={Math.round(currentTime)}
+          aria-valuetext={formatTrackTime(currentTime)}
+          onKeyDown={e => {
+            if (duration <= 0) return;
+            const step = 5 / duration;
+            if (e.key === 'ArrowRight') seek(Math.min(1, progress + step));
+            if (e.key === 'ArrowLeft') seek(Math.max(0, progress - step));
+          }}
+        >
+          <WaveformSeek trackId={currentTrackId} height={44} touch />
+        </div>
+      ) : (
       <div
         ref={barRef}
         className={`mobile-player__bar${preview !== null ? ' is-dragging' : ''}`}
@@ -101,6 +128,7 @@ function Scrubber({ duration, formatLabel }: { duration: number; formatLabel: st
       >
         <span className="mobile-player__bar-fill" style={{ transform: `scaleX(${shown})` }} />
       </div>
+      )}
       <div className="mobile-player__times">
         <span>{formatTrackTime(shownTime)}</span>
         {formatLabel && <span className="mobile-player__format">{formatLabel}</span>}
@@ -181,7 +209,7 @@ export default function MobilePlayer() {
     const target = e.target as Element;
     // Touches inside the queue/lyrics sheets bubble here through the portal.
     if (!e.currentTarget.contains(target)) return;
-    if (target.closest('[role="slider"], .mobile-chips')) return;
+    if (target.closest('[role="slider"], input, .mobile-chips')) return;
     const touch = e.touches[0];
     swipeRef.current = { x: touch.clientX, y: touch.clientY, active: false };
   };
@@ -342,7 +370,12 @@ export default function MobilePlayer() {
               </button>
             </div>
 
-            {!currentRadio && <TransitionModeChips />}
+            {!currentRadio && (
+              <div className="mobile-player__modes">
+                <TransitionModeChips />
+                <CrossfadeLengthSlider />
+              </div>
+            )}
 
             <div className="mobile-player__footer">
               <button type="button" className="mobile-footer-btn" onClick={() => setSheet('lyrics')} disabled={!!currentRadio}>
