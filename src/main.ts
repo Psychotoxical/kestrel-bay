@@ -1,6 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
+import { setupIndexTest } from "./indexTest";
+
 type PlayerEvent = {
   at: number;
   kind: string;
@@ -234,6 +236,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   account = loadAccount();
   renderAccount();
+  await setupIndexTest(() => account);
 
   setInterval(() => {
     const now = Date.now();

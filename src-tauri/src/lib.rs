@@ -4,6 +4,7 @@ use std::sync::{Arc, Mutex};
 
 use tauri::{AppHandle, Emitter, Manager, State};
 
+mod metrics;
 mod nowplaying;
 mod player;
 mod subsonic;
@@ -130,6 +131,16 @@ fn note(app: &AppHandle, kind: &'static str, id: u32, detail: String) {
 }
 
 #[tauri::command]
+fn metrics(app: AppHandle) -> metrics::Metrics {
+    metrics::collect(&app)
+}
+
+#[tauri::command]
+fn keep_awake(on: bool) {
+    metrics::keep_awake(on);
+}
+
+#[tauri::command]
 fn events(audio: State<'_, Audio>) -> Vec<player::Event> {
     audio.log.lock().map(|log| log.clone()).unwrap_or_default()
 }
@@ -193,7 +204,13 @@ fn on_remote_command(app: &AppHandle, name: &'static str) {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .manage(Arc::new(
+            psysonic_core::server_http::ServerHttpRegistry::new(),
+        ))
         .setup(|app| {
+            let store = psysonic_library::LibraryStore::init(app.handle())?;
+            app.manage(psysonic_library::LibraryRuntime::new(Arc::new(store)));
+
             let handle = app.handle().clone();
             let log = Arc::new(Mutex::new(Vec::new()));
             let player_log = log.clone();
@@ -216,7 +233,14 @@ pub fn run() {
             toggle,
             now_playing,
             events,
-            clear_events
+            clear_events,
+            metrics,
+            keep_awake,
+            psysonic_library::commands::library_sync_bind_session,
+            psysonic_library::commands::library_sync_start,
+            psysonic_library::commands::library_sync_cancel,
+            psysonic_library::commands::library_get_status,
+            psysonic_library::commands::library_count_live_tracks
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

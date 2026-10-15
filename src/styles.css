@@ -145,6 +145,21 @@ select {
   font-size: 14px;
 }
 
+#index-password {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 10px;
+}
+
+#index-progress {
+  font-variant-numeric: tabular-nums;
+}
+
+#index-result {
+  padding-left: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
 #heartbeat {
   margin: 0;
 }

@@ -45,6 +45,22 @@
       </section>
 
       <section>
+        <h2>Bibliotheks-Index</h2>
+        <p class="hint">
+          Echter Psysonic-Erst-Sync für den verbundenen Server. Das Passwort geht nur für diesen
+          Lauf an die Bibliothek und wird nicht gespeichert. App während des Syncs offen lassen,
+          der Bildschirm bleibt dabei an.
+        </p>
+        <input id="index-password" type="password" placeholder="Passwort für den Sync" autocomplete="current-password" />
+        <div class="buttons">
+          <button id="index-start" type="button">Index-Sync starten</button>
+          <button id="index-cancel" type="button" class="secondary">Abbrechen</button>
+        </div>
+        <p id="index-progress" class="hint">–</p>
+        <ul id="index-result"></ul>
+      </section>
+
+      <section>
         <h2>Testtöne</h2>
         <p class="hint">Ton 1 piept einmal, Ton 2 zweimal, Ton 3 dreimal.</p>
         <button id="tones" type="button">Töne starten</button>
