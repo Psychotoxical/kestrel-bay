@@ -44,8 +44,12 @@ jobs:
         working-directory: src-tauri
         run: |
           set +e
+          # Debug and release both: Psysonic has code that only exists without debug_assertions.
           cargo check --workspace --target aarch64-apple-ios --keep-going --message-format short 2>&1 | tee "$GITHUB_WORKSPACE/ios-check.log"
-          echo "cargo exit code: ${PIPESTATUS[0]}" | tee -a "$GITHUB_WORKSPACE/ios-check.log"
+          dev=${PIPESTATUS[0]}
+          cargo check --release --workspace --target aarch64-apple-ios --keep-going --message-format short 2>&1 | tee -a "$GITHUB_WORKSPACE/ios-check.log"
+          release=${PIPESTATUS[0]}
+          echo "cargo exit code: dev=$dev release=$release" | tee -a "$GITHUB_WORKSPACE/ios-check.log"
 
       - name: Summary
         run: |

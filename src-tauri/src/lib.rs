@@ -49,7 +49,7 @@ type ShortcutMap = Mutex<HashMap<String, String>>;
 const MAX_DL_CONCURRENCY: usize = 4;
 
 /// Focus or CLI-hand off when a second instance of the same build channel launches.
-#[cfg(any(target_os = "linux", not(debug_assertions)))]
+#[cfg(all(desktop, any(target_os = "linux", not(debug_assertions))))]
 fn on_second_instance<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
     argv: Vec<String>,
@@ -511,7 +511,7 @@ pub fn run() {
 
     // The upstream plugin only exposes a custom namespace on Linux. Keep debug
     // unrestricted elsewhere so an installed production build can run beside it.
-    #[cfg(all(not(target_os = "linux"), not(debug_assertions)))]
+    #[cfg(all(desktop, not(target_os = "linux"), not(debug_assertions)))]
     let builder = builder.plugin(tauri_plugin_single_instance::init(on_second_instance));
 
     builder

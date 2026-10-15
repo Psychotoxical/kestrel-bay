@@ -1,4 +1,4 @@
-#[cfg(not(debug_assertions))]
+#[cfg(all(desktop, not(debug_assertions)))]
 use tauri::Emitter;
 
 use crate::{MprisControls, ShortcutMap};
@@ -12,13 +12,14 @@ pub(crate) fn register_global_shortcut(
     action: String,
 ) -> Result<(), String> {
     // Debug builds run alongside release with shared settings — do not grab OS shortcuts.
-    #[cfg(debug_assertions)]
+    // Mobile has no global shortcuts at all.
+    #[cfg(any(debug_assertions, mobile))]
     {
         let _ = (app, shortcut_map, shortcut, action);
         Ok(())
     }
 
-    #[cfg(not(debug_assertions))]
+    #[cfg(all(desktop, not(debug_assertions)))]
     {
         use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
@@ -58,13 +59,13 @@ pub(crate) fn unregister_global_shortcut(
     shortcut_map: tauri::State<ShortcutMap>,
     shortcut: String,
 ) -> Result<(), String> {
-    #[cfg(debug_assertions)]
+    #[cfg(any(debug_assertions, mobile))]
     {
         let _ = (app, shortcut_map, shortcut);
         Ok(())
     }
 
-    #[cfg(not(debug_assertions))]
+    #[cfg(all(desktop, not(debug_assertions)))]
     {
         use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut};
         shortcut_map.lock().unwrap().remove(&shortcut);
