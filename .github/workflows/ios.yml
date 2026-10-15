@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "check = compile this branch for iOS; testflight = build the app and upload it"
+        description: "check = compile this branch for iOS; testflight = build the app and upload it; crashlogs = fetch TestFlight crash reports"
         type: choice
-        options: [check, testflight]
+        options: [check, testflight, crashlogs]
         default: check
 
 concurrency:
@@ -134,3 +134,59 @@ jobs:
           if [ -z "$ipa" ]; then echo "::error::No IPA found"; exit 1; fi
           echo "Uploading $ipa"
           xcrun altool --upload-app --type ios --file "$ipa" --apiKey "$APPLE_API_KEY" --apiIssuer "$APPLE_API_ISSUER"
+
+  crashlogs:
+    if: inputs.mode == 'crashlogs'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch TestFlight crash reports
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          BUNDLE_ID: com.kestrelbay.lab
+        run: |
+          cat > fetch.mjs <<'JS'
+          import crypto from 'node:crypto';
+          import fs from 'node:fs';
+
+          const { APPLE_API_ISSUER: iss, APPLE_API_KEY: kid, APPLE_API_KEY_P8: p8, BUNDLE_ID } = process.env;
+          const b64 = (v) => Buffer.from(typeof v === 'string' ? v : JSON.stringify(v)).toString('base64url');
+          const now = Math.floor(Date.now() / 1000);
+          const unsigned = `${b64({ alg: 'ES256', kid, typ: 'JWT' })}.${b64({ iss, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' })}`;
+          const signature = crypto.sign('sha256', Buffer.from(unsigned), { key: p8, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+          const token = `${unsigned}.${signature}`;
+
+          const api = async (path) => {
+            const response = await fetch(`https://api.appstoreconnect.apple.com${path}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!response.ok) throw new Error(`${path}: HTTP ${response.status} ${await response.text()}`);
+            return response.json();
+          };
+
+          const apps = await api(`/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
+          if (!apps.data.length) throw new Error(`no app with bundle id ${BUNDLE_ID}`);
+          const submissions = await api(`/v1/apps/${apps.data[0].id}/betaFeedbackCrashSubmissions?limit=20`);
+          const sorted = [...submissions.data].sort((a, b) =>
+            String(b.attributes.createdDate).localeCompare(String(a.attributes.createdDate)));
+          console.log(`${sorted.length} crash submission(s)`);
+
+          fs.mkdirSync('crashlogs', { recursive: true });
+          for (const submission of sorted) {
+            const a = submission.attributes;
+            const stamp = String(a.createdDate).replace(/[:.]/g, '-');
+            console.log(`${a.createdDate}  ${a.deviceModel ?? '?'}  iOS ${a.osVersion ?? '?'}  ${submission.id}`);
+            fs.writeFileSync(`crashlogs/${stamp}-meta.json`, JSON.stringify(a, null, 2));
+            const log = await api(`/v1/betaFeedbackCrashSubmissions/${submission.id}/crashLog`);
+            const text = log.data?.attributes?.logText;
+            fs.writeFileSync(`crashlogs/${stamp}.crash`, text ?? JSON.stringify(log, null, 2));
+          }
+          JS
+          node fetch.mjs
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: testflight-crashlogs
+          path: crashlogs
