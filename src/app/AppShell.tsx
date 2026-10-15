@@ -298,6 +298,8 @@ export function AppShell() {
   );
 
   if (IS_MOBILE_SHELL) {
+    // Browse pages scroll in their own in-page area; the route viewport must not.
+    const inpageRoute = !!mainRouteInpageScrollViewportId(location.pathname);
     return (
       <div
         className="app-shell"
@@ -315,7 +317,9 @@ export function AppShell() {
             <div className="content-body app-shell-route-host">
               <OverlayScrollArea
                 className="app-shell-route-scroll"
-                viewportClassName="app-shell-route-scroll__viewport"
+                viewportClassName={inpageRoute
+                  ? 'app-shell-route-scroll__viewport app-shell-route-scroll__viewport--inpage-split'
+                  : 'app-shell-route-scroll__viewport'}
                 viewportId={APP_MAIN_SCROLL_VIEWPORT_ID}
                 measureDeps={[location.pathname]}
                 railInset="panel"
@@ -324,7 +328,7 @@ export function AppShell() {
                 <Suspense fallback={null}>
                   <AppRoutes />
                 </Suspense>
-                {!isMobilePlayer && <div className="mobile-shell-bottom-spacer" aria-hidden="true" />}
+                {!isMobilePlayer && !inpageRoute && <div className="mobile-shell-bottom-spacer" aria-hidden="true" />}
               </OverlayScrollArea>
             </div>
           </div>

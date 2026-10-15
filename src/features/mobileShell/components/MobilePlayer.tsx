@@ -27,6 +27,11 @@ import MobileSheet from '@/features/mobileShell/components/MobileSheet';
 import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet';
 import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
 
+/** Finger travel before a downward swipe takes over. */
+const SWIPE_START_PX = 12;
+/** Swipe distance that closes the player on release. */
+const SWIPE_CLOSE_PX = 120;
+
 function usePlaybackProgress() {
   return useSyncExternalStore(
     onStoreChange => subscribePlaybackProgress(() => onStoreChange()),
@@ -128,6 +133,9 @@ export default function MobilePlayer() {
   const transportRef = useRef<HTMLDivElement>(null);
   const playSlotRef = useRef<HTMLSpanElement>(null);
   const [sheet, setSheet] = useState<'queue' | 'lyrics' | null>(null);
+  // Swipe down anywhere (outside the seek bar and chip row) closes the player.
+  const swipeRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const [swipeY, setSwipeY] = useState(0);
 
   const coverRef = usePlaybackTrackCoverRef(currentTrack ?? undefined);
   const { src, cacheKey } = usePlaybackCoverArt(coverRef, 800, {
@@ -169,8 +177,45 @@ export default function MobilePlayer() {
 
   const title = currentRadio ? currentRadio.name : currentTrack?.title;
 
+  const onTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const target = e.target as Element;
+    // Touches inside the queue/lyrics sheets bubble here through the portal.
+    if (!e.currentTarget.contains(target)) return;
+    if (target.closest('[role="slider"], .mobile-chips')) return;
+    const touch = e.touches[0];
+    swipeRef.current = { x: touch.clientX, y: touch.clientY, active: false };
+  };
+  const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    const swipe = swipeRef.current;
+    if (!swipe) return;
+    const touch = e.touches[0];
+    const dy = touch.clientY - swipe.y;
+    const dx = touch.clientX - swipe.x;
+    if (!swipe.active) {
+      if (dy > SWIPE_START_PX && dy > Math.abs(dx)) swipe.active = true;
+      else if (Math.abs(dx) > SWIPE_START_PX || dy < -SWIPE_START_PX) {
+        swipeRef.current = null;
+        return;
+      }
+    }
+    if (swipe.active) setSwipeY(Math.max(0, dy));
+  };
+  const onTouchEnd = () => {
+    const swipe = swipeRef.current;
+    swipeRef.current = null;
+    if (swipe?.active && swipeY > SWIPE_CLOSE_PX) close();
+    else setSwipeY(0);
+  };
+
   return (
-    <div className="mobile-player" style={style}>
+    <div
+      className="mobile-player"
+      style={swipeY > 0 ? { ...style, transform: `translateY(${swipeY}px)`, transition: 'none' } : style}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onTouchCancel={onTouchEnd}
+    >
       <div className="mobile-player__top">
         <button type="button" className="mobile-player__close" onClick={close} aria-label={t('player.back')}>
           <ChevronDown size={30} strokeWidth={2} aria-hidden="true" />
@@ -186,12 +231,14 @@ export default function MobilePlayer() {
         </div>
       ) : (
         <>
-          <div className="mobile-player__cover">
-            {!currentRadio && cover
-              ? <img src={cover} alt="" />
-              : <span className="mobile-player__cover-fallback">
-                  {currentRadio ? <Radio size={72} aria-hidden="true" /> : <Music size={72} aria-hidden="true" />}
-                </span>}
+          <div className="mobile-player__cover-area">
+            <div className="mobile-player__cover">
+              {!currentRadio && cover
+                ? <img src={cover} alt="" />
+                : <span className="mobile-player__cover-fallback">
+                    {currentRadio ? <Radio size={72} aria-hidden="true" /> : <Music size={72} aria-hidden="true" />}
+                  </span>}
+            </div>
           </div>
 
           <div className="mobile-player__body">

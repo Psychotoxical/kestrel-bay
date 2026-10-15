@@ -444,8 +444,12 @@ html[data-mobile-app] .mobile-search-overlay {
   position: sticky;
   top: 0;
   z-index: 20;
+  flex: none;
   margin: 0 0 6px;
-  padding: 4px 0;
+  padding: 4px 0 8px;
+  background: color-mix(in srgb, var(--bg-app) 88%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   pointer-events: none;
 }
 
@@ -986,8 +990,8 @@ html[data-mobile-app] .mobile-search-overlay {
   align-items: center;
   padding: env(safe-area-inset-top, 0px) 24px calc(env(safe-area-inset-bottom, 0px) + 8px);
   box-sizing: border-box;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
+  touch-action: none;
   background:
     radial-gradient(ellipse 160% 60% at 50% 18%, var(--mobile-player-tint) 0%, transparent 68%),
     var(--bg-app);
@@ -1030,11 +1034,25 @@ html[data-mobile-app] .mobile-search-overlay {
   width: 36px;
 }
 
+/* Everything fits on one screen: controls keep their height, the cover takes
+   what is left (a square as large as the free box allows). */
+.mobile-player__cover-area {
+  flex: 1 1 0;
+  min-height: 120px;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 10px;
+  box-sizing: border-box;
+  container-type: size;
+}
+
 .mobile-player__cover {
   flex: none;
-  width: min(100%, 40vh, 420px);
-  aspect-ratio: 1;
-  margin-top: 12px;
+  width: min(100cqw, 100cqh, 420px);
+  height: min(100cqw, 100cqh, 420px);
   border-radius: 20px;
   overflow: hidden;
   background: var(--bg-card);
@@ -1058,15 +1076,13 @@ html[data-mobile-app] .mobile-search-overlay {
 }
 
 .mobile-player__body {
-  flex: 1;
+  flex: none;
   width: 100%;
   max-width: 520px;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
-  gap: 14px;
-  padding-top: 18px;
+  gap: 16px;
+  padding-top: 20px;
 }
 
 .mobile-player__meta {
@@ -1264,7 +1280,10 @@ html[data-mobile-app] .mobile-search-overlay {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 4px 0;
+  padding: 4px 0 8px;
+  background: color-mix(in srgb, var(--bg-app) 88%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
   pointer-events: none;
 }
 
@@ -1826,7 +1845,7 @@ html[data-mobile-app] .app-shell {
 }
 
 /* ─── Mainstage sections: tighter rhythm, swipe rails, iOS headings ─── */
-.app-shell[data-mobile-app] .app-shell-route-host .content-body {
+.app-shell[data-mobile-app] .app-shell-route-host .content-body:not(.mainstage-inpage-split) {
   gap: 26px !important;
 }
 
@@ -1865,4 +1884,110 @@ html[data-mobile-app] .app-shell {
 /* Empty section slots would still take a flex gap. */
 .app-shell[data-mobile-app] .app-shell-route-host .content-body > :empty {
   display: none;
+}
+
+/* No scrollbars on touch: no overlay rail, no native bars. */
+html[data-mobile-app] .overlay-scroll__rail {
+  display: none !important;
+}
+
+html[data-mobile-app] *,
+html[data-mobile-app] *::before {
+  scrollbar-width: none;
+}
+
+html[data-mobile-app] ::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* WebKit sizes a flex item holding a percentage-width image by the image's
+   natural width (min-width: auto), so rail tiles grew to their artwork size on
+   the iPhone. Pin the tile width and let nothing inside push it. */
+.app-shell[data-mobile-app] .album-grid > *,
+.app-shell[data-mobile-app] .song-grid > * {
+  min-width: 0;
+}
+
+.app-shell[data-mobile-app] .album-grid .album-card,
+.app-shell[data-mobile-app] .album-grid .artist-card,
+.app-shell[data-mobile-app] .album-card-more {
+  width: 156px;
+  max-width: 156px;
+}
+
+.app-shell[data-mobile-app] .album-card-cover,
+.app-shell[data-mobile-app] .album-card-info,
+.app-shell[data-mobile-app] .album-grid-wrap > * {
+  min-width: 0;
+}
+
+.app-shell[data-mobile-app] .album-card-cover img {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* ─── In-page browse pages (Albums, New Releases, Artists, …) ───
+   The route viewport is a column: back bar on top, the page fills the rest and
+   scrolls inside itself; its scroller leaves room for the floating bars. */
+.app-shell[data-mobile-app] .app-shell-route-scroll__viewport--inpage-split {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-shell[data-mobile-app] .content-body.mainstage-inpage-split {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}
+
+.app-shell[data-mobile-app] .mainstage-inpage-split .mainstage-inpage-scroll .overlay-scroll__viewport {
+  padding-bottom: calc(var(--mobile-bottom-edge) + var(--mobile-tabbar-height) + var(--mobile-miniplayer-height) + 2 * var(--mobile-bar-gap) + 16px) !important;
+}
+
+.app-shell[data-mobile-app] .mainstage-inpage-toolbar-row.page-sticky-header {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 0 0 12px;
+  margin: 0 !important;
+  border-bottom: none;
+}
+
+.app-shell[data-mobile-app] .mainstage-inpage-toolbar-row > div {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.app-shell[data-mobile-app] .mainstage-inpage-toolbar .btn {
+  flex: none;
+  height: 36px;
+  min-width: 36px;
+  padding: 0 12px;
+  border-radius: 18px;
+  border: 1px solid var(--mobile-glass-border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.app-shell[data-mobile-app] .mainstage-inpage-toolbar .btn.btn-sort-active,
+.app-shell[data-mobile-app] .mainstage-inpage-toolbar .btn.btn-primary,
+.app-shell[data-mobile-app] .mainstage-inpage-toolbar .btn.active {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--text-on-accent, var(--bg-app));
+}
+
+/* Player: the three mode chips stay on one line. */
+.mobile-player .mobile-chips--wrap {
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+
+.mobile-player .mobile-chip {
+  padding: 0 11px;
+  gap: 5px;
+  white-space: nowrap;
 }
