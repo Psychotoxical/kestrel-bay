@@ -3,7 +3,7 @@
   "version": "1.56.0",
   "bundle": {
     "iOS": {
-      "frameworks": ["AudioToolbox", "AVFAudio"]
+      "frameworks": ["AudioToolbox", "AVFAudio", "MediaPlayer"]
     }
   }
 }
