@@ -1,0 +1,9 @@
+{
+  "identifier": "com.kestrelbay.lab",
+  "version": "1.56.0",
+  "bundle": {
+    "iOS": {
+      "frameworks": ["AudioToolbox", "AVFAudio"]
+    }
+  }
+}
