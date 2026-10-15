@@ -155,6 +155,7 @@ select {
   font-variant-numeric: tabular-nums;
 }
 
+#orbit-result,
 #index-result {
   padding-left: 20px;
   font-variant-numeric: tabular-nums;

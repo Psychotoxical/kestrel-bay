@@ -153,6 +153,10 @@ fn clear_events(audio: State<'_, Audio>) {
 }
 
 fn on_player_event(app: &AppHandle, log: &Mutex<Vec<player::Event>>, event: player::Event) {
+    if event.kind == "progress" {
+        let _ = app.emit("kb:progress", &event);
+        return;
+    }
     match event.kind {
         "paused" | "resumed" => {
             let playing = event.kind == "resumed";

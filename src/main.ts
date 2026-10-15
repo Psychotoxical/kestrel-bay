@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
 import { setupIndexTest } from "./indexTest";
+import { setupOrbitTest } from "./orbitTest";
 
 type PlayerEvent = {
   at: number;
@@ -237,6 +238,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   account = loadAccount();
   renderAccount();
   await setupIndexTest(() => account);
+  await setupOrbitTest((endpoint) => (account ? apiUrl(endpoint, { f: "json" }) : null));
 
   setInterval(() => {
     const now = Date.now();

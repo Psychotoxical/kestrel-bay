@@ -252,7 +252,11 @@ struct Current {
     stream: Arc<Shared>,
     started: Instant,
     buffered: bool,
+    last_progress: Instant,
 }
+
+/// Same throttle as Psysonic's audio engine: at most one progress event per 1.5 s.
+const PROGRESS_EVERY: Duration = Duration::from_millis(1500);
 
 pub fn spawn(on_event: impl Fn(Event) + Send + 'static) -> Sender<Command> {
     let (tx, rx) = mpsc::channel();
@@ -335,6 +339,7 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
                             stream,
                             started,
                             buffered: false,
+                            last_progress: Instant::now(),
                         });
                     }
                     Err(err) => emit("error", id, 0.0, format!("decode: {err}")),
@@ -365,6 +370,11 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
                 let Some(cur) = current.as_mut() else {
                     continue;
                 };
+                if !cur.player.is_paused() && cur.last_progress.elapsed() >= PROGRESS_EVERY {
+                    cur.last_progress = Instant::now();
+                    let pos = cur.player.get_pos().as_secs_f64();
+                    emit("progress", cur.id, pos, String::new());
+                }
                 let (done, size, error) = match cur.stream.state.lock() {
                     Ok(state) => (state.done, state.bytes.len(), state.error.clone()),
                     Err(_) => (true, 0, Some("stream lock poisoned".into())),
