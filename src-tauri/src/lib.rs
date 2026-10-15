@@ -442,6 +442,7 @@ fn export_specta_bindings() {
     export_bindings_to("../src/generated/bindings.ts");
 }
 
+#[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(debug_assertions)]
     export_specta_bindings();
