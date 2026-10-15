@@ -124,7 +124,7 @@ jobs:
       - name: Show linked SDK frameworks
         run: grep -n "sdk:" src-tauri/gen/apple/project.yml
 
-      - run: npx tauri icon src-tauri/icons/icon.png
+      - run: npx tauri icon src-tauri/icons/ios-app-icon.png
 
       - run: npx tauri ios build --ci --export-method app-store-connect --build-number ${{ github.run_number }}
 
