@@ -89,6 +89,9 @@ libc = "0.2"
 [target.'cfg(target_os = "macos")'.dependencies]
 mach2 = "0.7"
 
+[target.'cfg(target_os = "ios")'.dependencies]
+objc2-avf-audio = { version = "0.3", default-features = false, features = ["std", "AVAudioSession", "AVAudioSessionTypes"] }
+
 [target.'cfg(target_os = "linux")'.dependencies]
 zbus = { version = "5.16", default-features = false, features = ["blocking-api", "async-io"] }
 # Match wry/tauri’s WebKitGTK stack — used only to turn off kinetic wheel scrolling.

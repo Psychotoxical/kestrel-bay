@@ -3572,6 +3572,7 @@ version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13a380031deed8e99db00065c45937da434ca987c034e13b87e4441f9e4090be"
 dependencies = [
+ "bitflags 2.13.2",
  "objc2",
  "objc2-foundation",
 ]
@@ -4343,6 +4344,7 @@ dependencies = [
  "lofty",
  "mach2 0.7.0",
  "md5",
+ "objc2-avf-audio",
  "psysonic-analysis",
  "psysonic-audio",
  "psysonic-burn",

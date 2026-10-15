@@ -6,6 +6,8 @@ mod canonical_migration;
 pub mod cli;
 mod cover_cache;
 pub(crate) mod desktop_palette;
+#[cfg(target_os = "ios")]
+mod ios_audio_session;
 mod lib_commands;
 pub(crate) mod library_analysis_backfill;
 mod library_identity_maintenance;
@@ -446,6 +448,10 @@ fn export_specta_bindings() {
 pub fn run() {
     #[cfg(debug_assertions)]
     export_specta_bindings();
+
+    // Before the audio engine opens its output, so playback survives the lock screen.
+    #[cfg(target_os = "ios")]
+    ios_audio_session::activate_playback();
 
     // Windows: bind this process to an explicit AppUserModelID before any window
     // or the SMTC media controls are created, so the OS can resolve the app
