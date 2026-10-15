@@ -9,28 +9,57 @@
   </head>
 
   <body>
-    <main>
+    <header>
       <h1>Kestrel Bay</h1>
       <p id="status">Bereit.</p>
-
       <div class="buttons">
-        <button id="start" type="button">Start</button>
-        <button id="toggle" type="button">Pause</button>
-        <button id="stop" type="button">Stopp</button>
+        <button id="toggle" type="button" class="secondary">Pause</button>
+        <button id="stop" type="button" class="secondary">Stopp</button>
       </div>
+    </header>
 
-      <p class="hint">
-        Die drei Töne laufen in Schleife. Ton 1 piept einmal, Ton 2 zweimal, Ton 3 dreimal.
-        Starten, iPhone sperren, dann auf dem Sperrbildschirm und im Kontrollzentrum
-        Pause, Weiter und Zurück ausprobieren. Danach steht unten, was wann passiert ist.
-      </p>
+    <main>
+      <section>
+        <h2>Navidrome</h2>
+        <form id="login" hidden>
+          <input id="server" type="url" placeholder="https://server" autocomplete="url" autocapitalize="off" />
+          <input id="user" type="text" placeholder="Benutzer" autocomplete="username" autocapitalize="off" />
+          <input id="password" type="password" placeholder="Passwort" autocomplete="current-password" />
+          <button type="submit">Verbinden</button>
+        </form>
+        <div id="connected" hidden>
+          <p id="account" class="hint"></p>
+          <div class="row">
+            <label for="format">Format</label>
+            <select id="format">
+              <option value="raw">Original</option>
+              <option value="mp3">MP3 320</option>
+            </select>
+          </div>
+          <div class="buttons">
+            <button id="load" type="button">20 zufällige Songs</button>
+            <button id="logout" type="button" class="secondary">Abmelden</button>
+          </div>
+          <ul id="songs"></ul>
+        </div>
+      </section>
 
-      <h2>Herzschlag der Oberfläche</h2>
-      <p id="heartbeat">–</p>
+      <section>
+        <h2>Testtöne</h2>
+        <p class="hint">Ton 1 piept einmal, Ton 2 zweimal, Ton 3 dreimal.</p>
+        <button id="tones" type="button">Töne starten</button>
+      </section>
 
-      <h2>Ablauf</h2>
-      <button id="refresh" type="button" class="small">Aktualisieren</button>
-      <ol id="log"></ol>
+      <section>
+        <h2>Herzschlag der Oberfläche</h2>
+        <p id="heartbeat">–</p>
+      </section>
+
+      <section>
+        <h2>Ablauf</h2>
+        <button id="refresh" type="button" class="small">Aktualisieren</button>
+        <ol id="log"></ol>
+      </section>
     </main>
   </body>
 </html>

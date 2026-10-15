@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Manager, State};
 
 mod nowplaying;
 mod player;
+mod subsonic;
 
 struct Audio {
     tx: Mutex<Sender<player::Command>>,
@@ -30,8 +31,28 @@ fn record(log: &Mutex<Vec<player::Event>>, event: player::Event) {
 }
 
 #[tauri::command]
-fn play(id: u32, url: String, audio: State<'_, Audio>) -> Result<(), String> {
-    audio.send(player::Command::Play { id, url })
+fn play(id: u32, url: String, hint: Option<String>, audio: State<'_, Audio>) -> Result<(), String> {
+    audio.send(player::Command::Play { id, url, hint })
+}
+
+#[tauri::command]
+fn make_token(password: String) -> subsonic::Token {
+    subsonic::make_token(&password)
+}
+
+#[tauri::command]
+async fn random_songs(
+    server: String,
+    user: String,
+    salt: String,
+    token: String,
+    size: u32,
+) -> Result<Vec<subsonic::Song>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        subsonic::random_songs(&server, &user, &salt, &token, size)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
@@ -169,6 +190,8 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             play,
+            make_token,
+            random_songs,
             stop,
             toggle,
             now_playing,

@@ -1,8 +1,10 @@
 :root {
   --bg: #f4f2ec;
+  --surface: #ffffff;
   --fg: #12232b;
   --muted: #5a6a70;
   --accent: #0e5668;
+  --line: #d9d6cc;
   --error: #b3261e;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 17px;
@@ -14,11 +16,17 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #0b1a20;
+    --surface: #13262e;
     --fg: #e8ecea;
     --muted: #9aa8ad;
     --accent: #4fb3c8;
+    --line: #24414b;
     --error: #ff8a80;
   }
+}
+
+[hidden] {
+  display: none !important;
 }
 
 body {
@@ -26,16 +34,26 @@ body {
   background: var(--bg);
 }
 
+header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding: calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 16px) 12px
+    calc(env(safe-area-inset-left) + 16px);
+}
+
 main {
-  padding: calc(env(safe-area-inset-top) + 16px) calc(env(safe-area-inset-right) + 16px)
-    calc(env(safe-area-inset-bottom) + 24px) calc(env(safe-area-inset-left) + 16px);
+  padding: 0 calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 24px)
+    calc(env(safe-area-inset-left) + 16px);
   max-width: 640px;
   margin: 0 auto;
 }
 
 h1 {
-  margin: 0 0 8px;
-  font-size: 28px;
+  margin: 0 0 4px;
+  font-size: 24px;
 }
 
 h2 {
@@ -44,9 +62,9 @@ h2 {
 }
 
 #status {
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 600;
-  margin: 0 0 16px;
+  margin: 0 0 10px;
 }
 
 .buttons {
@@ -54,9 +72,16 @@ h2 {
   gap: 12px;
 }
 
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+
 button {
   flex: 1;
-  padding: 16px;
+  padding: 14px;
   border: none;
   border-radius: 12px;
   background: var(--accent);
@@ -65,8 +90,7 @@ button {
   font-weight: 600;
 }
 
-button#toggle,
-button#stop {
+button.secondary {
   background: var(--muted);
 }
 
@@ -76,9 +100,49 @@ button.small {
   font-size: 15px;
 }
 
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input,
+select {
+  font: inherit;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--fg);
+}
+
+select {
+  flex: 1;
+}
+
 .hint {
   color: var(--muted);
   font-size: 15px;
+}
+
+#songs {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+#songs li {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--surface);
+  margin-bottom: 8px;
+}
+
+#songs li span {
+  color: var(--muted);
+  font-size: 14px;
 }
 
 #heartbeat {
@@ -88,7 +152,8 @@ button.small {
 #log {
   padding-left: 20px;
   font-family: ui-monospace, "SF Mono", Menlo, monospace;
-  font-size: 14px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
 }
 
 #log li.remote {
