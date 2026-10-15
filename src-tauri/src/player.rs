@@ -1,6 +1,6 @@
 use std::io::{self, Read, Seek, SeekFrom};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
-use std::sync::{Arc, Condvar, Mutex};
+use std::sync::{Arc, Condvar, Mutex, OnceLock};
 use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
@@ -35,6 +35,17 @@ pub fn now_ms() -> u64 {
         .unwrap_or(0)
 }
 
+/// One HTTP client for streams, covers and API calls, so connections are reused.
+pub fn client() -> &'static reqwest::blocking::Client {
+    static CLIENT: OnceLock<reqwest::blocking::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| {
+        reqwest::blocking::Client::builder()
+            .connect_timeout(Duration::from_secs(10))
+            .build()
+            .unwrap_or_else(|_| reqwest::blocking::Client::new())
+    })
+}
+
 /// Drops the query string of every URL in `text`, so tokens never reach logs or the UI.
 pub fn scrub(text: &str) -> String {
     let mut out = String::with_capacity(text.len());
@@ -59,17 +70,33 @@ pub fn scrub(text: &str) -> String {
     out
 }
 
-fn request_error(err: reqwest::Error) -> String {
-    scrub(&err.without_url().to_string())
+/// The error and all its causes, joined, with URL queries removed.
+fn error_text(err: &(dyn std::error::Error + 'static)) -> String {
+    let mut text = err.to_string();
+    let mut source = err.source();
+    while let Some(cause) = source {
+        let part = cause.to_string();
+        if !text.contains(&part) {
+            text.push_str(": ");
+            text.push_str(&part);
+        }
+        source = cause.source();
+    }
+    scrub(&text)
+}
+
+pub fn request_error(err: reqwest::Error) -> String {
+    error_text(&err.without_url())
 }
 
 fn io_error(err: io::Error) -> String {
+    let kind = err.kind();
     match err.into_inner() {
         Some(inner) => match inner.downcast::<reqwest::Error>() {
             Ok(err) => request_error(*err),
-            Err(other) => scrub(&other.to_string()),
+            Err(other) => error_text(&*other),
         },
-        None => "read failed".into(),
+        None => format!("read failed ({kind})"),
     }
 }
 
@@ -239,7 +266,7 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
     sink.log_on_drop(false);
     emit("ready", 0, 0.0, String::new());
 
-    let client = reqwest::blocking::Client::new();
+    let client = client();
     let mut current: Option<Current> = None;
 
     loop {
@@ -248,7 +275,7 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
                 emit("command", id, 0.0, "play".into());
                 current = None;
                 let started = Instant::now();
-                let (reader, stream) = match open_stream(&client, &url) {
+                let (reader, stream) = match open_stream(client, &url) {
                     Ok(opened) => opened,
                     Err(err) => {
                         emit("error", id, 0.0, format!("stream: {err}"));
@@ -317,18 +344,23 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
                     cur.buffered = true;
                     let secs = cur.started.elapsed().as_secs_f64();
                     let mb = size as f64 / 1_000_000.0;
-                    emit(
-                        "buffered",
-                        cur.id,
-                        secs,
-                        format!("{mb:.1} MB in {secs:.1} s"),
-                    );
+                    match error {
+                        Some(err) => emit(
+                            "error",
+                            cur.id,
+                            secs,
+                            format!("stream aborted after {mb:.1} MB in {secs:.1} s: {err}"),
+                        ),
+                        None => emit(
+                            "buffered",
+                            cur.id,
+                            secs,
+                            format!("{mb:.1} MB in {secs:.1} s"),
+                        ),
+                    }
                 }
                 if cur.player.empty() {
                     let id = cur.id;
-                    if let Some(err) = error {
-                        emit("error", id, 0.0, format!("stream: {err}"));
-                    }
                     current = None;
                     emit("ended", id, 0.0, String::new());
                 }
@@ -339,7 +371,7 @@ fn run(rx: Receiver<Command>, on_event: impl Fn(Event)) {
 }
 
 pub fn fetch_bytes(url: &str) -> Result<Vec<u8>, String> {
-    let response = reqwest::blocking::Client::new()
+    let response = client()
         .get(url)
         .send()
         .and_then(|r| r.error_for_status())

@@ -3,7 +3,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::player::scrub;
+use crate::player::{client, request_error};
 
 const API_VERSION: &str = "1.16.1";
 const CLIENT: &str = "kestrelbay";
@@ -49,7 +49,7 @@ pub fn random_songs(
 ) -> Result<Vec<Song>, String> {
     let url = format!("{}/rest/getRandomSongs.view", server.trim_end_matches('/'));
     let size = size.to_string();
-    let response = reqwest::blocking::Client::new()
+    let response = client()
         .get(url)
         .query(&[
             ("u", user),
@@ -62,10 +62,8 @@ pub fn random_songs(
         ])
         .send()
         .and_then(|r| r.error_for_status())
-        .map_err(|e| scrub(&e.without_url().to_string()))?;
-    let text = response
-        .text()
-        .map_err(|e| scrub(&e.without_url().to_string()))?;
+        .map_err(request_error)?;
+    let text = response.text().map_err(request_error)?;
     let body: Value = serde_json::from_str(&text).map_err(|e| format!("invalid response: {e}"))?;
     let root = &body["subsonic-response"];
     if root["status"] != "ok" {

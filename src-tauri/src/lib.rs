@@ -88,25 +88,45 @@ fn now_playing(
         .map_err(|e| e.to_string())?;
 
     let handle = app.clone();
-    std::thread::spawn(move || match player::fetch_bytes(&cover_url) {
-        Ok(bytes) => {
-            let _ = handle.run_on_main_thread(move || nowplaying::set_cover(id, bytes));
-        }
-        Err(err) => {
-            let audio = handle.state::<Audio>();
-            record(
-                &audio.log,
-                player::Event {
-                    at: player::now_ms(),
-                    kind: "error",
-                    id,
-                    seconds: 0.0,
-                    detail: format!("cover: {err}"),
-                },
-            );
+    std::thread::spawn(move || {
+        for attempt in 1..=COVER_ATTEMPTS {
+            match player::fetch_bytes(&cover_url) {
+                Ok(bytes) => {
+                    if attempt > 1 {
+                        note(&handle, "cover", id, format!("ok on attempt {attempt}"));
+                    }
+                    let _ = handle.run_on_main_thread(move || nowplaying::set_cover(id, bytes));
+                    return;
+                }
+                Err(err) => {
+                    note(
+                        &handle,
+                        "cover-error",
+                        id,
+                        format!("attempt {attempt}/{COVER_ATTEMPTS}: {err}"),
+                    );
+                    if attempt < COVER_ATTEMPTS {
+                        std::thread::sleep(std::time::Duration::from_secs(1));
+                    }
+                }
+            }
         }
     });
     Ok(())
+}
+
+const COVER_ATTEMPTS: u32 = 2;
+
+fn note(app: &AppHandle, kind: &'static str, id: u32, detail: String) {
+    let event = player::Event {
+        at: player::now_ms(),
+        kind,
+        id,
+        seconds: 0.0,
+        detail,
+    };
+    let _ = app.emit("kb:event", &event);
+    record(&app.state::<Audio>().log, event);
 }
 
 #[tauri::command]

@@ -22,6 +22,7 @@ type Song = {
 
 type Item = {
   title: string;
+  duration: number;
   artist: string;
   album: string;
   url: string;
@@ -35,6 +36,7 @@ const BASE = "https://raw.githubusercontent.com/Psychotoxical/kestrel-bay/main";
 const ACCOUNT_KEY = "kestrel-bay.account";
 const TONES: Item[] = [1, 2, 3].map((n) => ({
   title: `Ton ${n} · ${["ein Piep", "zwei Pieps", "drei Pieps"][n - 1]}`,
+  duration: 20,
   artist: "Kestrel Bay",
   album: "Testtöne",
   url: `${BASE}/tones/${n}.wav`,
@@ -122,7 +124,7 @@ async function renderLog() {
       const item = bySeq.get(e.id);
       const what = item ? `${e.kind} „${item.title}“` : e.kind;
       li.textContent = `${relative(e.at)}  ${what}${e.detail ? ` – ${e.detail}` : ""}`;
-      if (e.kind === "error") li.className = "error";
+      if (e.kind === "error" || e.kind === "cover-error") li.className = "error";
       if (e.kind === "remote") li.className = "remote";
       return li;
     }),
@@ -148,7 +150,7 @@ async function onEvent(e: PlayerEvent) {
       title: item.title,
       artist: item.artist,
       album: item.album,
-      duration: e.seconds,
+      duration: e.seconds > 0 ? e.seconds : item.duration,
       coverUrl: item.cover,
     });
   }
@@ -173,6 +175,7 @@ function songItem(song: Song, format: string): Item {
       : apiUrl("stream", { id: song.id, format: "raw" });
   return {
     title: song.title,
+    duration: song.duration,
     artist: song.artist,
     album: song.album,
     url: stream,
