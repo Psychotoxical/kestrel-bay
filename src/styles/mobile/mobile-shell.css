@@ -1195,9 +1195,9 @@ html[data-mobile-app] .mobile-search-overlay {
 }
 
 .mobile-player__play {
-  width: 84px;
-  height: 84px;
-  border-radius: 42px;
+  width: 68px;
+  height: 68px;
+  border-radius: 34px;
   border: none;
   background: var(--accent);
   color: var(--text-on-accent, var(--bg-app));
@@ -2006,8 +2006,18 @@ html[data-mobile-app] ::-webkit-scrollbar {
 
 /* Waveform seekbar (desktop component, touch mode) in the player. */
 .mobile-player__waveform {
+  width: 100%;
   touch-action: none;
-  margin: -6px 0 -4px;
+}
+
+.mobile-player__seek-slot {
+  height: 32px;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-player__seek-slot > .mobile-player__bar {
+  flex: 1;
 }
 
 /* Crossfade length (shown while crossfade is the active transition). */
@@ -2200,4 +2210,24 @@ html[data-mobile-app] ::-webkit-scrollbar {
 
 @keyframes mobile-ptr-spin {
   to { transform: rotate(360deg); }
+}
+
+/* Lyrics sheet: large, readable lines (accessibility). */
+html[data-mobile-app] .mobile-sheet .lyrics-line {
+  font-size: 24px;
+  line-height: 1.3;
+  padding: 9px 6px;
+}
+
+html[data-mobile-app] .mobile-sheet .lyrics-line.active {
+  font-weight: 700;
+}
+
+html[data-mobile-app] .mobile-sheet .lyrics-plain-line {
+  font-size: 22px;
+  line-height: 1.45;
+}
+
+html[data-mobile-app] .mobile-sheet .lyrics-status {
+  font-size: 17px;
 }

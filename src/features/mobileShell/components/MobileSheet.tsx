@@ -23,6 +23,8 @@ export default function MobileSheet({ title, hideTitle, onClose, className, chil
   const { t } = useTranslation();
   const [dragY, setDragY] = useState(0);
   const dragStartRef = useRef<number | null>(null);
+  // Read on release: the last move may not have rendered yet.
+  const dragYRef = useRef(0);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -33,16 +35,18 @@ export default function MobileSheet({ title, hideTitle, onClose, className, chil
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if ((e.target as HTMLElement).closest('button')) return;
     dragStartRef.current = e.clientY;
+    dragYRef.current = 0;
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (dragStartRef.current === null) return;
-    setDragY(Math.max(0, e.clientY - dragStartRef.current));
+    dragYRef.current = Math.max(0, e.clientY - dragStartRef.current);
+    setDragY(dragYRef.current);
   };
   const onPointerUp = () => {
     if (dragStartRef.current === null) return;
     dragStartRef.current = null;
-    if (dragY > DISMISS_DRAG_PX) onClose();
+    if (dragYRef.current > DISMISS_DRAG_PX) onClose();
     else setDragY(0);
   };
 

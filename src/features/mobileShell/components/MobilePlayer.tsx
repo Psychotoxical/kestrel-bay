@@ -29,6 +29,9 @@ import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet
 import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
 import CrossfadeLengthSlider from '@/features/mobileShell/components/CrossfadeLengthSlider';
 
+/** Height of the seek area, plain bar or waveform alike (px). */
+const SEEK_SLOT_PX = 32;
+
 /** Finger travel before a downward swipe takes over. */
 const SWIPE_START_PX = 12;
 /** Swipe distance that closes the player on release. */
@@ -75,6 +78,8 @@ function Scrubber({ duration, formatLabel }: { duration: number; formatLabel: st
 
   return (
     <div className="mobile-player__scrubber">
+      {/* Fixed-height slot: the cover keeps its size when the waveform arrives. */}
+      <div className="mobile-player__seek-slot">
       {hasWaveform ? (
         <div
           className="mobile-player__waveform"
@@ -92,7 +97,7 @@ function Scrubber({ duration, formatLabel }: { duration: number; formatLabel: st
             if (e.key === 'ArrowLeft') seek(Math.max(0, progress - step));
           }}
         >
-          <WaveformSeek trackId={currentTrackId} height={44} touch />
+          <WaveformSeek trackId={currentTrackId} height={SEEK_SLOT_PX} touch />
         </div>
       ) : (
       <div
@@ -129,6 +134,7 @@ function Scrubber({ duration, formatLabel }: { duration: number; formatLabel: st
         <span className="mobile-player__bar-fill" style={{ transform: `scaleX(${shown})` }} />
       </div>
       )}
+      </div>
       <div className="mobile-player__times">
         <span>{formatTrackTime(shownTime)}</span>
         {formatLabel && <span className="mobile-player__format">{formatLabel}</span>}
@@ -162,7 +168,7 @@ export default function MobilePlayer() {
   const playSlotRef = useRef<HTMLSpanElement>(null);
   const [sheet, setSheet] = useState<'queue' | 'lyrics' | null>(null);
   // Swipe down anywhere (outside the seek bar and chip row) closes the player.
-  const swipeRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
+  const swipeRef = useRef<{ x: number; y: number; active: boolean; dy: number } | null>(null);
   const [swipeY, setSwipeY] = useState(0);
 
   const coverRef = usePlaybackTrackCoverRef(currentTrack ?? undefined);
@@ -211,7 +217,7 @@ export default function MobilePlayer() {
     if (!e.currentTarget.contains(target)) return;
     if (target.closest('[role="slider"], input, .mobile-chips')) return;
     const touch = e.touches[0];
-    swipeRef.current = { x: touch.clientX, y: touch.clientY, active: false };
+    swipeRef.current = { x: touch.clientX, y: touch.clientY, active: false, dy: 0 };
   };
   const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     const swipe = swipeRef.current;
@@ -226,12 +232,16 @@ export default function MobilePlayer() {
         return;
       }
     }
-    if (swipe.active) setSwipeY(Math.max(0, dy));
+    if (swipe.active) {
+      swipe.dy = Math.max(0, dy);
+      setSwipeY(swipe.dy);
+    }
   };
   const onTouchEnd = () => {
     const swipe = swipeRef.current;
     swipeRef.current = null;
-    if (swipe?.active && swipeY > SWIPE_CLOSE_PX) close();
+    // The ref, not state: the last move may not have rendered yet.
+    if (swipe?.active && swipe.dy > SWIPE_CLOSE_PX) close();
     else setSwipeY(0);
   };
 
@@ -345,8 +355,8 @@ export default function MobilePlayer() {
                       <span className="player-btn-schedule-time player-btn-schedule-time--mobile">{scheduleRemaining.remaining}</span>
                     </span>
                   ) : isPlaying
-                    ? <Pause size={34} fill="currentColor" aria-hidden="true" />
-                    : <Play size={34} fill="currentColor" aria-hidden="true" />}
+                    ? <Pause size={28} fill="currentColor" aria-hidden="true" />
+                    : <Play size={28} fill="currentColor" aria-hidden="true" />}
                 </button>
               </span>
               <button

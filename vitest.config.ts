@@ -22,6 +22,8 @@ export default defineConfig({
       'node_modules/**',
       'dist/**',
       'src-tauri/**',
+      // Touch-shell build tests run with the flag on: vitest.mobile.config.ts.
+      'src/**/*.mobile.test.{ts,tsx}',
     ],
     // Process isolation. Fake timers + module-level mocks + Zustand globals
     // collide unpredictably across files inside a shared worker — forks +
