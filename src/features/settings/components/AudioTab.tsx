@@ -10,6 +10,7 @@ import { effectiveLoudnessPreAnalysisAttenuationDb } from '@/lib/audio/loudnessP
 import { useAudioDevicesProbe } from '@/features/playback/hooks/useAudioDevicesProbe';
 import { IS_MACOS } from '@/lib/util/platform';
 import { AudioOutputDeviceSection } from '@/features/settings/components/audio/AudioOutputDeviceSection';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 import { NormalizationBlock } from '@/features/settings/components/audio/NormalizationBlock';
 import { PlaybackRateBlock } from '@/features/settings/components/audio/PlaybackRateBlock';
 import { TrackTransitionsBlock } from '@/features/settings/components/audio/TrackTransitionsBlock';
@@ -39,17 +40,20 @@ export function AudioTab() {
   return (
     <>
       {/* Output-device picker is hidden on macOS — the stream is pinned to the
-          system default there, so the whole category is gated out. */}
+          system default there, so the whole category is gated out. On iPhone and
+          iPad the output is chosen through AirPlay / Control Center. */}
       {!IS_MACOS && (
-        <AudioOutputDeviceSection
-          audioDevices={audioDevices}
-          osDefaultAudioDeviceId={osDefaultAudioDeviceId}
-          deviceSwitching={deviceSwitching}
-          devicesLoading={devicesLoading}
-          setDeviceSwitching={setDeviceSwitching}
-          refreshAudioDevices={refreshAudioDevices}
-          t={t}
-        />
+        <DesktopOnly>
+          <AudioOutputDeviceSection
+            audioDevices={audioDevices}
+            osDefaultAudioDeviceId={osDefaultAudioDeviceId}
+            deviceSwitching={deviceSwitching}
+            devicesLoading={devicesLoading}
+            setDeviceSwitching={setDeviceSwitching}
+            refreshAudioDevices={refreshAudioDevices}
+            t={t}
+          />
+        </DesktopOnly>
       )}
 
       {/* Normalization — loudness levelling (own category) */}

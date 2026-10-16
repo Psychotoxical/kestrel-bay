@@ -21,6 +21,8 @@ import { pickSpotlightTheme } from '@/lib/themes/pickSpotlightTheme';
 import { installThemeFromRegistry } from '@/lib/themes/installThemeFromRegistry';
 import { uninstallTheme } from '@/lib/themes/uninstallTheme';
 import { isNewer } from '@/lib/util/appUpdaterHelpers';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { THEME_STORE_BUTTON_SIZE, THEME_STORE_SELECT_STYLE } from '@/features/settings/utils/themeStoreLayout';
 
 type ModeFilter = 'all' | 'dark' | 'light';
 type SortMode = 'newest' | 'name';
@@ -279,48 +281,27 @@ export function ThemeStoreSection() {
           onChange={e => setQuery(e.target.value)}
           placeholder={t('settings.themeStoreSearchPlaceholder')}
           aria-label={t('settings.themeStoreSearchPlaceholder')}
-          style={{ flex: '1 1 180px', minWidth: 140 }}
+          // Touch: search gets its own line, the pickers share the next one.
+          style={IS_MOBILE_SHELL ? { flex: '1 1 100%' } : { flex: '1 1 180px', minWidth: 140 }}
         />
         <CustomSelect
           value={sortMode}
           options={sortOptions}
           onChange={v => setSortMode(v as SortMode)}
-          style={{
-            width: 170,
-            flexShrink: 0,
-            alignSelf: 'stretch',
-            boxSizing: 'border-box',
-            padding: '0 var(--space-4)',
-            background: 'var(--input-bg)',
-            border: '1px solid var(--input-border)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 14,
-            lineHeight: 1,
-          }}
+          style={{ ...THEME_STORE_SELECT_STYLE, ...(IS_MOBILE_SHELL ? { flex: '1 1 40%', minWidth: 0, minHeight: 44 } : { width: 170, flexShrink: 0 }) }}
         />
         <CustomSelect
           value={animFilter}
           options={animFilterOptions}
           onChange={v => setAnimFilter(v as AnimFilter)}
-          style={{
-            width: 150,
-            flexShrink: 0,
-            alignSelf: 'stretch',
-            boxSizing: 'border-box',
-            padding: '0 var(--space-4)',
-            background: 'var(--input-bg)',
-            border: '1px solid var(--input-border)',
-            borderRadius: 'var(--radius-md)',
-            fontSize: 14,
-            lineHeight: 1,
-          }}
+          style={{ ...THEME_STORE_SELECT_STYLE, ...(IS_MOBILE_SHELL ? { flex: '1 1 40%', minWidth: 0, minHeight: 44 } : { width: 150, flexShrink: 0 }) }}
         />
-        <div style={{ display: 'flex', gap: 4 }} role="group" aria-label={t('settings.themeStoreFilterMode')}>
+        <div style={{ display: 'flex', gap: 4, ...(IS_MOBILE_SHELL ? { flex: '1 1 auto' } : {}) }} role="group" aria-label={t('settings.themeStoreFilterMode')}>
           {modeBtns.map(b => (
             <button
               key={b.key}
               className={`btn ${mode === b.key ? 'btn-primary' : 'btn-ghost'}`}
-              style={{ fontSize: 12, padding: '4px 10px' }}
+              style={IS_MOBILE_SHELL ? { flex: '1 1 0', fontSize: 14, padding: '8px 10px' } : { fontSize: 12, padding: '4px 10px' }}
               aria-pressed={mode === b.key}
               onClick={() => setMode(b.key)}
             >
@@ -330,7 +311,7 @@ export function ThemeStoreSection() {
         </div>
         <button
           className="btn btn-ghost"
-          style={{ padding: '4px 10px' }}
+          style={IS_MOBILE_SHELL ? { minWidth: 44, minHeight: 40, padding: 0, justifyContent: 'center' } : { padding: '4px 10px' }}
           onClick={() => load(true)}
           disabled={loading || refreshing}
           aria-label={t('settings.themeStoreRefresh')}
@@ -400,7 +381,16 @@ export function ThemeStoreSection() {
               <div
                 key={th.id}
                 className="theme-store-row"
-                style={{
+                style={IS_MOBILE_SHELL ? {
+                  // Touch: an App-Store-like card, screenshot on top in full width.
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 12,
+                  padding: 12,
+                  border: `1px solid ${isActive ? 'var(--accent)' : 'transparent'}`,
+                  borderRadius: 14,
+                  background: 'var(--bg-card)',
+                } : {
                   display: 'flex',
                   flexWrap: 'wrap',
                   gap: 14,
@@ -417,7 +407,10 @@ export function ThemeStoreSection() {
                   aria-label={t('settings.themeStoreEnlarge')}
                   data-tooltip={t('settings.themeStoreEnlarge')}
                   data-tooltip-pos="right"
-                  style={{ padding: 0, border: 'none', background: 'none', cursor: 'zoom-in', flexShrink: 0, alignSelf: 'flex-start', lineHeight: 0, borderRadius: 6 }}
+                  style={{
+                    padding: 0, border: 'none', background: 'none', cursor: 'zoom-in', flexShrink: 0, lineHeight: 0, borderRadius: 6,
+                    alignSelf: IS_MOBILE_SHELL ? 'stretch' : 'flex-start',
+                  }}
                 >
                   <img
                     src={thumbUrl(th.thumbnail)}
@@ -428,7 +421,9 @@ export function ThemeStoreSection() {
                     // Offline / missing thumbnail: hide the broken-image glyph; the
                     // image's own neutral background stands in as a placeholder.
                     onError={e => { e.currentTarget.style.opacity = '0'; }}
-                    style={{ width: 200, height: 112, objectFit: 'cover', borderRadius: 6, background: 'var(--bg-deep)' }}
+                    style={IS_MOBILE_SHELL
+                      ? { width: '100%', height: 'auto', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: 10, background: 'var(--bg-deep)' }
+                      : { width: 200, height: 112, objectFit: 'cover', borderRadius: 6, background: 'var(--bg-deep)' }}
                   />
                 </button>
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -505,7 +500,7 @@ export function ThemeStoreSection() {
                     {!isInstalled && !requiresNewerApp && (
                       <button
                         className="btn btn-primary"
-                        style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                        style={{ ...THEME_STORE_BUTTON_SIZE, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                         onClick={() => handleInstall(th)}
                         disabled={busy}
                       >
@@ -515,7 +510,7 @@ export function ThemeStoreSection() {
                     {isInstalled && !isActive && (
                       <button
                         className="btn btn-ghost"
-                        style={{ fontSize: 12, padding: '4px 12px' }}
+                        style={{ ...THEME_STORE_BUTTON_SIZE }}
                         onClick={() => setTheme(th.id)}
                       >
                         {t('settings.themeStoreApply')}
@@ -524,7 +519,7 @@ export function ThemeStoreSection() {
                     {updateAvailable && (
                       <button
                         className="btn btn-primary"
-                        style={{ fontSize: 12, padding: '4px 12px' }}
+                        style={{ ...THEME_STORE_BUTTON_SIZE }}
                         onClick={() => handleInstall(th)}
                         disabled={busy}
                       >
@@ -534,7 +529,7 @@ export function ThemeStoreSection() {
                     {isInstalled && (
                       <button
                         className="btn btn-ghost"
-                        style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                        style={{ ...THEME_STORE_BUTTON_SIZE, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                         onClick={() => uninstallTheme(th.id)}
                       >
                         <Trash2 size={14} /> {t('settings.themeStoreUninstall')}

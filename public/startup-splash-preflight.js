@@ -155,7 +155,17 @@
   }
 
   var persisted = readThemeState();
+  // iPhone / iPad (iPadOS reports itself as a Mac, but with touch points): no tray,
+  // and hiding the only window would leave a blank app. The value can arrive there
+  // from a desktop backup. This runs before the bundle, so no build flag is available.
+  function isAppleTouchDevice() {
+    var nav = window.navigator;
+    return /iPhone|iPad|iPod/.test(nav.userAgent)
+      || (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1);
+  }
+
   function readStartMinimizedToTray() {
+    if (isAppleTouchDevice()) return false;
     try {
       var raw = localStorage.getItem('psysonic-auth');
       if (!raw) return false;

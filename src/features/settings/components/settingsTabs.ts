@@ -28,6 +28,9 @@ export function resolveTab(input: string | undefined | null): Tab {
   return (known as string[]).includes(input) ? (input as Tab) : 'servers';
 }
 
+/** Tabs with nothing the touch shell can use (mouse, keyboard shortcuts): not offered there. */
+export const TOUCH_HIDDEN_TABS: ReadonlySet<Tab> = new Set<Tab>(['input']);
+
 export const TAB_LABEL_KEY: Record<Tab, string> = {
   library:         'settings.tabLibrary',
   servers:         'settings.tabServers',
@@ -47,7 +50,14 @@ export const TAB_LABEL_KEY: Record<Tab, string> = {
 // Begriffe). Ueberschriften und Texte der Sections liefert der generierte Index
 // (scripts/generate-settings-search-index.mjs) — neue Sections brauchen hier
 // keinen Eintrag mehr.
-export type SearchIndexEntry = { tab: Tab; titleKey: string; keywords?: string; focusTitleKey?: string };
+export type SearchIndexEntry = {
+  tab: Tab;
+  titleKey: string;
+  keywords?: string;
+  /** Words for rows the touch shell does not show (`<DesktopOnly>`); left out of its search. */
+  desktopKeywords?: string;
+  focusTitleKey?: string;
+};
 
 export const SETTINGS_INDEX: SearchIndexEntry[] = [
   { tab: 'audio',          titleKey: 'settings.audioOutputDevice',        keywords: 'output device speakers headphones alsa wasapi coreaudio' },
@@ -66,7 +76,7 @@ export const SETTINGS_INDEX: SearchIndexEntry[] = [
   { tab: 'personalisation',titleKey: 'settings.artistLayoutTitle',        keywords: 'artist page layout sections order' },
   { tab: 'personalisation',titleKey: 'settings.favoritesLayoutTitle',     keywords: 'favorites favourites page layout sections order top artists albums songs radio stations hide show' },
   { tab: 'personalisation',titleKey: 'settings.homeCustomizerTitle',      keywords: 'mainstage home page customize sections' },
-  { tab: 'personalisation',titleKey: 'settings.queueSettingsTitle',       keywords: 'queue settings display mode list playlist timeline toolbar buttons reorder customize shuffle save load behaviour behavior preserve play next order smart shuffle spread artist album random' },
+  { tab: 'personalisation',titleKey: 'settings.queueSettingsTitle',       keywords: 'queue settings display mode list playlist timeline shuffle behaviour behavior preserve play next order smart shuffle spread artist album random', desktopKeywords: 'toolbar buttons reorder customize save load' },
   { tab: 'personalisation',titleKey: 'settings.playlistLayoutTitle',     keywords: 'playlist page layout buttons order reorder shuffle queue share edit rules refresh smart add songs import csv download zip cache offline suggestions controls hide show' },
   { tab: 'personalisation',titleKey: 'settings.albumHeaderLayoutTitle',  keywords: 'album page layout buttons order reorder shuffle queue favorite share artist bio download zip offline controls hide show' },
   { tab: 'personalisation',titleKey: 'settings.buttonSizeTitle',         keywords: 'compact buttons button size small large icon only labels toolbar' },
@@ -86,7 +96,7 @@ export const SETTINGS_INDEX: SearchIndexEntry[] = [
   { tab: 'themes',         titleKey: 'settings.themesYourThemesTitle',    keywords: 'theme color palette dark light install uninstall apply your' },
   { tab: 'themes',         titleKey: 'settings.themeSchedulerTitle',      keywords: 'theme scheduler auto time dark mode sunset' },
   { tab: 'themes',         titleKey: 'settings.themeStoreTitle',          keywords: 'theme store community download install browse marketplace' },
-  { tab: 'appearance',     titleKey: 'settings.visualOptionsTitle',       keywords: 'visual options animations effects titlebar mini player' },
+  { tab: 'appearance',     titleKey: 'settings.visualOptionsTitle',       keywords: 'visual options animations effects', desktopKeywords: 'titlebar mini player' },
   { tab: 'appearance',     titleKey: 'settings.uiScaleTitle',             keywords: 'ui scale zoom dpi size' },
   { tab: 'appearance',     titleKey: 'settings.font',                     keywords: 'font typography typeface' },
   { tab: 'appearance',     titleKey: 'settings.seekbarStyle',             keywords: 'seekbar progress bar waveform reduced animations performance gpu fps low-end framerate cap' },
@@ -94,10 +104,10 @@ export const SETTINGS_INDEX: SearchIndexEntry[] = [
   { tab: 'input',          titleKey: 'settings.inputKeybindingsTitle',    keywords: 'keybindings shortcuts hotkeys keyboard' },
   { tab: 'input',          titleKey: 'settings.globalShortcutsTitle',     keywords: 'global shortcuts hotkeys system-wide media keys' },
   { tab: 'system',         titleKey: 'settings.language',                 keywords: 'language locale translation i18n' },
-  { tab: 'system',         titleKey: 'settings.behavior',                 keywords: 'behavior tray minimize close start minimized launch hidden smooth scroll linux' },
+  { tab: 'system',         titleKey: 'settings.behavior',                 keywords: 'behavior', desktopKeywords: 'tray minimize close start minimized launch hidden smooth scroll linux' },
   { tab: 'system',         titleKey: 'settings.backupTitle',              keywords: 'backup export import settings restore' },
   { tab: 'system',         titleKey: 'settings.loggingTitle',             keywords: 'log logs diagnostic debug verbose depth detail trace' },
-  { tab: 'system',         titleKey: 'settings.aboutTitle',               keywords: 'about version update changelog release notes' },
+  { tab: 'system',         titleKey: 'settings.aboutTitle',               keywords: 'about version changelog release notes', desktopKeywords: 'update' },
   { tab: 'system',         titleKey: 'settings.aboutContributorsLabel',   keywords: 'contributors credits maintainers' },
   { tab: 'system',         titleKey: 'licenses.title',                    keywords: 'licenses license open source attribution copyright third party dependencies oss' },
 ];

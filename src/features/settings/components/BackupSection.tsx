@@ -11,6 +11,7 @@ import {
   pickBackupImportPath,
 } from '@/features/settings/utils/backup';
 import { showToast } from '@/lib/dom/toast';
+import { confirmChoice } from '@/features/settings/utils/confirmChoice';
 
 type BackupMode = 'full' | 'library' | 'config';
 type BackupAction = 'export' | 'import';
@@ -58,7 +59,13 @@ export function BackupSection() {
   };
 
   const handleImport = async () => {
-    if (!window.confirm(t('settings.backupImportAnyConfirm'))) return;
+    const confirmed = await confirmChoice({
+      title: t('settings.backupImportAny'),
+      message: t('settings.backupImportAnyConfirm'),
+      confirmLabel: t('settings.backupImportAny'),
+      cancelLabel: t('common.cancel'),
+    });
+    if (!confirmed) return;
     const path = await pickBackupImportPath();
     if (!path) return;
     setBusyAction('import');

@@ -104,3 +104,35 @@ describe('searchSettings', () => {
     expect(searchSettings('qxzvbnm', 'library', tEn)).toEqual([]);
   });
 });
+
+describe('settings search in the touch shell', () => {
+  const desktop = (q: string) => searchSettings(q, 'library', tEn, { tEn });
+  const touch = (q: string) => searchSettings(q, 'library', tEn, { tEn, touchShell: true });
+
+  it('the index marks <DesktopOnly> sections and rows', () => {
+    const discord = SETTINGS_SEARCH_SECTIONS.find(s => s.titleKey === 'settings.discordRichPresence');
+    expect(discord?.desktopOnly).toBe(true);
+    const visual = SETTINGS_SEARCH_SECTIONS.find(s => s.titleKey === 'settings.visualOptionsTitle');
+    expect(visual?.desktopOnly).toBeFalsy();
+    expect(visual?.desktopOnlyKeys).toEqual(expect.arrayContaining(['settings.preloadMiniPlayer', 'settings.floatingPlayerBar']));
+    expect(visual?.desktopOnlyKeys).not.toContain('settings.showBitrate');
+  });
+
+  it('leaves out sections the touch shell does not render', () => {
+    expect(desktop('discord').some(h => h.key === 'settings.discordRichPresence')).toBe(true);
+    expect(touch('discord').some(h => h.key === 'settings.discordRichPresence')).toBe(false);
+    expect(touch('equalizer').some(h => h.key === 'settings.eqTitle')).toBe(true);
+  });
+
+  it('does not lead to a kept section through its hidden rows or their keywords', () => {
+    expect(desktop('tray').some(h => h.key === 'settings.behavior')).toBe(true);
+    expect(touch('tray').some(h => h.key === 'settings.behavior')).toBe(false);
+    expect(touch('preload mini player').some(h => h.key === 'settings.visualOptionsTitle')).toBe(false);
+    expect(touch('bitrate').some(h => h.key === 'settings.visualOptionsTitle')).toBe(true);
+  });
+
+  it('offers no keyboard shortcuts or other Input tab results', () => {
+    expect(desktop('volume up').some(h => h.tab === 'input')).toBe(true);
+    expect(touch('volume up').some(h => h.tab === 'input')).toBe(false);
+  });
+});

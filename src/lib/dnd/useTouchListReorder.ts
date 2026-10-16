@@ -11,6 +11,8 @@ const DRAG_START_PX = 6;
 export interface TouchDropTarget {
   idx: number;
   before: boolean;
+  /** The row under the finger (for lists that identify rows by attribute, not index). */
+  row: HTMLElement;
 }
 
 export interface TouchListReorderOptions {
@@ -19,16 +21,17 @@ export interface TouchListReorderOptions {
   enabled: boolean;
   /** Rows that can be picked up. */
   rowSelector: string;
-  /** `data-*` attribute on each row holding its list index, e.g. `data-queue-idx`. */
-  indexAttr: string;
+  /** `data-*` attribute on each row holding its list index, e.g. `data-queue-idx`;
+   *  without it a row's index is its position among the rows. */
+  indexAttr?: string;
   /** Touches that start inside these keep their own meaning (buttons in the row). */
   ignoreSelector: string;
   /** Class on the held row; the row moves with the `--lift-dy` CSS variable. */
   liftedClass: string;
   /** Element that scrolls under the finger; the list itself when omitted. */
   getScroller?: () => HTMLElement | null;
-  /** The held row (index `fromIdx`) was dropped in front of / behind row `target.idx`. */
-  onDrop: (fromIdx: number, target: TouchDropTarget) => void;
+  /** The held row (index `fromIdx`, element `fromRow`) was dropped in front of / behind `target`. */
+  onDrop: (fromIdx: number, target: TouchDropTarget, fromRow: HTMLElement) => void;
 }
 
 /**
@@ -54,7 +57,9 @@ export function useTouchListReorder(options: TouchListReorderOptions): TouchDrop
     if (!enabled || !list) return;
     list.setAttribute('data-no-touch-menu', '');
     const scroller = () => latest.current.getScroller?.() ?? list;
-    const indexOf = (row: HTMLElement) => Number(row.getAttribute(indexAttr));
+    const indexOf = (row: HTMLElement) => (indexAttr
+      ? Number(row.getAttribute(indexAttr))
+      : [...list.querySelectorAll(rowSelector)].indexOf(row));
 
     let timer: number | undefined;
     let press: { x: number; y: number; row: HTMLElement; idx: number; scrollTop: number } | null = null;
@@ -66,7 +71,7 @@ export function useTouchListReorder(options: TouchListReorderOptions): TouchDrop
     let lastFrameAt: number | null = null;
 
     const setDrop = (next: TouchDropTarget | null) => {
-      if (next?.idx === dropTarget?.idx && next?.before === dropTarget?.before) return;
+      if (next?.row === dropTarget?.row && next?.before === dropTarget?.before) return;
       dropTarget = next;
       setTarget(next);
     };
@@ -76,7 +81,7 @@ export function useTouchListReorder(options: TouchListReorderOptions): TouchDrop
         if (el === row) continue;
         const rect = el.getBoundingClientRect();
         if (clientY >= rect.top && clientY <= rect.bottom) {
-          return { idx: indexOf(el), before: clientY < rect.top + rect.height / 2 };
+          return { idx: indexOf(el), before: clientY < rect.top + rect.height / 2, row: el };
         }
       }
       return null;
@@ -175,7 +180,7 @@ export function useTouchListReorder(options: TouchListReorderOptions): TouchDrop
       const wasDragging = dragging;
       reset();
       if (wasDragging) {
-        if (drop) latest.current.onDrop(idx, drop);
+        if (drop) latest.current.onDrop(idx, drop, row);
         return;
       }
       row.dispatchEvent(new MouseEvent('contextmenu', {

@@ -21,6 +21,7 @@ import { SettingsSegmented, type SegmentedOption } from '@/features/settings/com
 import { SeekbarPreview } from '@/features/waveform';
 import WindowButtonPreview from '@/features/settings/components/WindowButtonPreview';
 import { VisualizerSection } from '@/features/settings/components/VisualizerSection';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 
 export function AppearanceTab() {
   const { t } = useTranslation();
@@ -49,42 +50,44 @@ export function AppearanceTab() {
 
   return (
     <>
-      <SettingsSubSection
-        title={t('settings.libraryGridMaxColumnsTitle')}
-        icon={<LayoutGrid size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup>
-            <div className="settings-hint settings-hint-info" style={{ marginBottom: '0.75rem' }}>
-              {t('settings.libraryGridMaxColumnsPerfHint')}
-            </div>
-            <SettingsSubCard>
-              <SettingsField
-                label={t('settings.libraryGridMaxColumnsRangeLabel', {
-                  min: LIBRARY_GRID_MAX_COLUMNS_MIN,
-                  max: LIBRARY_GRID_MAX_COLUMNS_MAX,
-                })}
-                desc={t('settings.libraryGridMaxColumnsDesc')}
-                row
-              >
-                <input
-                  id="library-grid-max-cols"
-                  type="range"
-                  min={LIBRARY_GRID_MAX_COLUMNS_MIN}
-                  max={LIBRARY_GRID_MAX_COLUMNS_MAX}
-                  step={1}
-                  value={auth.libraryGridMaxColumns}
-                  onChange={e => auth.setLibraryGridMaxColumns(Number(e.target.value))}
-                  aria-valuemin={LIBRARY_GRID_MAX_COLUMNS_MIN}
-                  aria-valuemax={LIBRARY_GRID_MAX_COLUMNS_MAX}
-                  aria-valuenow={auth.libraryGridMaxColumns}
-                />
-                <SettingsValue>{auth.libraryGridMaxColumns}</SettingsValue>
-              </SettingsField>
-            </SettingsSubCard>
-          </SettingsGroup>
-        </div>
-      </SettingsSubSection>
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.libraryGridMaxColumnsTitle')}
+          icon={<LayoutGrid size={16} />}
+        >
+          <div className="settings-card">
+            <SettingsGroup>
+              <div className="settings-hint settings-hint-info" style={{ marginBottom: '0.75rem' }}>
+                {t('settings.libraryGridMaxColumnsPerfHint')}
+              </div>
+              <SettingsSubCard>
+                <SettingsField
+                  label={t('settings.libraryGridMaxColumnsRangeLabel', {
+                    min: LIBRARY_GRID_MAX_COLUMNS_MIN,
+                    max: LIBRARY_GRID_MAX_COLUMNS_MAX,
+                  })}
+                  desc={t('settings.libraryGridMaxColumnsDesc')}
+                  row
+                >
+                  <input
+                    id="library-grid-max-cols"
+                    type="range"
+                    min={LIBRARY_GRID_MAX_COLUMNS_MIN}
+                    max={LIBRARY_GRID_MAX_COLUMNS_MAX}
+                    step={1}
+                    value={auth.libraryGridMaxColumns}
+                    onChange={e => auth.setLibraryGridMaxColumns(Number(e.target.value))}
+                    aria-valuemin={LIBRARY_GRID_MAX_COLUMNS_MIN}
+                    aria-valuemax={LIBRARY_GRID_MAX_COLUMNS_MAX}
+                    aria-valuenow={auth.libraryGridMaxColumns}
+                  />
+                  <SettingsValue>{auth.libraryGridMaxColumns}</SettingsValue>
+                </SettingsField>
+              </SettingsSubCard>
+            </SettingsGroup>
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       <SettingsSubSection
         title={t('settings.visualOptionsTitle')}
@@ -92,13 +95,15 @@ export function AppearanceTab() {
       >
         <div className="settings-card">
           <SettingsGroup title={t('settings.groupDisplay')}>
-            <SettingsToggle
-              label={t('settings.coverArtBackground')}
-              desc={t('settings.coverArtBackgroundSub')}
-              checked={theme.enableCoverArtBackground}
-              onChange={theme.setEnableCoverArtBackground}
-            />
-            <div className="settings-section-divider" />
+            <DesktopOnly>
+              <SettingsToggle
+                label={t('settings.coverArtBackground')}
+                desc={t('settings.coverArtBackgroundSub')}
+                checked={theme.enableCoverArtBackground}
+                onChange={theme.setEnableCoverArtBackground}
+              />
+              <div className="settings-section-divider" />
+            </DesktopOnly>
             <SettingsToggle
               label={t('settings.playlistCoverPhoto')}
               desc={t('settings.playlistCoverPhotoSub')}
@@ -140,20 +145,22 @@ export function AppearanceTab() {
               checked={theme.blurExplicitCovers}
               onChange={theme.setBlurExplicitCovers}
             />
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.showCardTooltips')}
-              desc={t('settings.showCardTooltipsSub')}
-              checked={theme.showCardTooltips}
-              onChange={theme.setShowCardTooltips}
-            />
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.floatingPlayerBar')}
-              desc={t('settings.floatingPlayerBarSub')}
-              checked={theme.floatingPlayerBar}
-              onChange={theme.setFloatingPlayerBar}
-            />
+            <DesktopOnly>
+              <div className="settings-section-divider" />
+              <SettingsToggle
+                label={t('settings.showCardTooltips')}
+                desc={t('settings.showCardTooltipsSub')}
+                checked={theme.showCardTooltips}
+                onChange={theme.setShowCardTooltips}
+              />
+              <div className="settings-section-divider" />
+              <SettingsToggle
+                label={t('settings.floatingPlayerBar')}
+                desc={t('settings.floatingPlayerBarSub')}
+                checked={theme.floatingPlayerBar}
+                onChange={theme.setFloatingPlayerBar}
+              />
+            </DesktopOnly>
             <div className="settings-section-divider" />
             <SettingsToggle
               label={t('settings.squareCorners')}
@@ -168,116 +175,124 @@ export function AppearanceTab() {
               checked={auth.showArtistImages}
               onChange={auth.setShowArtistImages}
             />
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.showOrbitTrigger')}
-              desc={t('settings.showOrbitTriggerDesc')}
-              checked={auth.showOrbitTrigger}
-              onChange={auth.setShowOrbitTrigger}
-            />
-            {!IS_WINDOWS && (
-              <>
-                <div className="settings-section-divider" />
-                <SettingsToggle
-                  label={t('settings.preloadMiniPlayer')}
-                  desc={t('settings.preloadMiniPlayerDesc')}
-                  checked={auth.preloadMiniPlayer}
-                  onChange={auth.setPreloadMiniPlayer}
-                />
-              </>
-            )}
-            {IS_WINDOWS && (
-              <>
-                <div className="settings-section-divider" />
-                <SettingsToggle
-                  label={t('settings.miniPlayerCustomTitlebar')}
-                  desc={t('settings.miniPlayerCustomTitlebarDesc')}
-                  checked={auth.miniPlayerCustomTitlebar}
-                  onChange={auth.setMiniPlayerCustomTitlebar}
-                />
-              </>
-            )}
-          </SettingsGroup>
-
-          {IS_LINUX && !isTilingWm && (
-            <SettingsGroup title={t('settings.groupWindow')}>
+            <DesktopOnly>
+              <div className="settings-section-divider" />
               <SettingsToggle
-                label={t('settings.useCustomTitlebar')}
-                desc={t('settings.useCustomTitlebarDesc')}
-                checked={auth.useCustomTitlebar}
-                onChange={auth.setUseCustomTitlebar}
+                label={t('settings.showOrbitTrigger')}
+                desc={t('settings.showOrbitTriggerDesc')}
+                checked={auth.showOrbitTrigger}
+                onChange={auth.setShowOrbitTrigger}
               />
-              {auth.useCustomTitlebar && (
+            </DesktopOnly>
+            <DesktopOnly>
+              {!IS_WINDOWS && (
                 <>
-                  <SettingsSubCard style={{ marginTop: '0.85rem' }}>
-                    <SettingsField
-                      label={t('settings.windowButtonStyle')}
-                      desc={t('settings.windowButtonStyleDesc')}
-                    >
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-                        {(['dots', 'dotsGlyph', 'flat', 'pill', 'outline', 'glyph'] as WindowButtonStyle[]).map(style => (
-                          <WindowButtonPreview
-                            key={style}
-                            style={style}
-                            label={t(`settings.windowButtons${style.charAt(0).toUpperCase() + style.slice(1)}`)}
-                            selected={auth.windowButtonStyle === style}
-                            onClick={() => auth.setWindowButtonStyle(style)}
-                          />
-                        ))}
-                      </div>
-                    </SettingsField>
-                  </SettingsSubCard>
                   <div className="settings-section-divider" />
                   <SettingsToggle
-                    label={t('settings.showMinimizeButton')}
-                    desc={t('settings.showMinimizeButtonDesc')}
-                    checked={auth.showMinimizeButton}
-                    onChange={auth.setShowMinimizeButton}
+                    label={t('settings.preloadMiniPlayer')}
+                    desc={t('settings.preloadMiniPlayerDesc')}
+                    checked={auth.preloadMiniPlayer}
+                    onChange={auth.setPreloadMiniPlayer}
                   />
                 </>
               )}
-            </SettingsGroup>
-          )}
+              {IS_WINDOWS && (
+                <>
+                  <div className="settings-section-divider" />
+                  <SettingsToggle
+                    label={t('settings.miniPlayerCustomTitlebar')}
+                    desc={t('settings.miniPlayerCustomTitlebarDesc')}
+                    checked={auth.miniPlayerCustomTitlebar}
+                    onChange={auth.setMiniPlayerCustomTitlebar}
+                  />
+                </>
+              )}
+            </DesktopOnly>
+          </SettingsGroup>
+
+          <DesktopOnly>
+            {IS_LINUX && !isTilingWm && (
+              <SettingsGroup title={t('settings.groupWindow')}>
+                <SettingsToggle
+                  label={t('settings.useCustomTitlebar')}
+                  desc={t('settings.useCustomTitlebarDesc')}
+                  checked={auth.useCustomTitlebar}
+                  onChange={auth.setUseCustomTitlebar}
+                />
+                {auth.useCustomTitlebar && (
+                  <>
+                    <SettingsSubCard style={{ marginTop: '0.85rem' }}>
+                      <SettingsField
+                        label={t('settings.windowButtonStyle')}
+                        desc={t('settings.windowButtonStyleDesc')}
+                      >
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                          {(['dots', 'dotsGlyph', 'flat', 'pill', 'outline', 'glyph'] as WindowButtonStyle[]).map(style => (
+                            <WindowButtonPreview
+                              key={style}
+                              style={style}
+                              label={t(`settings.windowButtons${style.charAt(0).toUpperCase() + style.slice(1)}`)}
+                              selected={auth.windowButtonStyle === style}
+                              onClick={() => auth.setWindowButtonStyle(style)}
+                            />
+                          ))}
+                        </div>
+                      </SettingsField>
+                    </SettingsSubCard>
+                    <div className="settings-section-divider" />
+                    <SettingsToggle
+                      label={t('settings.showMinimizeButton')}
+                      desc={t('settings.showMinimizeButtonDesc')}
+                      checked={auth.showMinimizeButton}
+                      onChange={auth.setShowMinimizeButton}
+                    />
+                  </>
+                )}
+              </SettingsGroup>
+            )}
+          </DesktopOnly>
         </div>
       </SettingsSubSection>
 
-      <SettingsSubSection
-        title={t('settings.uiScaleTitle')}
-        icon={<ZoomIn size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup>
-            <SettingsSubCard>
-              <SettingsField label={t('settings.uiScaleLabel')}>
-                {(() => {
-                  const presets = [80, 90, 100, 110, 125, 150];
-                  const currentPct = Math.round(fontStore.uiScale * 100);
-                  // Snap a legacy off-preset value to the closest preset so one
-                  // button is always marked active.
-                  const activePct = presets.includes(currentPct)
-                    ? currentPct
-                    : presets.reduce(
-                        (best, p) => (Math.abs(p - currentPct) < Math.abs(best - currentPct) ? p : best),
-                        presets[0],
-                      );
-                  const options: SegmentedOption<string>[] = presets.map(p => ({
-                    id: String(p),
-                    label: `${p}%`,
-                  }));
-                  return (
-                    <SettingsSegmented
-                      options={options}
-                      value={String(activePct)}
-                      onChange={id => fontStore.setUiScale(parseInt(id, 10) / 100)}
-                      ariaLabel={t('settings.uiScaleLabel')}
-                    />
-                  );
-                })()}
-              </SettingsField>
-            </SettingsSubCard>
-          </SettingsGroup>
-        </div>
-      </SettingsSubSection>
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.uiScaleTitle')}
+          icon={<ZoomIn size={16} />}
+        >
+          <div className="settings-card">
+            <SettingsGroup>
+              <SettingsSubCard>
+                <SettingsField label={t('settings.uiScaleLabel')}>
+                  {(() => {
+                    const presets = [80, 90, 100, 110, 125, 150];
+                    const currentPct = Math.round(fontStore.uiScale * 100);
+                    // Snap a legacy off-preset value to the closest preset so one
+                    // button is always marked active.
+                    const activePct = presets.includes(currentPct)
+                      ? currentPct
+                      : presets.reduce(
+                          (best, p) => (Math.abs(p - currentPct) < Math.abs(best - currentPct) ? p : best),
+                          presets[0],
+                        );
+                    const options: SegmentedOption<string>[] = presets.map(p => ({
+                      id: String(p),
+                      label: `${p}%`,
+                    }));
+                    return (
+                      <SettingsSegmented
+                        options={options}
+                        value={String(activePct)}
+                        onChange={id => fontStore.setUiScale(parseInt(id, 10) / 100)}
+                        ariaLabel={t('settings.uiScaleLabel')}
+                      />
+                    );
+                  })()}
+                </SettingsField>
+              </SettingsSubCard>
+            </SettingsGroup>
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       <SettingsSubSection
         title={t('settings.font')}
@@ -332,80 +347,82 @@ export function AppearanceTab() {
         </div>
       </SettingsSubSection>
 
-      <SettingsSubSection
-        title={t('settings.fullscreenPlayerStyle')}
-        icon={<Sliders size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup>
-            <SettingsField desc={t('settings.fullscreenPlayerStyleDesc')}>
-              <SettingsSegmented
-                options={fullscreenPlayerStyleOptions}
-                value={auth.fullscreenPlayerStyle}
-                onChange={auth.setFullscreenPlayerStyle}
-                ariaLabel={t('settings.fullscreenPlayerStyle')}
-              />
-            </SettingsField>
-            {/* The artist photo behind every style is governed by the per-surface
-                backdrop switch, which lives on another tab — people look for it
-                here and conclude the photo can only be turned off in the
-                immersive style, where a second toggle happens to sit. A plain
-                description line sits too quietly between two full-width
-                controls, so this one carries the tab's info styling. */}
-            <div className="settings-hint settings-hint-info settings-hint-action">
-              <span>{t('settings.fsBackdropPointerDesc')}</span>
-              <button
-                type="button"
-                className="btn btn-sm btn-surface"
-                onClick={() => navigate('/settings', {
-                  state: { tab: 'integrations', focus: t('settings.backdropSourcesTitle') },
-                })}
-              >
-                {t('settings.fsBackdropPointerAction')}
-              </button>
-            </div>
-          </SettingsGroup>
-          <SettingsGroup>
-            <SettingsField label={t('settings.fsAutoOpen')} desc={t('settings.fsAutoOpenDesc')}>
-              <SettingsSegmented
-                options={fsAutoOpenOptions}
-                value={String(auth.fullscreenAutoOpenMinutes)}
-                onChange={id => auth.setFullscreenAutoOpenMinutes(Number(id))}
-                ariaLabel={t('settings.fsAutoOpen')}
-              />
-            </SettingsField>
-          </SettingsGroup>
-          {auth.fullscreenPlayerStyle === 'immersive' && (
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.fullscreenPlayerStyle')}
+          icon={<Sliders size={16} />}
+        >
+          <div className="settings-card">
             <SettingsGroup>
-              <SettingsToggle
-                label={t('settings.fsShowArtistPortrait')}
-                desc={t('settings.fsShowArtistPortraitDesc')}
-                checked={auth.showFsArtistPortrait}
-                onChange={auth.setShowFsArtistPortrait}
-              />
-              {auth.showFsArtistPortrait && (
-                <SettingsSubCard>
-                  <SettingsField label={t('settings.fsPortraitDim')}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <input
-                        type="range"
-                        min={0}
-                        max={80}
-                        step={1}
-                        value={auth.fsPortraitDim}
-                        onChange={e => auth.setFsPortraitDim(parseInt(e.target.value, 10))}
-                        className="ui-scale-slider"
-                        style={{ flex: 1 }}
-                      />
-                      <SettingsValue>{auth.fsPortraitDim}%</SettingsValue>
-                    </div>
-                  </SettingsField>
-                </SettingsSubCard>
-              )}
+              <SettingsField desc={t('settings.fullscreenPlayerStyleDesc')}>
+                <SettingsSegmented
+                  options={fullscreenPlayerStyleOptions}
+                  value={auth.fullscreenPlayerStyle}
+                  onChange={auth.setFullscreenPlayerStyle}
+                  ariaLabel={t('settings.fullscreenPlayerStyle')}
+                />
+              </SettingsField>
+              {/* The artist photo behind every style is governed by the per-surface
+                  backdrop switch, which lives on another tab — people look for it
+                  here and conclude the photo can only be turned off in the
+                  immersive style, where a second toggle happens to sit. A plain
+                  description line sits too quietly between two full-width
+                  controls, so this one carries the tab's info styling. */}
+              <div className="settings-hint settings-hint-info settings-hint-action">
+                <span>{t('settings.fsBackdropPointerDesc')}</span>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-surface"
+                  onClick={() => navigate('/settings', {
+                    state: { tab: 'integrations', focus: t('settings.backdropSourcesTitle') },
+                  })}
+                >
+                  {t('settings.fsBackdropPointerAction')}
+                </button>
+              </div>
             </SettingsGroup>
-          )}
-        </div>
-      </SettingsSubSection>
+            <SettingsGroup>
+              <SettingsField label={t('settings.fsAutoOpen')} desc={t('settings.fsAutoOpenDesc')}>
+                <SettingsSegmented
+                  options={fsAutoOpenOptions}
+                  value={String(auth.fullscreenAutoOpenMinutes)}
+                  onChange={id => auth.setFullscreenAutoOpenMinutes(Number(id))}
+                  ariaLabel={t('settings.fsAutoOpen')}
+                />
+              </SettingsField>
+            </SettingsGroup>
+            {auth.fullscreenPlayerStyle === 'immersive' && (
+              <SettingsGroup>
+                <SettingsToggle
+                  label={t('settings.fsShowArtistPortrait')}
+                  desc={t('settings.fsShowArtistPortraitDesc')}
+                  checked={auth.showFsArtistPortrait}
+                  onChange={auth.setShowFsArtistPortrait}
+                />
+                {auth.showFsArtistPortrait && (
+                  <SettingsSubCard>
+                    <SettingsField label={t('settings.fsPortraitDim')}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <input
+                          type="range"
+                          min={0}
+                          max={80}
+                          step={1}
+                          value={auth.fsPortraitDim}
+                          onChange={e => auth.setFsPortraitDim(parseInt(e.target.value, 10))}
+                          className="ui-scale-slider"
+                          style={{ flex: 1 }}
+                        />
+                        <SettingsValue>{auth.fsPortraitDim}%</SettingsValue>
+                      </div>
+                    </SettingsField>
+                  </SettingsSubCard>
+                )}
+              </SettingsGroup>
+            )}
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       <SettingsSubSection
         title={t('settings.seekbarStyle')}
@@ -432,7 +449,9 @@ export function AppearanceTab() {
         </div>
       </SettingsSubSection>
 
-      <VisualizerSection t={t} />
+      <DesktopOnly>
+        <VisualizerSection t={t} />
+      </DesktopOnly>
     </>
   );
 }

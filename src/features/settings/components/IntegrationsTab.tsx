@@ -17,6 +17,7 @@ import { MusicNetworkSection } from '@/features/settings/components/musicNetwork
 import { purgeExternalAlbumArt, purgeExternalArtworkAllServers } from '@/lib/api/coverCache';
 import { useShareSettingsStore } from '@/features/share';
 import { usePlayQueueSyncSettingsStore } from '@/features/playback';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 
 export function IntegrationsTab() {
   const { t } = useTranslation();
@@ -109,84 +110,86 @@ export function IntegrationsTab() {
       {/* Music Network — scrobbling + enrichment across multiple services */}
       <MusicNetworkSection />
 
-      {/* Discord Rich Presence */}
-      <SettingsSubSection
-        title={t('settings.discordRichPresence')}
-        icon={<Sparkles size={16} />}
-      >
-        <div className="settings-card">
-          <div
-            style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.5, marginBottom: 'var(--space-3)', color: 'var(--text-secondary)' }}
-          >
-            {t('settings.discordRichPresenceNotice')}
-          </div>
-          <SettingsGroup title={t('settings.discordRichPresence')}>
-            <SettingsToggle
-              desc={t('settings.discordRichPresenceDesc')}
-              ariaLabel={t('settings.discordRichPresence')}
-              checked={auth.discordRichPresence}
-              onChange={auth.setDiscordRichPresence}
-            />
-          </SettingsGroup>
-          {auth.discordRichPresence && (
-            <>
-              <SettingsGroup title={t('settings.discordCoverTitle')} desc={t('settings.discordCoverDesc')}>
-                <SettingsSegmented
-                  options={discordCoverOptions}
-                  value={auth.discordCoverSource}
-                  onChange={auth.setDiscordCoverSource}
-                  ariaLabel={t('settings.discordCoverTitle')}
-                  // These three labels differ by more than a factor of two in
-                  // length, and translations widen the gap. Equal-width
-                  // segments would clip the longest one at both ends.
-                  className="settings-segmented-auto"
-                />
-              </SettingsGroup>
+      {/* Discord Rich Presence — local Discord IPC, desktop only */}
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.discordRichPresence')}
+          icon={<Sparkles size={16} />}
+        >
+          <div className="settings-card">
+            <div
+              style={{ fontWeight: 700, fontSize: 13, lineHeight: 1.5, marginBottom: 'var(--space-3)', color: 'var(--text-secondary)' }}
+            >
+              {t('settings.discordRichPresenceNotice')}
+            </div>
+            <SettingsGroup title={t('settings.discordRichPresence')}>
+              <SettingsToggle
+                desc={t('settings.discordRichPresenceDesc')}
+                ariaLabel={t('settings.discordRichPresence')}
+                checked={auth.discordRichPresence}
+                onChange={auth.setDiscordRichPresence}
+              />
+            </SettingsGroup>
+            {auth.discordRichPresence && (
+              <>
+                <SettingsGroup title={t('settings.discordCoverTitle')} desc={t('settings.discordCoverDesc')}>
+                  <SettingsSegmented
+                    options={discordCoverOptions}
+                    value={auth.discordCoverSource}
+                    onChange={auth.setDiscordCoverSource}
+                    ariaLabel={t('settings.discordCoverTitle')}
+                    // These three labels differ by more than a factor of two in
+                    // length, and translations widen the gap. Equal-width
+                    // segments would clip the longest one at both ends.
+                    className="settings-segmented-auto"
+                  />
+                </SettingsGroup>
 
-              <SettingsGroup title={t('settings.discordTemplates')} desc={t('settings.discordTemplatesDesc')}>
-                <SettingsSubCard>
-                  <SettingsField label={t('settings.discordTemplateName')}>
-                    <input
-                      className="input"
-                      type="text"
-                      value={auth.discordTemplateName}
-                      onChange={e => auth.setDiscordTemplateName(e.target.value)}
-                      placeholder="{title}"
-                    />
-                  </SettingsField>
-                  <SettingsField label={t('settings.discordTemplateDetails')}>
-                    <input
-                      className="input"
-                      type="text"
-                      value={auth.discordTemplateDetails}
-                      onChange={e => auth.setDiscordTemplateDetails(e.target.value)}
-                      placeholder="{artist}"
-                    />
-                  </SettingsField>
-                  <SettingsField label={t('settings.discordTemplateState')}>
-                    <input
-                      className="input"
-                      type="text"
-                      value={auth.discordTemplateState}
-                      onChange={e => auth.setDiscordTemplateState(e.target.value)}
-                      placeholder="{title}"
-                    />
-                  </SettingsField>
-                  <SettingsField label={t('settings.discordTemplateLargeText')}>
-                    <input
-                      className="input"
-                      type="text"
-                      value={auth.discordTemplateLargeText}
-                      onChange={e => auth.setDiscordTemplateLargeText(e.target.value)}
-                      placeholder="{album}"
-                    />
-                  </SettingsField>
-                </SettingsSubCard>
-              </SettingsGroup>
-            </>
-          )}
-        </div>
-      </SettingsSubSection>
+                <SettingsGroup title={t('settings.discordTemplates')} desc={t('settings.discordTemplatesDesc')}>
+                  <SettingsSubCard>
+                    <SettingsField label={t('settings.discordTemplateName')}>
+                      <input
+                        className="input"
+                        type="text"
+                        value={auth.discordTemplateName}
+                        onChange={e => auth.setDiscordTemplateName(e.target.value)}
+                        placeholder="{title}"
+                      />
+                    </SettingsField>
+                    <SettingsField label={t('settings.discordTemplateDetails')}>
+                      <input
+                        className="input"
+                        type="text"
+                        value={auth.discordTemplateDetails}
+                        onChange={e => auth.setDiscordTemplateDetails(e.target.value)}
+                        placeholder="{artist}"
+                      />
+                    </SettingsField>
+                    <SettingsField label={t('settings.discordTemplateState')}>
+                      <input
+                        className="input"
+                        type="text"
+                        value={auth.discordTemplateState}
+                        onChange={e => auth.setDiscordTemplateState(e.target.value)}
+                        placeholder="{title}"
+                      />
+                    </SettingsField>
+                    <SettingsField label={t('settings.discordTemplateLargeText')}>
+                      <input
+                        className="input"
+                        type="text"
+                        value={auth.discordTemplateLargeText}
+                        onChange={e => auth.setDiscordTemplateLargeText(e.target.value)}
+                        placeholder="{album}"
+                      />
+                    </SettingsField>
+                  </SettingsSubCard>
+                </SettingsGroup>
+              </>
+            )}
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       {/* Cover source chain — library-wide art */}
       <SettingsSubSection

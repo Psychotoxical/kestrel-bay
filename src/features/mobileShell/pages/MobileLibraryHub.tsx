@@ -3,9 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, HardDriveDownload, Search, type LucideIcon } from 'lucide-react';
 import { useMobileNavItems } from '@/features/sidebar/hooks/useMobileNavItems';
 import { requestOpenSearch } from '@/lib/dom/openSearch';
-
-/** Shown as tabs or in the profile sheet, or desktop-only (USB device sync, CD burning). */
-const NOT_IN_LIBRARY = new Set(['/', '/playlists', '/statistics', '/help', '/device-sync', '/burn']);
+import { NOT_IN_TOUCH_LIBRARY as NOT_IN_LIBRARY } from '@/config/navItems';
 
 function HubRow({ icon: Icon, label, onClick }: { icon: LucideIcon; label: string; onClick: () => void }) {
   return (

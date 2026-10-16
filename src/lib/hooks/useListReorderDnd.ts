@@ -1,6 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDragDrop } from '@/lib/dnd/DragDropContext';
+import { useTouchListReorder, type TouchDropTarget } from '@/lib/dnd/useTouchListReorder';
 import type { ListReorderDropTarget } from '@/lib/util/listReorder';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
+
+function rowTarget(target: TouchDropTarget): ListReorderDropTarget | null {
+  const id = target.row.dataset.reorderId;
+  if (!id) return null;
+  const section = target.row.dataset.reorderSection;
+  return section ? { id, before: target.before, section } : { id, before: target.before };
+}
 
 interface Options {
   /** Payload discriminator the drag source emits, e.g. `'lyrics_source_reorder'`. */
@@ -82,10 +92,29 @@ export function useListReorderDnd({ type, apply }: Options): Result {
     setDropTarget(target);
   }, [isDragging, container]);
 
+  // Touch shell: the mouse drag above never starts; hold a row instead and drag it
+  // (same gesture as the queue). Buttons, switches and links in a row keep their tap.
+  const containerRef = useMemo(() => ({ current: container }), [container]);
+  const touchTarget = useTouchListReorder({
+    listRef: containerRef,
+    enabled: IS_MOBILE_SHELL && container !== null,
+    rowSelector: '[data-reorder-id]',
+    ignoreSelector: 'button, input, label, a, select',
+    liftedClass: 'is-reorder-lifted',
+    getScroller: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID),
+    onDrop: (_fromIdx, target, fromRow) => {
+      const draggedId = fromRow.dataset.reorderId;
+      const resolved = rowTarget(target);
+      if (draggedId && resolved) apply(draggedId, resolved);
+    },
+  });
+  const touchDrop = touchTarget ? rowTarget(touchTarget) : null;
+
   const dropEdge = useCallback((id: string): 'before' | 'after' | null => {
+    if (touchDrop) return touchDrop.id === id ? (touchDrop.before ? 'before' : 'after') : null;
     if (!isDragging || dropTarget?.id !== id) return null;
     return dropTarget.before ? 'before' : 'after';
-  }, [isDragging, dropTarget]);
+  }, [isDragging, dropTarget, touchDrop]);
 
-  return { isDragging, setContainer, onMouseMove, dropEdge };
+  return { isDragging: isDragging || touchTarget !== null, setContainer, onMouseMove, dropEdge };
 }

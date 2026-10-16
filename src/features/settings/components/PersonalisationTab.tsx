@@ -24,6 +24,7 @@ import { PlayerBarLayoutCustomizer } from '@/features/settings/components/Player
 import { PlaylistLayoutCustomizer } from '@/features/settings/components/PlaylistLayoutCustomizer';
 import { QueueToolbarCustomizer } from '@/features/settings/components/QueueToolbarCustomizer';
 import { SidebarCustomizer } from '@/features/settings/components/SidebarCustomizer';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 
 export function PersonalisationTab() {
   const { t } = useTranslation();
@@ -55,6 +56,8 @@ export function PersonalisationTab() {
     <>
       <SettingsSubSection
         title={t('settings.sidebarTitle')}
+        // No sidebar in the touch shell: the same list orders its Library tab.
+        touchTitle={t('sidebar.library')}
         icon={<PanelLeft size={16} />}
         action={
           <button
@@ -93,31 +96,33 @@ export function PersonalisationTab() {
         </SettingsGroup>
       </SettingsSubSection>
 
-      <SettingsSubSection
-        title={t('settings.buttonSizeTitle')}
-        icon={<Maximize2 size={16} />}
-      >
-        <SettingsGroup>
-          <SettingsSubCard>
-            <SettingsField
-              label={t('settings.buttonSizeLabel')}
-              desc={t('settings.buttonSizeDesc')}
-            >
-              <div style={{ display: 'flex', gap: 8 }}>
-                {(['large', 'small'] as const).map(size => (
-                  <button
-                    key={size}
-                    className={`btn ${buttonSize === size ? 'btn-primary' : 'btn-ghost'}`}
-                    onClick={() => setButtonSize(size)}
-                  >
-                    {t(`settings.buttonSize_${size}`)}
-                  </button>
-                ))}
-              </div>
-            </SettingsField>
-          </SettingsSubCard>
-        </SettingsGroup>
-      </SettingsSubSection>
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.buttonSizeTitle')}
+          icon={<Maximize2 size={16} />}
+        >
+          <SettingsGroup>
+            <SettingsSubCard>
+              <SettingsField
+                label={t('settings.buttonSizeLabel')}
+                desc={t('settings.buttonSizeDesc')}
+              >
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {(['large', 'small'] as const).map(size => (
+                    <button
+                      key={size}
+                      className={`btn ${buttonSize === size ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => setButtonSize(size)}
+                    >
+                      {t(`settings.buttonSize_${size}`)}
+                    </button>
+                  ))}
+                </div>
+              </SettingsField>
+            </SettingsSubCard>
+          </SettingsGroup>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       <SettingsSubSection
         title={t('settings.artistLayoutTitle')}
@@ -141,27 +146,29 @@ export function PersonalisationTab() {
         </SettingsGroup>
       </SettingsSubSection>
 
-      <SettingsSubSection
-        title={t('settings.albumHeaderLayoutTitle')}
-        icon={<Disc size={16} />}
-        advanced
-        action={
-          <button
-            type="button"
-            className="btn btn-ghost"
-            style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 6px' }}
-            onClick={() => useAlbumHeaderLayoutStore.getState().reset()}
-            data-tooltip={t('settings.playlistLayoutReset')}
-            aria-label={t('settings.playlistLayoutReset')}
-          >
-            <RotateCcw size={14} />
-          </button>
-        }
-      >
-        <SettingsGroup>
-          <AlbumHeaderLayoutCustomizer />
-        </SettingsGroup>
-      </SettingsSubSection>
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.albumHeaderLayoutTitle')}
+          icon={<Disc size={16} />}
+          advanced
+          action={
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 6px' }}
+              onClick={() => useAlbumHeaderLayoutStore.getState().reset()}
+              data-tooltip={t('settings.playlistLayoutReset')}
+              aria-label={t('settings.playlistLayoutReset')}
+            >
+              <RotateCcw size={14} />
+            </button>
+          }
+        >
+          <SettingsGroup>
+            <AlbumHeaderLayoutCustomizer />
+          </SettingsGroup>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       <SettingsSubSection
         title={t('settings.favoritesLayoutTitle')}
@@ -226,26 +233,28 @@ export function PersonalisationTab() {
             />
           </SettingsGroup>
 
-          {advancedSettingsEnabled && (
-            <SettingsGroup
-              title={t('settings.queueToolbarTitle')}
-              advanced
-              action={
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 6px' }}
-                  onClick={() => useQueueToolbarStore.getState().reset()}
-                  data-tooltip={t('settings.queueToolbarReset')}
-                  aria-label={t('settings.queueToolbarReset')}
-                >
-                  <RotateCcw size={14} />
-                </button>
-              }
-            >
-              <QueueToolbarCustomizer />
-            </SettingsGroup>
-          )}
+          <DesktopOnly>
+            {advancedSettingsEnabled && (
+              <SettingsGroup
+                title={t('settings.queueToolbarTitle')}
+                advanced
+                action={
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 6px' }}
+                    onClick={() => useQueueToolbarStore.getState().reset()}
+                    data-tooltip={t('settings.queueToolbarReset')}
+                    aria-label={t('settings.queueToolbarReset')}
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                }
+              >
+                <QueueToolbarCustomizer />
+              </SettingsGroup>
+            )}
+          </DesktopOnly>
         </>
       </SettingsSubSection>
 
@@ -271,26 +280,28 @@ export function PersonalisationTab() {
         </SettingsGroup>
       </SettingsSubSection>
 
-      <SettingsSubSection
-        title={t('settings.playerBarTitle')}
-        icon={<Disc3 size={16} />}
-        action={
-          <button
-            type="button"
-            className="btn btn-ghost"
-            style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 6px' }}
-            onClick={() => usePlayerBarLayoutStore.getState().reset()}
-            data-tooltip={t('settings.playerBarReset')}
-            aria-label={t('settings.playerBarReset')}
-          >
-            <RotateCcw size={14} />
-          </button>
-        }
-      >
-        <SettingsGroup>
-          <PlayerBarLayoutCustomizer />
-        </SettingsGroup>
-      </SettingsSubSection>
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.playerBarTitle')}
+          icon={<Disc3 size={16} />}
+          action={
+            <button
+              type="button"
+              className="btn btn-ghost"
+              style={{ fontSize: 12, color: 'var(--text-muted)', padding: '2px 6px' }}
+              onClick={() => usePlayerBarLayoutStore.getState().reset()}
+              data-tooltip={t('settings.playerBarReset')}
+              aria-label={t('settings.playerBarReset')}
+            >
+              <RotateCcw size={14} />
+            </button>
+          }
+        >
+          <SettingsGroup>
+            <PlayerBarLayoutCustomizer />
+          </SettingsGroup>
+        </SettingsSubSection>
+      </DesktopOnly>
     </>
   );
 }

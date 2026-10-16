@@ -1,7 +1,9 @@
 import type { TFunction } from 'i18next';
 import { GLOBAL_SHORTCUT_ACTIONS, IN_APP_SHORTCUT_ACTIONS } from '@/config/shortcutActions';
-import { SETTINGS_SEARCH_SECTIONS, SETTINGS_SEARCH_TAB_KEYS } from '@/generated/settingsSearchIndex';
-import { SETTINGS_INDEX, TAB_LABEL_KEY, type Tab } from '@/features/settings/components/settingsTabs';
+import {
+  SETTINGS_SEARCH_SECTIONS, SETTINGS_SEARCH_TAB_DESKTOP_ONLY_KEYS, SETTINGS_SEARCH_TAB_KEYS,
+} from '@/generated/settingsSearchIndex';
+import { SETTINGS_INDEX, TAB_LABEL_KEY, TOUCH_HIDDEN_TABS, type Tab } from '@/features/settings/components/settingsTabs';
 import {
   exactTokenScore, prepareText, queryTokens, tokenScore, type PreparedText,
 } from '@/features/settings/components/settingsSearchMatch';
@@ -26,6 +28,8 @@ export interface SettingsSearchOptions {
   advancedEnabled?: boolean;
   /** The Users tab exists only for Navidrome admins. */
   usersAvailable?: boolean;
+  /** Touch shell: leave out what it does not render (`<DesktopOnly>`, hidden tabs). */
+  touchShell?: boolean;
 }
 
 interface Field {
@@ -100,7 +104,7 @@ function shortcutDocs(t: TFunction): SearchDoc[] {
   return docs;
 }
 
-function buildDocs(t: TFunction, tEn?: TFunction): SearchDoc[] {
+function buildDocs(t: TFunction, tEn: TFunction | undefined, touchShell: boolean): SearchDoc[] {
   const shortcuts = shortcutDocs(t);
   // Shortcuts are listed one by one; their sections must not list them again.
   const shortcutLabels = new Set(shortcuts.map(doc => doc.title));
@@ -109,13 +113,17 @@ function buildDocs(t: TFunction, tEn?: TFunction): SearchDoc[] {
 
   for (const section of SETTINGS_SEARCH_SECTIONS) {
     const tab = section.tab as Tab;
+    if (section.titleKey) indexedTitleKeys.add(section.titleKey);
+    if (touchShell && (section.desktopOnly || TOUCH_HIDDEN_TABS.has(tab))) continue;
     const title = section.titleKey ? translate(t, section.titleKey) ?? section.titleKey : section.title ?? '';
     const titleEn = section.titleKey && tEn ? translate(tEn, section.titleKey) : null;
     const skip = section.titleKey && SHORTCUT_SECTION_KEYS.has(section.titleKey) ? shortcutLabels : undefined;
-    const fields = [...headingFields(title, titleEn), ...contentFields(section.keys, t, tEn, skip)];
+    const desktopOnlyKeys = new Set(section.desktopOnlyKeys ?? []);
+    const keys = touchShell ? section.keys.filter(key => !desktopOnlyKeys.has(key)) : section.keys;
+    const fields = [...headingFields(title, titleEn), ...contentFields(keys, t, tEn, skip)];
     const manual = section.titleKey ? KEYWORDS_BY_TITLE_KEY.get(section.titleKey) : undefined;
     if (manual?.keywords) fields.push({ text: prepareText(manual.keywords), weight: 0.8 });
-    if (section.titleKey) indexedTitleKeys.add(section.titleKey);
+    if (manual?.desktopKeywords && !touchShell) fields.push({ text: prepareText(manual.desktopKeywords), weight: 0.8 });
     docs.push({
       tab, key: section.titleKey ?? `${tab}:${title}`, title, focusTitle: title, advanced: !!section.advanced, fields,
     });
@@ -124,16 +132,21 @@ function buildDocs(t: TFunction, tEn?: TFunction): SearchDoc[] {
   // Hand-written entries the source walk does not turn into a section (e.g. the Servers heading).
   for (const entry of SETTINGS_INDEX) {
     if (indexedTitleKeys.has(entry.titleKey)) continue;
+    if (touchShell && TOUCH_HIDDEN_TABS.has(entry.tab)) continue;
     const title = translate(t, entry.titleKey) ?? entry.titleKey;
     const titleEn = tEn ? translate(tEn, entry.titleKey) : null;
     const fields = headingFields(title, titleEn);
     if (entry.keywords) fields.push({ text: prepareText(entry.keywords), weight: 0.8 });
+    if (entry.desktopKeywords && !touchShell) fields.push({ text: prepareText(entry.desktopKeywords), weight: 0.8 });
     const focusTitle = entry.focusTitleKey ? translate(t, entry.focusTitleKey) ?? undefined : undefined;
     docs.push({ tab: entry.tab, key: entry.titleKey, title, focusTitle, advanced: false, fields });
   }
 
-  for (const [tabId, keys] of Object.entries(SETTINGS_SEARCH_TAB_KEYS)) {
+  for (const [tabId, allKeys] of Object.entries(SETTINGS_SEARCH_TAB_KEYS)) {
     const tab = tabId as Tab;
+    if (touchShell && TOUCH_HIDDEN_TABS.has(tab)) continue;
+    const desktopOnlyKeys = new Set(SETTINGS_SEARCH_TAB_DESKTOP_ONLY_KEYS[tabId] ?? []);
+    const keys = touchShell ? allKeys.filter(key => !desktopOnlyKeys.has(key)) : allKeys;
     const labelKey = TAB_LABEL_KEY[tab];
     const title = translate(t, labelKey) ?? labelKey;
     const titleEn = tEn ? translate(tEn, labelKey) : null;
@@ -143,13 +156,16 @@ function buildDocs(t: TFunction, tEn?: TFunction): SearchDoc[] {
     });
   }
 
-  return [...docs, ...shortcuts];
+  // The shortcut rows live in the Input tab.
+  return touchShell && TOUCH_HIDDEN_TABS.has('input') ? docs : [...docs, ...shortcuts];
 }
 
-let cache: { t: TFunction; tEn?: TFunction; docs: SearchDoc[] } | null = null;
+let cache: { t: TFunction; tEn?: TFunction; touchShell: boolean; docs: SearchDoc[] } | null = null;
 
-function docsFor(t: TFunction, tEn?: TFunction): SearchDoc[] {
-  if (!cache || cache.t !== t || cache.tEn !== tEn) cache = { t, tEn, docs: buildDocs(t, tEn) };
+function docsFor(t: TFunction, tEn: TFunction | undefined, touchShell: boolean): SearchDoc[] {
+  if (!cache || cache.t !== t || cache.tEn !== tEn || cache.touchShell !== touchShell) {
+    cache = { t, tEn, touchShell, docs: buildDocs(t, tEn, touchShell) };
+  }
   return cache.docs;
 }
 
@@ -203,9 +219,9 @@ export function searchSettings(
   const tokens = queryTokens(query);
   if (tokens.length === 0) return [];
   const phrase = tokens.join(' ');
-  const { advancedEnabled = true, usersAvailable = true } = options;
+  const { advancedEnabled = true, usersAvailable = true, touchShell = false } = options;
 
-  const docs = docsFor(t, options.tEn).filter(doc =>
+  const docs = docsFor(t, options.tEn, touchShell).filter(doc =>
     !(doc.advanced && !advancedEnabled) && !(doc.tab === 'users' && !usersAvailable));
   // Typos only count for a word that appears nowhere as written.
   const allowFuzzy = tokens.map(token =>

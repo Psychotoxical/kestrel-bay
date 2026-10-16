@@ -51,6 +51,7 @@ import { applyListReorderById, type ListReorderDropTarget } from '@/lib/util/lis
 import { ReorderGripHandle } from '@/features/settings/components/ReorderGripHandle';
 import { tooltipAttrs } from '@/ui/tooltipAttrs';
 import { publishServerConnectionStatus } from '@/lib/network/serverReachability';
+import { confirmChoice } from '@/features/settings/utils/confirmChoice';
 
 const AUDIOMUSE_NV_PLUGIN_URL = 'https://github.com/NeptuneHub/AudioMuse-AI-NV-plugin';
 
@@ -183,9 +184,14 @@ export function ServersTab({
   };
 
   const deleteServer = async (server: ServerProfile) => {
-    if (!confirm(t('settings.confirmDeleteServer', { name: serverListDisplayLabel(server, auth.servers) }))) {
-      return;
-    }
+    const confirmed = await confirmChoice({
+      title: t('settings.deleteServer'),
+      message: t('settings.confirmDeleteServer', { name: serverListDisplayLabel(server, auth.servers) }),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      danger: true,
+    });
+    if (!confirmed) return;
     // §5.6: when a local library index exists for this server, let the
     // user keep the cached rows (offline use) or delete them. OK =
     // delete the cache, Cancel = keep it.
@@ -194,7 +200,13 @@ export function ServersTab({
       candidate => candidate.id !== server.id && serverIndexKeyForProfile(candidate) === indexKey,
     );
     const hadIndex = useLibraryIndexStore.getState().isIndexEnabled(server.id);
-    const purgeLibrary = !replacement && hadIndex && confirm(t('settings.confirmDeleteServerLibrary'));
+    const purgeLibrary = !replacement && hadIndex && await confirmChoice({
+      title: t('settings.deleteServer'),
+      message: t('settings.confirmDeleteServerLibrary'),
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      danger: true,
+    });
 
     auth.removeServer(server.id);
     if (replacement) {

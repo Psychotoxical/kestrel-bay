@@ -59,6 +59,27 @@ describe('startup splash native reveal', () => {
     expect(window.__psyHidden).toBe(true);
   });
 
+  it.each([
+    ['iPhone', 'Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15', 'iPhone', 5],
+    ['iPad (reports a Mac with touch)', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15', 'MacIntel', 5],
+  ])('ignores a stored start-minimized flag on an %s and shows the window', async (_device, userAgent, platform, touchPoints) => {
+    localStorage.setItem('psysonic-auth', JSON.stringify({
+      state: { startMinimizedToTray: true, showTrayIcon: true },
+    }));
+    vi.stubGlobal('navigator', { ...window.navigator, userAgent, platform, maxTouchPoints: touchPoints });
+    const invoke = vi.fn(async (command: string) => command === 'window_lifecycle_generation' ? 4 : false);
+    (window as Window & { __TAURI_INTERNALS__?: StartupInternals }).__TAURI_INTERNALS__ = { invoke };
+    delete window.__psyHidden;
+
+    window.eval(readFileSync(resolve(process.cwd(), 'public/startup-splash-preflight.js'), 'utf8'));
+    window.eval(readFileSync(resolve(process.cwd(), 'public/startup-splash-reveal.js'), 'utf8'));
+
+    await vi.waitFor(() => expect(invoke).toHaveBeenCalledTimes(3));
+    expect(window.__psyStartMinimizedToTray).toBe(false);
+    expect(invoke.mock.calls[2]).toEqual(['window_lifecycle_startup_visibility', { hidden: false, generation: 4 }]);
+    expect(window.__psyHidden).toBeUndefined();
+  });
+
   it('shows the window through the native fallback when preparation hangs', async () => {
     vi.useFakeTimers();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});

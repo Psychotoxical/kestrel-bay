@@ -178,6 +178,9 @@ export function AppShell() {
 
 
   useEffect(() => {
+    // Touch shell: no interface scale (the setting is not shown there; a desktop
+    // backup can still carry a value). iOS text sizes follow the system instead.
+    if (IS_MOBILE_SHELL) return;
     getCurrentWebview().setZoom(uiScale).catch(() => {
       /* setZoom may fail on platforms where the capability is unavailable;
          fall back silently so the rest of the shell still renders. */

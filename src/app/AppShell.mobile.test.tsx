@@ -9,15 +9,19 @@ vi.mock('@tauri-apps/api/window', async importOriginal => ({
   ...(await importOriginal<typeof import('@tauri-apps/api/window')>()),
   getCurrentWindow: () => tauriHandle,
 }));
+const setZoom = vi.hoisted(() => vi.fn(async () => {}));
 vi.mock('@tauri-apps/api/webview', async importOriginal => ({
   ...(await importOriginal<typeof import('@tauri-apps/api/webview')>()),
-  getCurrentWebview: () => tauriHandle,
+  getCurrentWebview: () => new Proxy({}, {
+    get: (_target, key) => (key === 'setZoom' ? setZoom : async () => () => {}),
+  }),
 }));
 import { act, screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
 import { resetAllStores } from '@/test/helpers/storeReset';
 import { makeTrack, seedQueue } from '@/test/helpers/factories';
 import { onInvoke, registerDefaultCoverInvokeHandlers } from '@/test/mocks/tauri';
+import { useFontStore } from '@/store/fontStore';
 import { AppShell } from './AppShell';
 
 describe('AppShell in the touch shell build', () => {
@@ -61,5 +65,13 @@ describe('AppShell in the touch shell build', () => {
     await act(async () => { await Promise.resolve(); });
     expect(container.querySelector('.mobile-back-bar')).not.toBeNull();
     expect(container.querySelector('.mobile-mainstage-header')).toBeNull();
+  });
+
+  it('does not zoom the web view with a desktop interface scale', async () => {
+    useFontStore.setState({ uiScale: 1.25 });
+    setZoom.mockClear();
+    renderWithProviders(<AppShell />, { route: '/' });
+    await act(async () => { await Promise.resolve(); });
+    expect(setZoom).not.toHaveBeenCalled();
   });
 });

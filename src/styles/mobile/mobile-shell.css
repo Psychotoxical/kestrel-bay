@@ -3261,3 +3261,351 @@ button.mobile-artist-bio__card:active {
   display: inline-block;
   width: 17px;
 }
+
+/* ─── Settings (SettingsTouchHome + category pages, iOS Settings style) ─── */
+.settings-touch .page-title {
+  margin-bottom: 14px;
+}
+
+.settings-search--touch {
+  margin-bottom: 20px;
+}
+
+.settings-search--touch .settings-search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.settings-search--touch .settings-search-input {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 12px;
+  background: var(--bg-card);
+}
+
+.settings-touch-home {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.settings-touch-server {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 14px 14px 16px;
+  border: none;
+  border-radius: 14px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+}
+
+.settings-touch-server:active,
+.settings-touch-row:active {
+  background: var(--bg-hover);
+}
+
+.settings-touch-server__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 22%, var(--bg-app));
+  color: var(--accent);
+}
+
+.settings-touch-server__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-touch-server__name {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.settings-touch-server__sub {
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.settings-touch-group {
+  border-radius: 14px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.settings-touch-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 50px;
+  box-sizing: border-box;
+  padding: 0 14px 0 12px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* iOS separator: starts after the icon tile. */
+.settings-touch-row + .settings-touch-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 54px;
+  right: 0;
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.settings-touch-row__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--bg-app);
+}
+
+.settings-touch-row__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.settings-touch-row__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-touch-row__chevron {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.settings-touch-row--toggle {
+  justify-content: space-between;
+  padding-left: 16px;
+}
+
+.settings-touch-footnote {
+  margin: -12px 16px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* Category pages: the accordions became plain headed sections (SettingsSubSection). */
+.settings-touch .settings-sub-section--touch {
+  margin: 0 0 28px;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+
+.settings-touch .settings-sub-section--touch > .settings-sub-section-summary {
+  padding: 0 4px 8px;
+  cursor: default;
+}
+
+.settings-touch .settings-sub-section--touch > .settings-sub-section-summary:hover {
+  background: none;
+}
+
+.settings-touch .settings-sub-section--touch .settings-sub-section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.settings-touch .settings-sub-section-desc {
+  padding: 0 4px 10px;
+  font-size: 13px;
+}
+
+.settings-touch .settings-sub-section-content {
+  padding: 0;
+}
+
+.settings-touch .settings-card {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+
+/* Each group is one rounded inset list. */
+.settings-touch .settings-group {
+  padding: 4px 16px;
+  border: none;
+  border-radius: 14px;
+  background: var(--bg-card);
+}
+
+.settings-touch .settings-group + .settings-group {
+  margin-top: 16px;
+}
+
+.settings-touch .settings-group-title {
+  padding-top: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.settings-touch .settings-group-body {
+  padding-left: 0;
+}
+
+.settings-touch .settings-toggle-row {
+  min-height: 50px;
+  margin: 0;
+  padding: 10px 0;
+  gap: 14px;
+  border-radius: 0;
+}
+
+.settings-touch .settings-toggle-row:hover {
+  background: none;
+}
+
+.settings-touch .settings-toggle-row + .settings-toggle-row {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.settings-touch .settings-section-divider {
+  margin: 0;
+  border-top-color: var(--mobile-row-border);
+}
+
+.settings-touch .settings-norm-block {
+  padding: 12px 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+
+.settings-touch .settings-norm-block + .settings-norm-block {
+  margin-top: 0;
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+/* Segmented pickers: four options share ~370 px; let long labels ("Gapless Playback")
+ * wrap inside their segment instead of running over the edge. */
+.settings-touch .settings-segmented {
+  gap: 6px;
+}
+
+.settings-touch .settings-segmented > .btn {
+  min-height: 40px;
+  padding: 6px;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: center;
+}
+
+/* Settings lists in the touch shell (useListReorderDnd): hold a row, it lifts off and follows the finger. */
+.app-shell[data-mobile-app] [data-reorder-id] {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.app-shell[data-mobile-app] .is-reorder-lifted {
+  position: relative;
+  z-index: 5;
+  transform: translateY(var(--lift-dy, 0px)) scale(1.02);
+  border-radius: 12px;
+  background: var(--bg-elevated, var(--bg-card));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* Servers / Users tabs: their own section heading repeats the page title. */
+.settings-touch .settings-section > .settings-section-header {
+  display: none;
+}
+
+/* Analytics / cover-cache strategy tables: one stacked block per server instead of
+ * 520–560 px wide rows that scrolled sideways. Cells name their column (data-label). */
+.settings-touch .settings-strategy-table,
+.settings-touch .settings-strategy-table tbody,
+.settings-touch .settings-strategy-table tr,
+.settings-touch .settings-strategy-table td {
+  display: block;
+  width: 100%;
+}
+
+.settings-touch .settings-strategy-table thead,
+.settings-touch .settings-strategy-table colgroup,
+.settings-touch .settings-strategy-table .settings-strategy-table__empty {
+  display: none;
+}
+
+.settings-touch .settings-strategy-table tr {
+  padding: 10px 0;
+}
+
+.settings-touch .settings-strategy-table tr + tr {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.settings-touch .settings-strategy-table td {
+  box-sizing: border-box;
+  padding: 4px 0 !important; /* the cells carry desktop padding inline */
+}
+
+.settings-touch .settings-strategy-table td:first-child {
+  font-size: 16px !important;
+  font-weight: 600;
+}
+
+.settings-touch .settings-strategy-table td[data-label]::before {
+  content: attr(data-label);
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.settings-touch .settings-strategy-table .btn-sm {
+  min-height: 36px;
+  padding-inline: 14px;
+}
+
+.settings-touch .settings-strategy-table tbody tr:first-child {
+  border-top: none !important; /* rows carry their desktop divider inline */
+}
+
+/* Users tab: each user a rounded row (the generic card reset above strips its box). */
+.settings-touch .settings-card.user-row {
+  min-height: 56px;
+  margin-bottom: 8px;
+  padding: 10px 12px 10px 14px;
+  border-radius: 14px;
+  background: var(--bg-card);
+}
+
+.settings-touch .settings-card.user-row button {
+  min-width: 40px;
+  min-height: 40px;
+}

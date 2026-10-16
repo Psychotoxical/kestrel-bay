@@ -16,6 +16,7 @@ import {
 import { clearDiskSrcCacheForServer } from '@/cover/diskSrcCache';
 import { serverListDisplayLabel } from '@/lib/server/serverDisplayName';
 import { serverIndexKeyForProfile } from '@/lib/server/serverIndexKey';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { showToast } from '@/lib/dom/toast';
 import { formatBytes } from '@/lib/format/formatBytes';
 import { clearImageCache, getImageCacheSize } from '@/cover';
@@ -40,7 +41,8 @@ const TH_STYLE = {
 const TABLE_STYLE = {
   width: '100%',
   borderCollapse: 'collapse',
-  minWidth: 520,
+  // Touch: rows stack (settings-strategy-table), so no minimum width to scroll sideways for.
+  minWidth: IS_MOBILE_SHELL ? 0 : 520,
   tableLayout: 'fixed',
 } as const;
 
@@ -246,7 +248,7 @@ export default function CoverCacheStrategySection() {
         <SettingsGroup>
         <SettingsSubCard>
         <div style={{ overflowX: 'auto' }}>
-          <table style={TABLE_STYLE}>
+          <table className="settings-strategy-table" style={TABLE_STYLE}>
             <CoverCacheColGroup />
             <thead>
               <tr>
@@ -261,7 +263,7 @@ export default function CoverCacheStrategySection() {
                 <td style={{ ...FIRST_COL_TD, color: 'var(--text-primary)' }}>
                   {t('settings.imageCacheSubTitle')}
                 </td>
-                <td style={STRATEGY_GAP_TD} aria-hidden="true" />
+                <td className="settings-strategy-table__empty" style={STRATEGY_GAP_TD} aria-hidden="true" />
                 <td style={{ padding: '10px', fontSize: 12, color: 'var(--text-secondary)' }}>
                   {imageCacheBytes !== null
                     ? t('settings.coverCacheStrategyDiskUsage', { size: formatBytes(imageCacheBytes) })
@@ -294,7 +296,7 @@ export default function CoverCacheStrategySection() {
         </div>
 
         <div style={{ overflowX: 'auto' }}>
-          <table style={TABLE_STYLE}>
+          <table className="settings-strategy-table" style={TABLE_STYLE}>
             <CoverCacheColGroup />
             <thead>
               <tr>
@@ -313,7 +315,7 @@ export default function CoverCacheStrategySection() {
                 return (
                   <tr key={server.id} style={ROW_BORDER}>
                     <td style={{ ...FIRST_COL_TD, color: 'var(--text-primary)' }}>{label}</td>
-                    <td style={{ padding: '10px' }}>
+                    <td style={{ padding: '10px' }} data-label={t('settings.coverCacheStrategyLabel')}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {COVER_CACHE_STRATEGIES.map(s => (
                           <button
@@ -355,8 +357,8 @@ export default function CoverCacheStrategySection() {
                     {key}
                     <span style={{ marginLeft: 6, fontSize: 11 }}>({t('settings.coverCacheStrategyServerRemoved')})</span>
                   </td>
-                  <td style={STRATEGY_GAP_TD} aria-hidden="true" />
-                  <td style={STRATEGY_GAP_TD} aria-hidden="true" />
+                  <td className="settings-strategy-table__empty" style={STRATEGY_GAP_TD} aria-hidden="true" />
+                  <td className="settings-strategy-table__empty" style={STRATEGY_GAP_TD} aria-hidden="true" />
                   <td style={{ padding: '10px' }}>
                     <button
                       type="button"

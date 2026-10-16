@@ -23,6 +23,7 @@ import { libraryGetTracksBatch, type LibraryTrackDto, type TrackRefDto } from '@
 import { buildStreamUrlForServer } from '@/lib/api/subsonicStreamUrl';
 import { serverListDisplayLabel } from '@/lib/server/serverDisplayName';
 import { serverIndexKeyForProfile } from '@/lib/server/serverIndexKey';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { showToast } from '@/lib/dom/toast';
 import {
   ANALYTICS_STRATEGIES,
@@ -258,7 +259,7 @@ export default function AnalyticsStrategySection() {
         <SettingsGroup>
         <SettingsSubCard>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
+          <table className="settings-strategy-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: IS_MOBILE_SHELL ? 0 : 560 }}>
             <thead>
               <tr>
                 <th style={{ textAlign: 'left', padding: '8px 10px', paddingLeft: 0, fontSize: 12, color: 'var(--text-muted)' }}>
@@ -291,7 +292,7 @@ export default function AnalyticsStrategySection() {
                     <td style={{ padding: '10px', paddingLeft: 0, fontSize: 13, color: 'var(--text-primary)' }}>
                       {label}
                     </td>
-                    <td style={{ padding: '10px' }}>
+                    <td style={{ padding: '10px' }} data-label={t('settings.analyticsStrategyLabel')}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
                         {ANALYTICS_STRATEGIES.map(s => (
                           <button
@@ -305,7 +306,7 @@ export default function AnalyticsStrategySection() {
                         ))}
                       </div>
                     </td>
-                    <td style={{ padding: '10px', minWidth: 160 }}>
+                    <td style={{ padding: '10px', minWidth: IS_MOBILE_SHELL ? 0 : 160 }} data-label={t('settings.analyticsStrategyParallelismLabel')}>
                       {strategy === 'advanced' ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <input
@@ -331,7 +332,7 @@ export default function AnalyticsStrategySection() {
                         <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>
                       )}
                     </td>
-                    <td style={{ padding: '10px', fontSize: 12, color: 'var(--text-secondary)' }}>
+                    <td style={{ padding: '10px', fontSize: 12, color: 'var(--text-secondary)' }} data-label={t('settings.analyticsStrategyProgressLabel')}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <span>{progressLabel(progress, failedCount) ?? '—'}</span>
                         {failedCount > 0 && (
@@ -375,9 +376,9 @@ export default function AnalyticsStrategySection() {
                       {t('settings.analyticsStrategyServerRemoved')}
                     </div>
                   </td>
-                  <td style={{ padding: '10px', fontSize: 12, color: 'var(--text-muted)' }}>—</td>
-                  <td style={{ padding: '10px', fontSize: 12, color: 'var(--text-muted)' }}>—</td>
-                  <td style={{ padding: '10px', fontSize: 12, color: 'var(--text-muted)' }}>—</td>
+                  <td className="settings-strategy-table__empty" style={{ padding: '10px', fontSize: 12, color: 'var(--text-muted)' }}>—</td>
+                  <td className="settings-strategy-table__empty" style={{ padding: '10px', fontSize: 12, color: 'var(--text-muted)' }}>—</td>
+                  <td className="settings-strategy-table__empty" style={{ padding: '10px', fontSize: 12, color: 'var(--text-muted)' }}>—</td>
                   <td style={{ padding: '10px' }}>
                     <button
                       type="button"

@@ -3,6 +3,8 @@ import { Check, Download, Shuffle, Sparkles } from 'lucide-react';
 import { AnimatedThemeBadge } from '@/features/settings/components/AnimatedThemeBadge';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import type { RegistryTheme } from '@/lib/themes/themeRegistry';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { THEME_STORE_BUTTON_SIZE } from '@/features/settings/utils/themeStoreLayout';
 
 interface Props {
   theme: RegistryTheme;
@@ -51,7 +53,8 @@ export function ThemeSpotlightCard({
       </h3>
 
       <SettingsGroup>
-        <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+        {/* Touch: screenshot on top in full width, text below (like the store rows). */}
+        <div style={{ display: 'flex', gap: IS_MOBILE_SHELL ? 12 : 14, alignItems: IS_MOBILE_SHELL ? 'stretch' : 'flex-start', flexDirection: IS_MOBILE_SHELL ? 'column' : 'row' }}>
           <button
             type="button"
             onClick={onEnlarge}
@@ -67,7 +70,9 @@ export function ThemeSpotlightCard({
               width={140}
               height={79}
               onError={e => { e.currentTarget.style.opacity = '0'; }}
-              style={{ width: 140, height: 79, objectFit: 'cover', borderRadius: 6, background: 'var(--bg-deep)' }}
+              style={IS_MOBILE_SHELL
+                ? { width: '100%', height: 'auto', aspectRatio: '16 / 9', objectFit: 'cover', borderRadius: 10, background: 'var(--bg-deep)' }
+                : { width: 140, height: 79, objectFit: 'cover', borderRadius: 6, background: 'var(--bg-deep)' }}
             />
           </button>
 
@@ -106,7 +111,7 @@ export function ThemeSpotlightCard({
               {!installed && (
                 <button
                   className="btn btn-primary"
-                  style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                  style={{ ...THEME_STORE_BUTTON_SIZE, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                   onClick={onInstall}
                   disabled={busy}
                 >
@@ -114,13 +119,13 @@ export function ThemeSpotlightCard({
                 </button>
               )}
               {installed && !active && (
-                <button className="btn btn-ghost" style={{ fontSize: 12, padding: '4px 12px' }} onClick={onApply}>
+                <button className="btn btn-ghost" style={{ ...THEME_STORE_BUTTON_SIZE }} onClick={onApply}>
                   {t('settings.themeStoreApply')}
                 </button>
               )}
               <button
                 className="btn btn-ghost"
-                style={{ fontSize: 12, padding: '4px 12px', display: 'inline-flex', alignItems: 'center', gap: 5 }}
+                style={{ ...THEME_STORE_BUTTON_SIZE, display: 'inline-flex', alignItems: 'center', gap: 5 }}
                 onClick={onShuffle}
               >
                 <Shuffle size={14} /> {t('settings.themeStoreSpotlightShuffle')}

@@ -40,7 +40,7 @@ import { useCoverRevalidateScheduler } from '../cover/useCoverRevalidateSchedule
 import { runCoverIdbUpgradeMigration } from '@/app/migrations/coverIdbUpgradeMigration';
 import { useMigrationOrchestrator } from '@/app/hooks/useMigrationOrchestrator';
 import { useHiddenSequence } from '@/app/hooks/useHiddenSequence';
-import { IS_WINDOWS } from '@/lib/util/platform';
+import { IS_MOBILE_SHELL, IS_WINDOWS } from '@/lib/util/platform';
 import TauriEventBridge from './TauriEventBridge';
 import AppShell from './AppShell';
 import ErrorBoundary from '@/app/ErrorBoundary';
@@ -107,10 +107,12 @@ export default function MainApp() {
 
   // Optionally pre-create the mini player webview hidden so the first open
   // is instant. Windows already does this unconditionally in Rust .setup() as
-  // a hang workaround — skip here to avoid double-building.
+  // a hang workaround — skip here to avoid double-building. The touch shell has
+  // no second window (the Rust builder has no mobile path); the value can still
+  // arrive there from a desktop backup.
   const preloadMiniPlayer = useAuthStore(s => s.preloadMiniPlayer);
   useEffect(() => {
-    if (!migrationReady || IS_WINDOWS || !preloadMiniPlayer) return;
+    if (!migrationReady || IS_WINDOWS || IS_MOBILE_SHELL || !preloadMiniPlayer) return;
     preloadMiniPlayerWindow().catch(() => {});
   }, [preloadMiniPlayer, migrationReady]);
 

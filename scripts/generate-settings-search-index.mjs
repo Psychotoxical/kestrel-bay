@@ -209,12 +209,22 @@ function resolveIdentifier(file, name, id) {
 
 const sections = new Map();
 const tabKeys = new Map();
+/** Tab-level keys rendered only inside `<DesktopOnly>` (left out of the touch-shell search). */
+const tabDesktopOnlyKeys = new Map();
+/** Wrapper whose content the touch shell does not render. */
+const DESKTOP_ONLY_TAG = 'DesktopOnly';
 
 function addKey(ctx, key) {
-  if (ctx.section) ctx.section.keys.add(key);
-  else {
+  if (ctx.section) {
+    ctx.section.keys.add(key);
+    if (ctx.desktopOnly) ctx.section.desktopOnlyKeys.add(key);
+  } else {
     if (!tabKeys.has(ctx.tab)) tabKeys.set(ctx.tab, new Set());
     tabKeys.get(ctx.tab).add(key);
+    if (ctx.desktopOnly) {
+      if (!tabDesktopOnlyKeys.has(ctx.tab)) tabDesktopOnlyKeys.set(ctx.tab, new Set());
+      tabDesktopOnlyKeys.get(ctx.tab).add(key);
+    }
   }
 }
 
@@ -251,8 +261,11 @@ function openSection(ctx, opening) {
   const id = `${ctx.tab}|${title.titleKey ?? title.title}`;
   let section = sections.get(id);
   if (!section) {
-    section = { tab: ctx.tab, ...title, advanced, keys: new Set() };
+    section = { tab: ctx.tab, ...title, advanced, desktopOnly: !!ctx.desktopOnly, keys: new Set(), desktopOnlyKeys: new Set() };
     sections.set(id, section);
+  } else if (!ctx.desktopOnly) {
+    // Also reachable outside `<DesktopOnly>`: the touch shell shows it.
+    section.desktopOnly = false;
   }
   return section;
 }
@@ -264,7 +277,7 @@ function titleOfBoolean(init) {
 
 function followDeclaration(ctx, decl) {
   if (!decl || !isFollowable(decl.file)) return;
-  const visitKey = `${ctx.tab}|${ctx.section ? `${ctx.section.titleKey ?? ctx.section.title}` : ''}|${decl.file}|${decl.node.pos}`;
+  const visitKey = `${ctx.tab}|${ctx.section ? `${ctx.section.titleKey ?? ctx.section.title}` : ''}|${ctx.desktopOnly ? 'desktop' : ''}|${decl.file}|${decl.node.pos}`;
   if (ctx.seen.has(visitKey)) return;
   ctx.seen.add(visitKey);
   walk(decl.node, { ...ctx, file: decl.file });
@@ -272,9 +285,10 @@ function followDeclaration(ctx, decl) {
 
 function walkJsx(node, opening, ctx) {
   const tag = tagNameOf(opening);
+  if (tag === DESKTOP_ONLY_TAG) ctx = { ...ctx, desktopOnly: true };
   const section = openSection(ctx, opening);
   const inner = section ? { ...ctx, section } : ctx;
-  if (tag && /^[A-Z]/.test(tag) && !SECTION_TAGS.has(tag)) {
+  if (tag && /^[A-Z]/.test(tag) && !SECTION_TAGS.has(tag) && tag !== DESKTOP_ONLY_TAG) {
     followDeclaration(ctx, resolveIdentifier(ctx.file, tag));
   }
   for (const prop of opening.attributes.properties) {
@@ -360,12 +374,18 @@ for (const { tab, node } of tabRoots) {
 // ── Output ──────────────────────────────────────────────────────────────────
 
 const sectionList = [...sections.values()]
-  .map(s => ({
-    tab: s.tab,
-    ...(s.titleKey ? { titleKey: s.titleKey } : { title: s.title }),
-    ...(s.advanced ? { advanced: true } : {}),
-    keys: [...s.keys].filter(k => k !== s.titleKey).sort(),
-  }))
+  .map(s => {
+    const keys = [...s.keys].filter(k => k !== s.titleKey).sort();
+    const desktopOnlyKeys = s.desktopOnly ? [] : keys.filter(k => s.desktopOnlyKeys.has(k));
+    return {
+      tab: s.tab,
+      ...(s.titleKey ? { titleKey: s.titleKey } : { title: s.title }),
+      ...(s.advanced ? { advanced: true } : {}),
+      ...(s.desktopOnly ? { desktopOnly: true } : {}),
+      keys,
+      ...(desktopOnlyKeys.length > 0 ? { desktopOnlyKeys } : {}),
+    };
+  })
   .sort((a, b) => `${a.tab}|${a.titleKey ?? a.title}`.localeCompare(`${b.tab}|${b.titleKey ?? b.title}`));
 
 // A component body is walked once for the tab and again for each section that
@@ -380,6 +400,12 @@ const tabKeyObject = Object.fromEntries(
     .filter(([, keys]) => keys.length > 0),
 );
 
+const tabDesktopOnlyKeyObject = Object.fromEntries(
+  Object.entries(tabKeyObject)
+    .map(([tab, keys]) => [tab, keys.filter(k => tabDesktopOnlyKeys.get(tab)?.has(k))])
+    .filter(([, keys]) => keys.length > 0),
+);
+
 const outDir = join(srcDir, 'generated');
 mkdirSync(outDir, { recursive: true });
 
@@ -391,14 +417,21 @@ export interface GeneratedSettingsSection {
   title?: string;
   /** Only rendered while Advanced Mode is on. */
   advanced?: boolean;
+  /** Wrapped in \`<DesktopOnly>\`: not rendered in the touch shell. */
+  desktopOnly?: boolean;
   /** Translation keys rendered inside the section. */
   keys: readonly string[];
+  /** Subset of \`keys\` inside \`<DesktopOnly>\` rows of a section the touch shell shows. */
+  desktopOnlyKeys?: readonly string[];
 }
 
 export const SETTINGS_SEARCH_SECTIONS: readonly GeneratedSettingsSection[] = ${JSON.stringify(sectionList, null, 2)};
 
 /** Translation keys a tab renders outside of any section. */
 export const SETTINGS_SEARCH_TAB_KEYS: Readonly<Record<string, readonly string[]>> = ${JSON.stringify(tabKeyObject, null, 2)};
+
+/** Subset of \`SETTINGS_SEARCH_TAB_KEYS\` inside \`<DesktopOnly>\`. */
+export const SETTINGS_SEARCH_TAB_DESKTOP_ONLY_KEYS: Readonly<Record<string, readonly string[]>> = ${JSON.stringify(tabDesktopOnlyKeyObject, null, 2)};
 `;
 
 writeFileSync(join(outDir, 'settingsSearchIndex.ts'), out, 'utf8');

@@ -21,6 +21,7 @@ import { AboutPsysonicBrandHeader } from '@/features/settings/components/AboutPs
 import CustomSelect from '@/ui/CustomSelect';
 import LicensesPanel from '@/features/settings/components/LicensesPanel';
 import SettingsSubSection from '@/features/settings/components/SettingsSubSection';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
 import { SettingsSubCard, SettingsField } from '@/features/settings/components/SettingsSubCard';
@@ -155,75 +156,79 @@ export function SystemTab() {
         icon={<AppWindow size={16} />}
       >
         <div className="settings-card">
-          <SettingsGroup title={t('settings.groupTray')}>
-            <SettingsToggle
-              label={t('settings.showTrayIcon')}
-              desc={t('settings.showTrayIconDesc')}
-              checked={auth.showTrayIcon}
-              onChange={auth.setShowTrayIcon}
-            />
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.minimizeToTray')}
-              desc={
-                auth.showTrayIcon
-                  ? t('settings.minimizeToTrayDesc')
-                  : t('settings.minimizeToTrayRequiresTray')
-              }
-              checked={auth.minimizeToTray}
-              disabled={!auth.showTrayIcon}
-              onChange={auth.setMinimizeToTray}
-            />
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.startMinimizedToTray')}
-              desc={
-                auth.showTrayIcon
-                  ? t('settings.startMinimizedToTrayDesc')
-                  : t('settings.startMinimizedToTrayRequiresTray')
-              }
-              checked={auth.startMinimizedToTray}
-              disabled={!auth.showTrayIcon}
-              onChange={auth.setStartMinimizedToTray}
-            />
-          </SettingsGroup>
-
-          {IS_LINUX && (
-            <SettingsGroup title={t('settings.groupLinuxRendering')}>
+          <DesktopOnly>
+            <SettingsGroup title={t('settings.groupTray')}>
               <SettingsToggle
-                label={t('settings.linuxWebkitSmoothScroll')}
-                desc={t('settings.linuxWebkitSmoothScrollDesc')}
-                checked={auth.linuxWebkitKineticScroll}
-                onChange={auth.setLinuxWebkitKineticScroll}
+                label={t('settings.showTrayIcon')}
+                desc={t('settings.showTrayIconDesc')}
+                checked={auth.showTrayIcon}
+                onChange={auth.setShowTrayIcon}
               />
               <div className="settings-section-divider" />
               <SettingsToggle
-                label={t('settings.linuxWebkitInputForceRepaint')}
-                desc={t('settings.linuxWebkitInputForceRepaintDesc')}
-                checked={auth.linuxWebkitInputForceRepaint}
-                onChange={auth.setLinuxWebkitInputForceRepaint}
+                label={t('settings.minimizeToTray')}
+                desc={
+                  auth.showTrayIcon
+                    ? t('settings.minimizeToTrayDesc')
+                    : t('settings.minimizeToTrayRequiresTray')
+                }
+                checked={auth.minimizeToTray}
+                disabled={!auth.showTrayIcon}
+                onChange={auth.setMinimizeToTray}
               />
-              {waylandTextRenderAvailable && (
-                <SettingsSubCard style={{ marginTop: '0.85rem' }}>
-                  <SettingsField
-                    label={t('settings.linuxWaylandTextRender')}
-                    desc={t('settings.linuxWaylandTextRenderDesc')}
-                  >
-                    <CustomSelect
-                      value={auth.linuxWaylandTextRenderProfile}
-                      onChange={v => auth.setLinuxWaylandTextRenderProfile(v as LinuxWaylandTextRenderProfile)}
-                      options={[
-                        { value: 'balanced', label: t('settings.linuxWaylandTextRenderBalanced') },
-                        { value: 'sharp', label: t('settings.linuxWaylandTextRenderSharp') },
-                        { value: 'gpu', label: t('settings.linuxWaylandTextRenderGpu') },
-                        { value: 'minimal', label: t('settings.linuxWaylandTextRenderMinimal') },
-                      ]}
-                    />
-                  </SettingsField>
-                </SettingsSubCard>
-              )}
+              <div className="settings-section-divider" />
+              <SettingsToggle
+                label={t('settings.startMinimizedToTray')}
+                desc={
+                  auth.showTrayIcon
+                    ? t('settings.startMinimizedToTrayDesc')
+                    : t('settings.startMinimizedToTrayRequiresTray')
+                }
+                checked={auth.startMinimizedToTray}
+                disabled={!auth.showTrayIcon}
+                onChange={auth.setStartMinimizedToTray}
+              />
             </SettingsGroup>
-          )}
+          </DesktopOnly>
+
+          <DesktopOnly>
+            {IS_LINUX && (
+              <SettingsGroup title={t('settings.groupLinuxRendering')}>
+                <SettingsToggle
+                  label={t('settings.linuxWebkitSmoothScroll')}
+                  desc={t('settings.linuxWebkitSmoothScrollDesc')}
+                  checked={auth.linuxWebkitKineticScroll}
+                  onChange={auth.setLinuxWebkitKineticScroll}
+                />
+                <div className="settings-section-divider" />
+                <SettingsToggle
+                  label={t('settings.linuxWebkitInputForceRepaint')}
+                  desc={t('settings.linuxWebkitInputForceRepaintDesc')}
+                  checked={auth.linuxWebkitInputForceRepaint}
+                  onChange={auth.setLinuxWebkitInputForceRepaint}
+                />
+                {waylandTextRenderAvailable && (
+                  <SettingsSubCard style={{ marginTop: '0.85rem' }}>
+                    <SettingsField
+                      label={t('settings.linuxWaylandTextRender')}
+                      desc={t('settings.linuxWaylandTextRenderDesc')}
+                    >
+                      <CustomSelect
+                        value={auth.linuxWaylandTextRenderProfile}
+                        onChange={v => auth.setLinuxWaylandTextRenderProfile(v as LinuxWaylandTextRenderProfile)}
+                        options={[
+                          { value: 'balanced', label: t('settings.linuxWaylandTextRenderBalanced') },
+                          { value: 'sharp', label: t('settings.linuxWaylandTextRenderSharp') },
+                          { value: 'gpu', label: t('settings.linuxWaylandTextRenderGpu') },
+                          { value: 'minimal', label: t('settings.linuxWaylandTextRenderMinimal') },
+                        ]}
+                      />
+                    </SettingsField>
+                  </SettingsSubCard>
+                )}
+              </SettingsGroup>
+            )}
+          </DesktopOnly>
 
           <SettingsGroup title={t('settings.groupClock')}>
             <SettingsSubCard>
@@ -359,13 +364,15 @@ export function SystemTab() {
             </div>
           </div>
 
-          <div className="settings-section-divider" style={{ marginTop: '1.25rem' }} />
-          <SettingsToggle
-            label={t('settings.showChangelogOnUpdate')}
-            desc={t('settings.showChangelogOnUpdateDesc')}
-            checked={auth.showChangelogOnUpdate}
-            onChange={auth.setShowChangelogOnUpdate}
-          />
+          <DesktopOnly>
+            <div className="settings-section-divider" style={{ marginTop: '1.25rem' }} />
+            <SettingsToggle
+              label={t('settings.showChangelogOnUpdate')}
+              desc={t('settings.showChangelogOnUpdateDesc')}
+              checked={auth.showChangelogOnUpdate}
+              onChange={auth.setShowChangelogOnUpdate}
+            />
+          </DesktopOnly>
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.25rem', flexWrap: 'wrap' }}>
             <button

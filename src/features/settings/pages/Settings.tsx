@@ -5,7 +5,7 @@ import {
   AudioLines, HardDrive, Info, Keyboard, LayoutGrid, Music2, Paintbrush, Palette, Search, Server, Sparkles, Users, X,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { IS_MACOS } from '@/lib/util/platform';
+import { IS_MACOS, IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { AppearanceTab } from '@/features/settings/components/AppearanceTab';
 import { ThemesTab } from '@/features/settings/components/ThemesTab';
 import { AudioTab } from '@/features/settings/components/AudioTab';
@@ -20,8 +20,9 @@ import { StorageTab } from '@/features/settings/components/StorageTab';
 import { SystemTab } from '@/features/settings/components/SystemTab';
 import { searchSettings, type SettingsSearchHit } from '@/features/settings/components/settingsSearch';
 import { normalizeSearchText } from '@/features/settings/components/settingsSearchMatch';
-import { TAB_LABEL_KEY, type Tab, resolveTab } from '@/features/settings/components/settingsTabs';
+import { TAB_LABEL_KEY, TOUCH_HIDDEN_TABS, type Tab, resolveTab } from '@/features/settings/components/settingsTabs';
 import { UserManagementSection } from '@/features/settings/components/UserManagementSection';
+import SettingsTouchHome from '@/features/settings/components/SettingsTouchHome';
 import { ndLogin } from '@/lib/api/navidromeAdmin';
 import { type ServerMagicPayload } from '@/lib/server/serverMagicString';
 
@@ -47,7 +48,9 @@ export default function Settings() {
   const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const st = routeState as { openAddServerInvite?: ServerMagicPayload; tab?: Tab; focus?: string } | null;
+    const st = routeState as {
+      openAddServerInvite?: ServerMagicPayload; tab?: Tab; focus?: string; focusText?: string;
+    } | null;
     const inv = st?.openAddServerInvite;
     if (inv) {
       // React Compiler set-state-in-effect rule: local state synced with store/prop inputs when the effect’s dependencies change.
@@ -63,7 +66,7 @@ export default function Settings() {
     if (st?.tab) setActiveTab(st.tab);
     // A caller can name the sub-section it means, which lands on the same
     // scroll-and-flash path the settings search uses.
-    if (st?.focus) setPendingFocus({ title: st.focus });
+    if (st?.focus || st?.focusText) setPendingFocus({ title: st.focus, text: st.focusText });
   }, [routeState, location.pathname, location.search, location.hash, navigate]);
 
   // Settings-Suche: Volltext ueber Ueberschriften, Zeilen und Hinweise jeder
@@ -77,6 +80,7 @@ export default function Settings() {
     tEn,
     advancedEnabled: auth.advancedSettingsEnabled,
     usersAvailable: ndAdminAuth !== null,
+    touchShell: IS_MOBILE_SHELL,
   }), [searchQuery, activeTab, t, tEn, auth.advancedSettingsEnabled, ndAdminAuth]);
 
   // Selektion ins Blickfeld scrollen (nur wenn das Item out-of-view ist).
@@ -138,9 +142,21 @@ export default function Settings() {
     return () => window.clearTimeout(timer);
   }, [pendingFocus, activeTab]);
 
+  // Touch shell: the home list shows until a category is opened; that is a
+  // history entry carrying the tab, so the shell's back button returns home.
+  const stateTab = (routeState as { tab?: string } | null)?.tab;
+  const touchHome = IS_MOBILE_SHELL && (!stateTab || TOUCH_HIDDEN_TABS.has(resolveTab(stateTab)));
+  const openTouchTab = (tab: Tab, focus?: PendingFocus) => {
+    navigate('/settings', { state: { tab, focus: focus?.title, focusText: focus?.text } });
+  };
+
   const openSearchHit = (hit: SettingsSearchHit) => {
     setSearchQuery('');
     setSearchOpen(false);
+    if (IS_MOBILE_SHELL) {
+      openTouchTab(hit.tab, { title: hit.focusTitle, text: hit.focusText });
+      return;
+    }
     setPendingFocus({ title: hit.focusTitle, text: hit.focusText });
     setActiveTab(hit.tab);
   };
@@ -173,7 +189,7 @@ export default function Settings() {
     if (activeTab === 'users' && ndAuthChecked && ndAdminAuth === null) setActiveTab('servers');
   }, [activeTab, ndAdminAuth, ndAuthChecked]);
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
+  const allTabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'servers',         label: t('settings.tabServers'),         icon: <Server size={15} /> },
     { id: 'library',         label: t('settings.tabLibrary'),         icon: <Music2 size={15} /> },
     { id: 'audio',           label: t('settings.tabAudio'),           icon: <AudioLines size={15} /> },
@@ -187,104 +203,62 @@ export default function Settings() {
     { id: 'system',          label: t('settings.tabSystem'),          icon: <Info size={15} /> },
     ...(ndAdminAuth ? [{ id: 'users' as Tab, label: t('settings.tabUsers'), icon: <Users size={15} /> }] : []),
   ];
+  const tabs = allTabs.filter(tab => !(IS_MOBILE_SHELL && TOUCH_HIDDEN_TABS.has(tab.id)));
 
-  return (
-    <div ref={pageRef} className="content-body animate-fade-in">
-      <div className="settings-header">
-        <h1 className="page-title">{t('settings.title')}</h1>
-        <div className="settings-search">
-          {!searchOpen ? (
-            <button
-              type="button"
-              className="icon-btn"
-              onClick={() => setSearchOpen(true)}
-              aria-label={t('settings.searchPlaceholder')}
-              data-tooltip={t('settings.searchPlaceholder')}
-              data-tooltip-pos="bottom"
-            >
-              <Search size={16} />
-            </button>
-          ) : (
-            <div className="settings-search-wrap">
-              <Search size={14} className="settings-search-icon" aria-hidden="true" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                className="input settings-search-input"
-                value={searchQuery}
-                onChange={e => {
-                  setSearchQuery(e.target.value);
-                  setSelectedResultIdx(0);
-                }}
-                placeholder={`${t('settings.searchPlaceholder')} (${IS_MACOS ? '⌘F' : 'Ctrl+F'})`}
-                aria-label={t('settings.searchPlaceholder')}
-                autoFocus
-                onKeyDown={e => {
-                  if (e.key === 'Escape') {
-                    setSearchQuery('');
-                    setSearchOpen(false);
-                    return;
-                  }
-                  if (searchResults.length === 0) return;
-                  if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    setSelectedResultIdx(i => Math.min(i + 1, searchResults.length - 1));
-                  } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    setSelectedResultIdx(i => Math.max(i - 1, 0));
-                  } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    const hit = searchResults[selectedResultIdx];
-                    if (!hit) return;
-                    openSearchHit(hit);
-                  }
-                }}
-              />
-              <button
-                type="button"
-                className="settings-search-clear"
-                onClick={() => { setSearchQuery(''); setSearchOpen(false); }}
-                aria-label={t('common.clear')}
-              >
-                <X size={14} />
-              </button>
-            </div>
-          )}
-        </div>
-        <label
-          className="settings-advanced-toggle"
-          data-tooltip={t('settings.advancedModeTooltip')}
-          data-tooltip-pos="left"
+  const searchField = (
+    <div className="settings-search-wrap">
+      <Search size={14} className="settings-search-icon" aria-hidden="true" />
+      <input
+        ref={searchInputRef}
+        type="search"
+        className="input settings-search-input"
+        value={searchQuery}
+        onChange={e => {
+          setSearchQuery(e.target.value);
+          setSelectedResultIdx(0);
+        }}
+        placeholder={IS_MOBILE_SHELL
+          ? t('settings.searchPlaceholder')
+          : `${t('settings.searchPlaceholder')} (${IS_MACOS ? '⌘F' : 'Ctrl+F'})`}
+        aria-label={t('settings.searchPlaceholder')}
+        // Touch: the field is always shown; focusing it would pop the keyboard on arrival.
+        autoFocus={!IS_MOBILE_SHELL}
+        onKeyDown={e => {
+          if (e.key === 'Escape') {
+            setSearchQuery('');
+            setSearchOpen(false);
+            return;
+          }
+          if (searchResults.length === 0) return;
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedResultIdx(i => Math.min(i + 1, searchResults.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedResultIdx(i => Math.max(i - 1, 0));
+          } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const hit = searchResults[selectedResultIdx];
+            if (!hit) return;
+            openSearchHit(hit);
+          }
+        }}
+      />
+      {(searchQuery || !IS_MOBILE_SHELL) && (
+        <button
+          type="button"
+          className="settings-search-clear"
+          onClick={() => { setSearchQuery(''); setSearchOpen(false); }}
+          aria-label={t('common.clear')}
         >
-          <span className="settings-advanced-toggle-label">
-            {t('settings.advancedMode')}
-          </span>
-          <span className="toggle-switch">
-            <input
-              type="checkbox"
-              checked={auth.advancedSettingsEnabled}
-              onChange={e => auth.setAdvancedSettingsEnabled(e.target.checked)}
-              aria-label={t('settings.advancedMode')}
-            />
-            <span className="toggle-track" />
-          </span>
-        </label>
-      </div>
+          <X size={14} />
+        </button>
+      )}
+    </div>
+  );
 
-      {/* Tab navigation */}
-      <nav className="settings-tabs" aria-label="Settings navigation">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.icon}
-            {tab.label}
-          </button>
-        ))}
-      </nav>
-
+  const searchResultsView = (
+    <>
       {searchQuery && searchResults.length === 0 && (
         <div className="settings-search-empty" role="status">
           {t('settings.searchNoResults')}
@@ -318,8 +292,11 @@ export default function Settings() {
           })}
         </ul>
       )}
+    </>
+  );
 
-      {!searchQuery && <>
+  const tabContent = !searchQuery && (
+    <>
       {/* ── Audio ────────────────────────────────────────────────────────────── */}
       {activeTab === 'audio' && <AudioTab />}
 
@@ -366,8 +343,86 @@ export default function Settings() {
 
       {/* ── System ───────────────────────────────────────────────────────────── */}
       {activeTab === 'system' && <SystemTab />}
+    </>
+  );
 
-      </>}
+  // Touch shell (iOS Settings style): a home list of categories, each opening as
+  // its own page (a history entry, so the shell's back button and swipe return).
+  if (IS_MOBILE_SHELL) {
+    return (
+      <div ref={pageRef} className="content-body animate-fade-in settings-touch">
+        {touchHome ? (
+          <>
+            <h1 className="page-title">{t('settings.title')}</h1>
+            <div className="settings-search settings-search--touch">{searchField}</div>
+            {searchQuery ? searchResultsView : <SettingsTouchHome tabs={tabs} onOpen={openTouchTab} />}
+          </>
+        ) : (
+          <>
+            <h1 className="page-title">{t(TAB_LABEL_KEY[activeTab])}</h1>
+            {tabContent}
+          </>
+        )}
+        <SettingsBottomSpacer />
+      </div>
+    );
+  }
+
+  return (
+    <div ref={pageRef} className="content-body animate-fade-in">
+      <div className="settings-header">
+        <h1 className="page-title">{t('settings.title')}</h1>
+        <div className="settings-search">
+          {!searchOpen ? (
+            <button
+              type="button"
+              className="icon-btn"
+              onClick={() => setSearchOpen(true)}
+              aria-label={t('settings.searchPlaceholder')}
+              data-tooltip={t('settings.searchPlaceholder')}
+              data-tooltip-pos="bottom"
+            >
+              <Search size={16} />
+            </button>
+          ) : searchField}
+        </div>
+        <label
+          className="settings-advanced-toggle"
+          data-tooltip={t('settings.advancedModeTooltip')}
+          data-tooltip-pos="left"
+        >
+          <span className="settings-advanced-toggle-label">
+            {t('settings.advancedMode')}
+          </span>
+          <span className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={auth.advancedSettingsEnabled}
+              onChange={e => auth.setAdvancedSettingsEnabled(e.target.checked)}
+              aria-label={t('settings.advancedMode')}
+            />
+            <span className="toggle-track" />
+          </span>
+        </label>
+      </div>
+
+      {/* Tab navigation */}
+      <nav className="settings-tabs" aria-label="Settings navigation">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`settings-tab ${activeTab === tab.id ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {searchResultsView}
+
+      {tabContent}
 
       <SettingsBottomSpacer />
     </div>

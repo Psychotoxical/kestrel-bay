@@ -3,6 +3,7 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 import { usePlayerStore, usePreviewStore } from '@/features/playback';
 import { useWindowVisibility } from '@/lib/hooks/useWindowVisibility';
 import { useAuthStore } from '@/store/authStore';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 /** While the window is minimized there is nothing to show the player on; look again later. */
 const MINIMIZED_RECHECK_MS = 30_000;
@@ -48,7 +49,9 @@ export function useFsAutoOpen(): void {
   const lastInputAtRef = useRef(0);
   const autoOpenedRef = useRef(false);
   const wakeAnchorRef = useRef<{ x: number; y: number } | null>(null);
-  const enabled = minutes > 0;
+  // The touch shell has its own player; this would open the desktop overlay there
+  // (the value can arrive from a desktop backup, the setting itself is not shown).
+  const enabled = minutes > 0 && !IS_MOBILE_SHELL;
 
   useEffect(() => {
     if (!isFullscreenOpen) autoOpenedRef.current = false;

@@ -8,6 +8,7 @@ import { useLocalPlaybackStore } from '@/store/localPlaybackStore';
 import { getMediaTierSize } from '@/lib/api/syncfs';
 import { formatBytes, snapHotCacheMb } from '@/lib/format/formatBytes';
 import SettingsSubSection from '@/features/settings/components/SettingsSubSection';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
 import { SettingsSubCard, SettingsField, SettingsValue } from '@/features/settings/components/SettingsSubCard';
@@ -72,41 +73,43 @@ export function StorageTab() {
 
   return (
     <>
-      <SettingsSubSection
-        title={t('settings.mediaDirTitle')}
-        icon={<FolderOpen size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup desc={t('settings.mediaDirDesc')}>
-            <SettingsSubCard>
-              <SettingsField note={auth.mediaDir ? t('settings.mediaDirHint') : undefined}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input
-                    className="input"
-                    type="text"
-                    readOnly
-                    value={auth.mediaDir || t('settings.mediaDirDefault')}
-                    style={{ flex: 1, fontSize: 13, color: auth.mediaDir ? 'var(--text-primary)' : 'var(--text-muted)', cursor: 'default' }}
-                  />
-                  {auth.mediaDir && (
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => { auth.setMediaDir(''); refreshHotCacheSize(); }}
-                      data-tooltip={t('settings.mediaDirClear')}
-                      style={{ color: 'var(--text-muted)', flexShrink: 0 }}
-                    >
-                      <X size={16} />
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.mediaDirTitle')}
+          icon={<FolderOpen size={16} />}
+        >
+          <div className="settings-card">
+            <SettingsGroup desc={t('settings.mediaDirDesc')}>
+              <SettingsSubCard>
+                <SettingsField note={auth.mediaDir ? t('settings.mediaDirHint') : undefined}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      className="input"
+                      type="text"
+                      readOnly
+                      value={auth.mediaDir || t('settings.mediaDirDefault')}
+                      style={{ flex: 1, fontSize: 13, color: auth.mediaDir ? 'var(--text-primary)' : 'var(--text-muted)', cursor: 'default' }}
+                    />
+                    {auth.mediaDir && (
+                      <button
+                        className="btn btn-ghost"
+                        onClick={() => { auth.setMediaDir(''); refreshHotCacheSize(); }}
+                        data-tooltip={t('settings.mediaDirClear')}
+                        style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                    <button className="btn btn-surface" onClick={pickMediaDir} style={{ flexShrink: 0 }}>
+                      <FolderOpen size={16} /> {t('settings.mediaDirChange')}
                     </button>
-                  )}
-                  <button className="btn btn-surface" onClick={pickMediaDir} style={{ flexShrink: 0 }}>
-                    <FolderOpen size={16} /> {t('settings.mediaDirChange')}
-                  </button>
-                </div>
-              </SettingsField>
-            </SettingsSubCard>
-          </SettingsGroup>
-        </div>
-      </SettingsSubSection>
+                  </div>
+                </SettingsField>
+              </SettingsSubCard>
+            </SettingsGroup>
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       <CoverCacheStrategySection />
 
@@ -177,42 +180,44 @@ export function StorageTab() {
         </div>
       </SettingsSubSection>
 
-      <SettingsSubSection
-        title={t('settings.downloadsTitle')}
-        icon={<FolderOpen size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup desc={t('settings.downloadsFolderDesc')}>
-            <SettingsSubCard>
-              <SettingsField>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <input
-                    className="input"
-                    type="text"
-                    readOnly
-                    value={auth.downloadFolder || t('settings.downloadsDefault')}
-                    style={{ flex: 1, fontSize: 13, color: auth.downloadFolder ? 'var(--text-primary)' : 'var(--text-muted)', cursor: 'default' }}
-                  />
-                  {auth.downloadFolder && (
-                    <button
-                      className="btn btn-ghost"
-                      onClick={() => auth.setDownloadFolder('')}
-                      aria-label={t('settings.clearFolder')}
-                      data-tooltip={t('settings.clearFolder')}
-                      style={{ color: 'var(--text-muted)', flexShrink: 0 }}
-                    >
-                      <X size={16} />
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.downloadsTitle')}
+          icon={<FolderOpen size={16} />}
+        >
+          <div className="settings-card">
+            <SettingsGroup desc={t('settings.downloadsFolderDesc')}>
+              <SettingsSubCard>
+                <SettingsField>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <input
+                      className="input"
+                      type="text"
+                      readOnly
+                      value={auth.downloadFolder || t('settings.downloadsDefault')}
+                      style={{ flex: 1, fontSize: 13, color: auth.downloadFolder ? 'var(--text-primary)' : 'var(--text-muted)', cursor: 'default' }}
+                    />
+                    {auth.downloadFolder && (
+                      <button
+                        className="btn btn-ghost"
+                        onClick={() => auth.setDownloadFolder('')}
+                        aria-label={t('settings.clearFolder')}
+                        data-tooltip={t('settings.clearFolder')}
+                        style={{ color: 'var(--text-muted)', flexShrink: 0 }}
+                      >
+                        <X size={16} />
+                      </button>
+                    )}
+                    <button className="btn btn-surface" onClick={pickDownloadFolder} style={{ flexShrink: 0 }} id="settings-download-folder-btn">
+                      <FolderOpen size={16} /> {t('settings.pickFolder')}
                     </button>
-                  )}
-                  <button className="btn btn-surface" onClick={pickDownloadFolder} style={{ flexShrink: 0 }} id="settings-download-folder-btn">
-                    <FolderOpen size={16} /> {t('settings.pickFolder')}
-                  </button>
-                </div>
-              </SettingsField>
-            </SettingsSubCard>
-          </SettingsGroup>
-        </div>
-      </SettingsSubSection>
+                  </div>
+                </SettingsField>
+              </SettingsSubCard>
+            </SettingsGroup>
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
     </>
   );
 }

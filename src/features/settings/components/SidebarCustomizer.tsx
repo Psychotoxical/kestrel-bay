@@ -3,13 +3,15 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { useSidebarStore, SidebarItemConfig, CONSERVED_SIDEBAR_NAV_IDS } from '@/features/sidebar';
 import { useLuckyMixAvailable } from '@/features/randomMix';
-import { ALL_NAV_ITEMS } from '@/config/navItems';
+import { ALL_NAV_ITEMS, NOT_IN_TOUCH_LIBRARY } from '@/config/navItems';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { applySidebarReorderById } from '@/features/sidebar';
 import { useListReorderDnd } from '@/lib/hooks/useListReorderDnd';
 import type { ListReorderDropTarget } from '@/lib/util/listReorder';
 import { ReorderGripHandle } from '@/features/settings/components/ReorderGripHandle';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 
 const REORDER_TYPE = 'sidebar_reorder';
 
@@ -35,6 +37,8 @@ export function SidebarCustomizer() {
     if (randomNavMode === 'hub' && (cfg.id === 'randomMix' || cfg.id === 'randomAlbums' || cfg.id === 'luckyMix')) return false;
     if (randomNavMode === 'separate' && cfg.id === 'randomPicker') return false;
     if (cfg.id === 'luckyMix' && !luckyMixAvailable) return false;
+    // Touch: only what the Library tab lists (Mainstage and Playlists are tabs there).
+    if (IS_MOBILE_SHELL && NOT_IN_TOUCH_LIBRARY.has(ALL_NAV_ITEMS[cfg.id].to)) return false;
     return true;
   });
   const systemItems  = items.filter(cfg => ALL_NAV_ITEMS[cfg.id]?.section === 'system');
@@ -84,13 +88,15 @@ export function SidebarCustomizer() {
           checked={randomNavMode === 'separate'}
           onChange={c => setRandomNavMode(c ? 'separate' : 'hub')}
         />
-        <SettingsToggle
-          label={t('settings.nowPlayingTopTitle')}
-          desc={t('settings.nowPlayingTopDesc')}
-          searchText={t('settings.nowPlayingTopTitle')}
-          checked={nowPlayingAtTop}
-          onChange={setNowPlayingAtTop}
-        />
+        <DesktopOnly>
+          <SettingsToggle
+            label={t('settings.nowPlayingTopTitle')}
+            desc={t('settings.nowPlayingTopDesc')}
+            searchText={t('settings.nowPlayingTopTitle')}
+            checked={nowPlayingAtTop}
+            onChange={setNowPlayingAtTop}
+          />
+        </DesktopOnly>
         <SettingsToggle
           label={t('settings.luckyMixMenuTitle')}
           desc={t('settings.luckyMixMenuDesc')}
@@ -101,19 +107,21 @@ export function SidebarCustomizer() {
 
       <SettingsGroup>
         <div ref={setContainer} onMouseMove={onMouseMove} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {/* Library block */}
+          {/* Library block (touch: the section itself is titled Library) */}
           <div style={{ padding: '4px 0' }}>
-            <div className="sidebar-customizer-block-label">{t('sidebar.library')}</div>
+            {!IS_MOBILE_SHELL && <div className="sidebar-customizer-block-label">{t('sidebar.library')}</div>}
             {libraryItems.map(cfg => renderRow(cfg, 'library'))}
           </div>
-          {/* System block */}
-          <div style={{ padding: '4px 0' }}>
-            <div className="sidebar-customizer-block-label">{t('sidebar.system')}</div>
-            {systemItems.map(cfg => renderRow(cfg, 'system'))}
-            <div className="sidebar-customizer-fixed-hint">
-              <span>{t('settings.sidebarFixed')}: {t('sidebar.nowPlaying')}, {t('sidebar.settings')}</span>
+          {/* System block — not in the touch Library tab */}
+          <DesktopOnly>
+            <div style={{ padding: '4px 0' }}>
+              <div className="sidebar-customizer-block-label">{t('sidebar.system')}</div>
+              {systemItems.map(cfg => renderRow(cfg, 'system'))}
+              <div className="sidebar-customizer-fixed-hint">
+                <span>{t('settings.sidebarFixed')}: {t('sidebar.nowPlaying')}, {t('sidebar.settings')}</span>
+              </div>
             </div>
-          </div>
+          </DesktopOnly>
         </div>
       </SettingsGroup>
     </>

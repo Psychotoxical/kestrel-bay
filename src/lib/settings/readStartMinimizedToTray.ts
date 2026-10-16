@@ -1,3 +1,5 @@
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+
 const AUTH_STORAGE_KEY = 'psysonic-auth';
 
 /** Keep in sync with `public/startup-splash-preflight.js` and `public/startup-splash-reveal.js`. */
@@ -5,6 +7,8 @@ export const STARTUP_TRAY_HANDLED_KEY = 'psy-startup-tray-handled';
 
 /** Read persisted "start minimized to tray" before Zustand rehydrates. */
 export function readStartMinimizedToTray(): boolean {
+  // No tray in the touch shell (the preflight script checks the device the same way).
+  if (IS_MOBILE_SHELL) return false;
   try {
     const raw = localStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return false;

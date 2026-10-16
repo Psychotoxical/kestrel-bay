@@ -8,7 +8,7 @@ const ROW_H = 60;
 
 /** Radio-like list: each row is one big button plus an icon button; the page scrolls, not the list. */
 function Harness({ onDrop, scroller }: {
-  onDrop: (from: number, target: TouchDropTarget) => void;
+  onDrop: (from: number, target: TouchDropTarget, fromRow: HTMLElement) => void;
   scroller: HTMLElement;
 }) {
   const listRef = useRef<HTMLDivElement>(null);
@@ -22,7 +22,7 @@ function Harness({ onDrop, scroller }: {
     liftedClass: 'is-lifted',
     getScroller: () => scroller,
     // A fresh function on every render, as callers write it inline.
-    onDrop: (from, t) => onDrop(from, t),
+    onDrop: (from, t, fromRow) => onDrop(from, t, fromRow),
   });
   return (
     <>
@@ -86,7 +86,7 @@ describe('useTouchListReorder', () => {
     expect(row(3)).toHaveClass('is-lifted');
 
     act(() => { dispatchTouch(station(3), 'touchend', at(10)); });
-    expect(onDrop).toHaveBeenCalledWith(3, { idx: 0, before: true });
+    expect(onDrop).toHaveBeenCalledWith(3, expect.objectContaining({ idx: 0, before: true, row: row(0) }), row(3));
   });
 
   it('keeps the row under the finger while the page scroller moves', () => {

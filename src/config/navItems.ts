@@ -14,6 +14,15 @@ export interface NavItemMeta {
   section: 'library' | 'system';
 }
 
+/**
+ * Routes the touch shell's Library tab leaves out: shown as tabs or in the
+ * profile sheet, or desktop-only (USB device sync, CD burning). The touch
+ * settings list only the entries that do appear there.
+ */
+export const NOT_IN_TOUCH_LIBRARY: ReadonlySet<string> = new Set([
+  '/', '/playlists', '/statistics', '/help', '/device-sync', '/burn',
+]);
+
 // All configurable nav items — order and visibility controlled by sidebarStore.
 export const ALL_NAV_ITEMS: Record<string, NavItemMeta> = {
   mainstage:    { icon: Disc3,          labelKey: 'sidebar.mainstage',    to: '/',              section: 'library' },
