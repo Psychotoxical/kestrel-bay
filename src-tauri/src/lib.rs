@@ -8,6 +8,8 @@ mod cover_cache;
 pub(crate) mod desktop_palette;
 #[cfg(target_os = "ios")]
 mod ios_audio_session;
+#[cfg(target_os = "ios")]
+mod ios_orientation;
 mod lib_commands;
 pub(crate) mod library_analysis_backfill;
 mod library_identity_maintenance;
@@ -542,6 +544,14 @@ pub fn run() {
             desktop_palette::setup(app);
 
             startup::services::initialize(app)?;
+
+            // iOS: pause / resume around calls and lost headphones, and the
+            // player-only landscape lock.
+            #[cfg(target_os = "ios")]
+            {
+                ios_audio_session::observe_interruptions(app.handle());
+                ios_orientation::listen(app.handle());
+            }
 
             // ── Custom title bar on Linux ─────────────────────────────────
             // Apply Linux WebKit settings while the window is still hidden.

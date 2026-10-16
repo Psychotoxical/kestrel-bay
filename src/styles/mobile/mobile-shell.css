@@ -4106,3 +4106,84 @@ html[data-mobile-bars='collapsed'] .mobile-orbit-room {
   user-select: all;
   -webkit-user-select: all;
 }
+
+/* ─── Player held sideways (only the player may rotate on the iPhone) ───
+ * Cover on the left at the full height, head and controls on the right; the side
+ * insets keep clear of the Dynamic Island and the rounded corners. */
+@media (orientation: landscape) {
+  .mobile-player {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 32px;
+    align-items: stretch;
+    padding:
+      0
+      max(env(safe-area-inset-right, 0px), 24px)
+      calc(env(safe-area-inset-bottom, 0px) + 4px)
+      max(env(safe-area-inset-left, 0px), 24px);
+  }
+
+  .mobile-player__top {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: none;
+    height: 44px;
+  }
+
+  .mobile-player__cover-area {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    width: min(44vw, calc(100dvh - env(safe-area-inset-bottom, 0px) - 28px));
+    height: 100%;
+    max-width: none;
+    min-height: 0;
+    padding: 14px 0 10px;
+  }
+
+  .mobile-player__body {
+    grid-column: 2;
+    grid-row: 2;
+    max-width: none;
+    min-height: 0;
+    justify-content: center;
+    gap: 10px;
+    padding-top: 0;
+  }
+}
+
+/* Sheets over the sideways player: centred and capped, so the sides stay clear of
+ * the Dynamic Island and the rounded corners; the queue head takes two rows. */
+@media (orientation: landscape) {
+  .mobile-sheet-backdrop {
+    justify-content: center;
+  }
+
+  .mobile-sheet {
+    width: min(100%, 720px);
+  }
+
+  .queue-panel--touch .queue-touch-header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    column-gap: 16px;
+    row-gap: 10px;
+  }
+
+  .queue-panel--touch .queue-touch-header__row {
+    grid-column: 1;
+  }
+
+  .queue-panel--touch .queue-touch-header .mobile-transition-bar {
+    grid-column: 2;
+  }
+
+  .queue-panel--touch .queue-touch-header .mobile-crossfade-length {
+    grid-column: 1;
+  }
+
+  .queue-panel--touch .queue-touch-header > .mobile-segmented {
+    grid-column: 2;
+  }
+}

@@ -25,6 +25,7 @@ import { formatTrackTime } from '@/lib/format/formatDuration';
 import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';
+import { allowLandscape } from '@/features/mobileShell/utils/iosOrientation';
 import { isOrbitGuestFollowingHost, useOrbitStore } from '@/features/orbit';
 import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet';
 import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
@@ -151,6 +152,11 @@ export default function MobilePlayer() {
   const navigate = useNavigate();
   const navigatePlaybackLibrary = usePlaybackLibraryNavigate();
   const currentTrack = usePlayerStore(s => s.currentTrack);
+  // iPhone: the player is the one screen that may turn sideways.
+  useEffect(() => {
+    allowLandscape(true);
+    return () => allowLandscape(false);
+  }, []);
   const currentRadio = usePlayerStore(s => s.currentRadio);
   // An Orbit guest follows the host; skipping would only stop the local player.
   const guestFollowsHost = useOrbitStore(s => isOrbitGuestFollowingHost(s.role, s.phase));

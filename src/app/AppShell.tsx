@@ -62,6 +62,7 @@ import {
   MobileMiniPlayer,
   MobileOrbitAccountSheet,
   MobileOrbitHelpSheet,
+  MobileIosBridge,
   MobileRadioBridge,
   MobileTabBar,
   MobileTopBar,
@@ -343,6 +344,7 @@ export function AppShell() {
           </div>
         </main>
         <MobileRadioBridge />
+        <MobileIosBridge />
         <MobileTouchContextMenu />
         <MobileSwipeNavigation />
         {!isMobilePlayer && <MobileMiniPlayer />}
