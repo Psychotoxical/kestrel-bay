@@ -1,5 +1,5 @@
 import type { SubsonicSong } from '@/lib/api/subsonicTypes';
-import { sanitizeHtml as sanitizeHtmlBase } from '@/lib/util/sanitizeHtml';
+import { sanitizeBioHtml } from '@/lib/util/sanitizeHtml';
 
 export function formatTime(s: number): string {
   if (!s || isNaN(s)) return '0:00';
@@ -23,11 +23,8 @@ export function formatTotalDuration(s: number): string {
   return `${sec}s`;
 }
 
-/** Shared HTML sanitiser plus a now-playing-specific tweak: strip the trailing
- * "Read more on Last.fm" style link so clamped bios end cleanly. */
-export function sanitizeHtml(html: string): string {
-  return sanitizeHtmlBase(html).replace(/<a [^>]*>.*?<\/a>\.?\s*$/i, '').trim();
-}
+/** Bio sanitiser; the trailing "Read more on Last.fm" link is dropped (see `sanitizeBioHtml`). */
+export const sanitizeHtml = sanitizeBioHtml;
 
 export function isoToParts(iso: string): { month: string; day: string; weekday: string; time: string } | null {
   if (!iso) return null;

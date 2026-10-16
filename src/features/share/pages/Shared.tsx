@@ -32,7 +32,10 @@ import { outboundShareUnavailableHelp } from '@/features/share/outboundShare';
 import { useShareSettingsStore } from '@/features/share/store/shareSettingsStore';
 import ShareContentsModal from '@/features/share/components/ShareContentsModal';
 import ShareArtworkRail from '@/features/share/components/ShareArtworkRail';
+import SharedLinkTouchRow from '@/features/share/components/SharedLinkTouchRow';
+import SharedLinkSheet from '@/features/share/components/SharedLinkSheet';
 import { loadShareSongs } from '@/features/share/loadShareSongs';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { usePlayerStore } from '@/features/playback';
 import { songToTrack } from '@/lib/media/songToTrack';
 import { copyTextToClipboard } from '@/lib/server/serverMagicString';
@@ -106,6 +109,11 @@ export default function Shared() {
     share: SubsonicShare;
     title?: string;
   } | null>(null);
+  // Touch: the link whose detail sheet is open (looked up live, so a deleted link closes it).
+  const [touchSheet, setTouchSheet] = useState<{ serverId: string; shareId: string } | null>(null);
+  const touchSheetShare = touchSheet
+    ? byServer[touchSheet.serverId]?.shares.find(share => share.id === touchSheet.shareId)
+    : undefined;
   const browseScopeKey = visibleServerIds.join('\u0001');
   const anyLoading = visibleServerIds.some(serverId => byServer[serverId]?.loading);
   useEffect(() => {
@@ -133,6 +141,13 @@ export default function Shared() {
         [key]: err instanceof Error ? err.message : String(err),
       }));
     }
+  };
+
+  const openShareExternally = (serverId: string, share: SubsonicShare) => {
+    void open(share.url).catch(err => setActionErrors(current => ({
+      ...current,
+      [`${serverId}:${share.id}`]: String(err),
+    })));
   };
 
   const removeShare = async (serverId: string, share: SubsonicShare) => {
@@ -203,12 +218,21 @@ export default function Shared() {
           <span className="shared-page__total"><Link2 size={13} aria-hidden="true" />{t('shared.links', { count: totalShares })}</span>
         )}
       </div>
-      {navidromeSharingEnabled && (
+      {navidromeSharingEnabled && (IS_MOBILE_SHELL ? (
+        <button
+          type="button"
+          className="mobile-round-btn shared-page__refresh-touch"
+          aria-label={t('shared.refreshAll')}
+          onClick={() => void refreshAll()}
+        >
+          <RefreshCw size={18} className={anyLoading ? 'spin' : undefined} aria-hidden="true" />
+        </button>
+      ) : (
         <button type="button" className="btn btn-primary shared-page__refresh" onClick={() => void refreshAll()}>
           <RefreshCw size={16} className={anyLoading ? 'spin' : undefined} aria-hidden="true" />
           {t('shared.refreshAll')}
         </button>
-      )}
+      ))}
     </header>
   );
 
@@ -291,6 +315,16 @@ export default function Shared() {
                         <div className="shared-server__inline-error" role="alert">{state.error}</div>
                       )}
                       {state.shares.map(share => {
+                        if (IS_MOBILE_SHELL) {
+                          return (
+                            <SharedLinkTouchRow
+                              key={share.id}
+                              serverId={server.id}
+                              share={share}
+                              onOpen={() => setTouchSheet({ serverId: server.id, shareId: share.id })}
+                            />
+                          );
+                        }
                         const rowKey = `${server.id}:${share.id}`;
                         const locale = i18n.resolvedLanguage ?? i18n.language;
                         const created = formatDate(share.created, locale);
@@ -374,10 +408,7 @@ export default function Shared() {
                               <button
                                 type="button"
                                 className="btn btn-surface btn-sm shared-link__action"
-                                onClick={() => void open(share.url).catch(err => setActionErrors(current => ({
-                                  ...current,
-                                  [rowKey]: String(err),
-                                })))}
+                                onClick={() => openShareExternally(server.id, share)}
                               >
                                 <ExternalLink size={14} /> {t('shared.openExternal')}
                               </button>
@@ -401,6 +432,19 @@ export default function Shared() {
           );
         })}
       </div>
+      {touchSheet && touchSheetShare && (
+        <SharedLinkSheet
+          key={`${touchSheet.serverId}:${touchSheet.shareId}`}
+          serverId={touchSheet.serverId}
+          share={touchSheetShare}
+          error={actionErrors[`${touchSheet.serverId}:${touchSheet.shareId}`]}
+          deleting={busyRows.has(`${touchSheet.serverId}:${touchSheet.shareId}`)}
+          onCopy={() => void copyShare(touchSheet.serverId, touchSheetShare)}
+          onOpenExternal={() => openShareExternally(touchSheet.serverId, touchSheetShare)}
+          onDelete={() => void removeShare(touchSheet.serverId, touchSheetShare)}
+          onClose={() => setTouchSheet(null)}
+        />
+      )}
       {selectedContents && (
         <ShareContentsModal
           key={`${selectedContents.serverId}:${selectedContents.share.id}`}

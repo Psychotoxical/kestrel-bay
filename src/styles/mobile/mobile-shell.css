@@ -2564,3 +2564,649 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
   padding: 0;
   margin-bottom: 4px;
 }
+
+/* ─── Artist bio (ArtistBioTouch): excerpt card, whole text in a sheet ─── */
+.mobile-artist-bio .section-title {
+  margin: 0 0 12px;
+}
+
+.mobile-artist-bio__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+}
+
+button.mobile-artist-bio__card:active {
+  background: var(--bg-hover);
+}
+
+.mobile-artist-bio__excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.mobile-artist-bio__more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.mobile-artist-bio__full {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--text-primary);
+}
+
+.mobile-artist-bio__full p {
+  margin: 0 0 1em;
+}
+
+.mobile-artist-bio__full a {
+  color: var(--accent);
+}
+
+/* ─── Playlist edit sheet (PlaylistEditSheet) ─── */
+.mobile-playlist-edit__cover-block {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-playlist-edit__cover {
+  position: relative;
+  width: 168px;
+  aspect-ratio: 1;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-card);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  cursor: pointer;
+}
+
+.mobile-playlist-edit__cover-badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.mobile-playlist-edit__cover-actions {
+  display: flex;
+  gap: 20px;
+}
+
+.mobile-playlist-edit__link {
+  padding: 8px 4px;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.mobile-playlist-edit__link--danger {
+  color: var(--danger);
+}
+
+.mobile-form-group {
+  flex: none;
+  border-radius: 14px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+/* Specific enough to beat the fields' own `border: none`. */
+.mobile-form-group > :not(:first-child) {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.mobile-form-group__input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  /* Below 16 px iOS zooms the page into the focused field. */
+  font-size: 17px;
+  outline: none;
+}
+
+.mobile-form-group__input:focus {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.mobile-form-group__input::placeholder {
+  color: var(--text-muted);
+}
+
+.mobile-form-group__input--multiline {
+  min-height: 104px;
+  resize: none;
+  line-height: 1.4;
+}
+
+.mobile-form-group__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 52px;
+  padding: 0 16px;
+  font-size: 17px;
+  color: var(--text-primary);
+}
+
+.mobile-playlist-edit__save {
+  flex: none;
+  width: 100%;
+  min-height: 52px;
+  justify-content: center;
+  border-radius: 26px;
+  font-size: 17px;
+}
+
+/* ─── ND Shares page (SharedLinkTouchRow + SharedLinkSheet) ─── */
+/* The route host already has the 16 px gutter. */
+.app-shell[data-mobile-app] .shared-page {
+  gap: 20px;
+  padding: 4px 0 24px;
+}
+
+/* Title left, round refresh button right (the narrow desktop layout stacks them). */
+.app-shell[data-mobile-app] .shared-page__header {
+  flex-direction: row;
+  align-items: center;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.app-shell[data-mobile-app] .shared-page__total {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+/* No box around each server: its links form one grouped list below a heading. */
+.app-shell[data-mobile-app] .shared-server {
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.app-shell[data-mobile-app] .shared-server__header {
+  padding: 0 0 10px;
+  border-bottom: none;
+  background: none;
+}
+
+/* The round refresh button in the page header reloads every server. */
+.app-shell[data-mobile-app] .shared-server__refresh {
+  display: none;
+}
+
+.app-shell[data-mobile-app] .shared-server__state {
+  padding: 12px 4px;
+}
+
+.app-shell[data-mobile-app] .shared-server__list {
+  gap: 0;
+  padding: 0;
+  border-radius: 14px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.mobile-share-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+}
+
+.mobile-share-row + .mobile-share-row {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.mobile-share-row:active {
+  background: var(--bg-hover);
+}
+
+.mobile-share-cover {
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-app));
+  color: var(--accent);
+}
+
+.mobile-share-cover__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-share-row__cover {
+  width: 52px;
+  height: 52px;
+}
+
+.mobile-share-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mobile-share-row__title {
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mobile-share-row__sub {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.mobile-share-row__details {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mobile-share-row__visits {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--text-muted);
+}
+
+.mobile-share-row__chevron {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.mobile-detail-sheet__hero {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.mobile-detail-sheet__cover {
+  width: 84px;
+  height: 84px;
+  border-radius: 12px;
+}
+
+.mobile-detail-sheet__heading {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-detail-sheet__heading strong {
+  font-size: 18px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.mobile-detail-sheet__heading span {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.mobile-detail-sheet__actions {
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.mobile-detail-sheet__actions .btn {
+  min-height: 48px;
+  justify-content: center;
+  border-radius: 24px;
+  font-size: 16px;
+}
+
+.mobile-share-sheet__error {
+  flex: none;
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.mobile-form-group__action {
+  width: 100%;
+  box-sizing: border-box;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 17px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-form-group__action svg {
+  flex: none;
+  color: var(--accent);
+}
+
+.mobile-form-group__action:active {
+  background: var(--bg-hover);
+}
+
+.mobile-form-group__action--danger,
+.mobile-form-group__action--danger svg {
+  color: var(--danger);
+}
+
+.mobile-share-sheet__info {
+  margin: 0;
+}
+
+.mobile-share-sheet__info .mobile-form-group__row {
+  min-height: 46px;
+  font-size: 15px;
+}
+
+.mobile-share-sheet__info dt {
+  color: var(--text-secondary);
+}
+
+.mobile-share-sheet__info dd {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  text-align: right;
+}
+
+.mobile-share-sheet__contents {
+  flex: none;
+}
+
+.mobile-share-sheet__label {
+  margin: 0 0 8px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mobile-share-sheet__state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 0 4px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.mobile-share-sheet__tracks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: 14px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.mobile-share-sheet__tracks li + li {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.mobile-share-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 60px;
+  box-sizing: border-box;
+  padding: 8px 12px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+}
+
+.mobile-share-track:active {
+  background: var(--bg-hover);
+}
+
+.mobile-share-track__cover {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--bg-app);
+  color: var(--text-muted);
+}
+
+.mobile-share-track__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-share-track__title,
+.mobile-share-track__sub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mobile-share-track__title {
+  font-size: 15px;
+}
+
+.mobile-share-track__sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.mobile-share-track__time {
+  flex: none;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Internet Radio (RadioStationTouchRow + RadioStationSheet) ─── */
+.mobile-radio-filter {
+  margin: 16px 0 14px;
+}
+
+.mobile-radio-list {
+  margin-bottom: 16px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.mobile-radio-row {
+  display: flex;
+  align-items: center;
+  padding-right: 4px;
+}
+
+.mobile-radio-row + .mobile-radio-row {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.mobile-radio-row__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 72px;
+  padding: 10px 4px 10px 12px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+}
+
+.mobile-radio-row__main:active {
+  background: var(--bg-hover);
+}
+
+.mobile-radio-cover {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-app));
+  color: var(--accent);
+}
+
+.mobile-radio-cover__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mobile-radio-row__cover {
+  width: 52px;
+  height: 52px;
+}
+
+/* Same red badge as the desktop tile. */
+.mobile-radio-row__live {
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: #e03030;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+}
+
+.mobile-radio-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.mobile-radio-row__name,
+.mobile-radio-row__sub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mobile-radio-row__name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mobile-radio-row.is-active .mobile-radio-row__name {
+  color: var(--accent);
+}
+
+.mobile-radio-row__sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.mobile-radio-row__icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+}
+
+.mobile-radio-row__icon.is-on {
+  color: var(--accent);
+}
+
+/* Keeps unchecked sort entries aligned with the checked one. */
+.mobile-more-menu__icon-gap {
+  display: inline-block;
+  width: 17px;
+}

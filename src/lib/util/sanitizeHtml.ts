@@ -22,3 +22,11 @@ export function sanitizeHtml(html: string): string {
   });
   return doc.body.innerHTML;
 }
+
+/** `sanitizeHtml` for artist bios: also drops the trailing "Read more on Last.fm"
+ * style link, so clamped bios end cleanly. */
+export function sanitizeBioHtml(html: string): string {
+  // Only the last link: the match may not run across another `<a`, or a link
+  // earlier in the text would take everything after it along.
+  return sanitizeHtml(html).replace(/<a\b[^>]*>(?:(?!<a\b)[\s\S])*?<\/a>\.?\s*$/i, '').trim();
+}

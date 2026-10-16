@@ -9,7 +9,13 @@ import {
 } from '@/lib/api/subsonicRadio';
 import { type InternetRadioStation } from '@/lib/api/subsonicTypes';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
-import { Plus, Search } from 'lucide-react';
+import { Check, Plus, Search } from 'lucide-react';
+import { open } from '@tauri-apps/plugin-shell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { useConfirmModalStore } from '@/store/confirmModalStore';
+import { MobileMoreMenu } from '@/features/mobileShell';
+import RadioStationTouchRow from '@/features/radio/components/RadioStationTouchRow';
+import RadioStationSheet from '@/features/radio/components/RadioStationSheet';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { setRadioVolume } from '@/features/playback/store/radioPlayer';
 import { fadeOut } from '@/features/playback/utils/playback/fadeOut';
@@ -35,6 +41,15 @@ import {
   radioStationKey,
   sameRadioStation,
 } from '@/features/radio/utils/radioStationIdentity';
+
+function webHost(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  try {
+    return new URL(url).host.replace(/^www\./, '') || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 export default function InternetRadio() {
   const { t } = useTranslation();
@@ -89,6 +104,14 @@ export default function InternetRadio() {
   });
   const [manualOrder, setManualOrder] = useState<string[]>([]);
   const [dragOver, setDragOver] = useState<{ id: string; side: 'before' | 'after' } | null>(null);
+  // Touch: station whose action sheet is open (looked up live, so a deleted station closes it).
+  const [touchSheetKey, setTouchSheetKey] = useState<string | null>(null);
+  const touchSheetStation = touchSheetKey
+    ? stations.find(s => radioStationKey(s) === touchSheetKey)
+    : undefined;
+  const touchSubtitle = (s: InternetRadioStation): string | undefined =>
+    (effectiveServerIds.length > 1 && s.serverId ? serverLabelById.get(s.serverId) : undefined)
+      ?? webHost(s.homepageUrl) ?? webHost(s.streamUrl);
 
   const targetServerId = activeServerId && manageableServerOptions.some(server => server.id === activeServerId)
       ? activeServerId
@@ -324,6 +347,24 @@ export default function InternetRadio() {
       setDeleteConfirmId(stationKey);
       return;
     }
+    await deleteStation(s);
+    setDeleteConfirmId(null);
+  };
+
+  /** Touch: the sheet's delete asks through the shared confirm dialog instead of a second tap. */
+  const confirmAndDeleteStation = async (s: InternetRadioStation) => {
+    const confirmed = await useConfirmModalStore.getState().request({
+      title: t('radio.deleteStation'),
+      message: s.name,
+      confirmLabel: t('common.delete'),
+      cancelLabel: t('common.cancel'),
+      danger: true,
+    });
+    if (confirmed) await deleteStation(s);
+  };
+
+  const deleteStation = async (s: InternetRadioStation) => {
+    const stationKey = radioStationKey(s);
     if (sameRadioStation(currentRadio, s)) {
       if (isPlaying) {
         const vol = usePlayerStore.getState().volume;
@@ -338,11 +379,14 @@ export default function InternetRadio() {
       completeMutation();
       setStations(prev => prev.filter(st => radioStationKey(st) !== stationKey));
     } catch { /* ignore: best-effort */ }
-    setDeleteConfirmId(null);
   };
 
   const handlePlay = (e: React.MouseEvent, s: InternetRadioStation) => {
     e.stopPropagation();
+    togglePlay(s);
+  };
+
+  const togglePlay = (s: InternetRadioStation) => {
     if (sameRadioStation(currentRadio, s) && isPlaying) {
       stop();
     } else {
@@ -364,6 +408,20 @@ export default function InternetRadio() {
       {/* ── Header ── */}
       <div className="playlists-header">
         <h1 className="page-title" style={{ marginBottom: 0 }}>{t('radio.title')}</h1>
+        {IS_MOBILE_SHELL ? (
+          <MobileMoreMenu items={[
+            ...(targetServerId ? [
+              { id: 'directory', label: t('radio.browseDirectory'), icon: <Search size={17} />, onSelect: () => setDirectoryOpen(true) },
+              { id: 'add', label: t('radio.addStation'), icon: <Plus size={17} />, onSelect: () => setModalStation({ kind: 'new' }) },
+            ] : []),
+            ...(stations.length > 0 ? sortOptions.map(option => ({
+              id: `sort:${option.value}`,
+              label: option.label,
+              icon: sortBy === option.value ? <Check size={17} /> : <span className="mobile-more-menu__icon-gap" />,
+              onSelect: () => setSortBy(option.value as RadioSortBy),
+            })) : []),
+          ]} />
+        ) : (
         <div className="compact-action-bar" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           {stations.length > 0 && (
             <CustomSelect
@@ -382,11 +440,48 @@ export default function InternetRadio() {
               </button>
             </>)}
         </div>
+        )}
       </div>
 
       {/* ── Toolbar + Grid ── */}
       {stations.length === 0 ? (
         <div className="empty-state">{t('radio.empty')}</div>
+      ) : IS_MOBILE_SHELL ? (
+        <>
+          <div className="mobile-segmented mobile-radio-filter" role="tablist" aria-label={t('radio.title')}>
+            {(['all', 'favorites'] as const).map(f => (
+              <button
+                key={f}
+                type="button"
+                role="tab"
+                aria-selected={activeFilter === f}
+                className={`mobile-segmented__item${activeFilter === f ? ' is-active' : ''}`}
+                onClick={() => { setActiveFilter(f); setActiveLetter(null); }}
+              >
+                {f === 'all' ? t('radio.filterAll') : t('radio.filterFavorites')}
+              </button>
+            ))}
+          </div>
+          {displayedStations.length === 0 ? (
+            <div className="empty-state">{t('radio.noFavorites')}</div>
+          ) : (
+            <div className="mobile-radio-list">
+              {displayedStations.map(s => (
+                <RadioStationTouchRow
+                  key={radioStationKey(s)}
+                  station={s}
+                  isActive={sameRadioStation(currentRadio, s)}
+                  isPlaying={isPlaying}
+                  isFavorite={favorites.has(radioStationKey(s))}
+                  subtitle={touchSubtitle(s)}
+                  onToggle={() => togglePlay(s)}
+                  onFavoriteToggle={() => toggleFavorite(s)}
+                  onMore={() => setTouchSheetKey(radioStationKey(s))}
+                />
+              ))}
+            </div>
+          )}
+        </>
       ) : (
         <>
           <RadioToolbar
@@ -437,6 +532,25 @@ export default function InternetRadio() {
             />
           )}
         </>
+      )}
+
+      {touchSheetStation && (
+        <RadioStationSheet
+          station={touchSheetStation}
+          onAir={sameRadioStation(currentRadio, touchSheetStation) && isPlaying}
+          isFavorite={favorites.has(radioStationKey(touchSheetStation))}
+          subtitle={touchSubtitle(touchSheetStation)}
+          canManage={Boolean(
+            touchSheetStation.serverId
+              && canManageNavidromeRadio(adminRoles[touchSheetStation.serverId] ?? 'checking'),
+          )}
+          onToggle={() => togglePlay(touchSheetStation)}
+          onFavoriteToggle={() => toggleFavorite(touchSheetStation)}
+          onOpenHomepage={() => { if (touchSheetStation.homepageUrl) void open(touchSheetStation.homepageUrl); }}
+          onEdit={() => { setTouchSheetKey(null); setModalStation(touchSheetStation); }}
+          onDelete={() => { void confirmAndDeleteStation(touchSheetStation); }}
+          onClose={() => setTouchSheetKey(null)}
+        />
       )}
 
       {/* ── Edit/Create Modal ── */}

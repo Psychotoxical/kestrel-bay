@@ -5,39 +5,7 @@ import { AlbumCoverArtImage } from '@/cover/AlbumCoverArtImage';
 import { coverServerScopeForServerId } from '@/cover/serverScope';
 import type { SubsonicShare, SubsonicShareEntry } from '@/lib/api/subsonicSharing';
 import { useRailScroll } from '@/lib/hooks/useRailScroll';
-import { shareEntryIsAlbum, shareEntryLabel } from '@/features/share/sharePresentation';
-
-interface ArtworkItem {
-  albumId: string;
-  coverArt?: string;
-  label: string;
-  entries: SubsonicShareEntry[];
-}
-
-function shareArtworkItems(share: SubsonicShare): ArtworkItem[] {
-  const items = new Map<string, ArtworkItem>();
-  for (const entry of share.entry ?? []) {
-    const id = typeof entry.id === 'string' ? entry.id : '';
-    const albumId = shareEntryIsAlbum(entry)
-      ? id
-      : typeof entry.albumId === 'string' ? entry.albumId : id;
-    if (!albumId) continue;
-    const existing = items.get(albumId);
-    if (existing) {
-      existing.entries.push(entry);
-      continue;
-    }
-    const coverArt = typeof entry.coverArt === 'string' ? entry.coverArt : undefined;
-    const entryLabel = shareEntryLabel(entry);
-    const label = shareEntryIsAlbum(entry) && entryLabel
-      ? entryLabel
-      : typeof entry.album === 'string' && entry.album.trim()
-        ? entry.album.trim()
-        : entryLabel ?? albumId;
-    items.set(albumId, { albumId, coverArt, label, entries: [entry] });
-  }
-  return [...items.values()];
-}
+import { shareArtworkItems } from '@/features/share/sharePresentation';
 
 interface ShareArtworkRailProps {
   serverId: string;

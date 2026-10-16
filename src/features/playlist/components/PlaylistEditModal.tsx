@@ -1,62 +1,24 @@
-import React, { useRef, useState } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Camera, Loader2, X } from 'lucide-react';
-import type { SubsonicPlaylist } from '@/lib/api/subsonicTypes';
-import { playlistDisplayName } from '@/lib/format/playlistClassification';
-import type { CoverArtId } from '@/cover/types';
-import { AlbumCoverArtImage } from '@/cover/AlbumCoverArtImage';
-import { PLAYLIST_MAIN_COVER_CSS_PX } from '@/features/playlist/hooks/usePlaylistCovers';
-import { PlaylistSmartCoverCell } from '@/features/playlist/components/PlaylistCoverImages';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { usePlaylistEditForm, type PlaylistEditProps } from '@/features/playlist/hooks/usePlaylistEditForm';
+import PlaylistEditCover from '@/features/playlist/components/PlaylistEditCover';
+import PlaylistEditSheet from '@/features/playlist/components/PlaylistEditSheet';
 
-interface EditModalProps {
-  playlist: SubsonicPlaylist;
-  customCoverId: string | null;
-  coverQuadIds: (CoverArtId | null)[];
-  onClose: () => void;
-  onSave: (opts: { name: string; comment: string; isPublic: boolean; coverFile: File | null; coverRemoved: boolean }) => Promise<void>;
+export default function PlaylistEditModal(props: PlaylistEditProps) {
+  return IS_MOBILE_SHELL ? <PlaylistEditSheet {...props} /> : <PlaylistEditDialog {...props} />;
 }
 
-export default function PlaylistEditModal({
+function PlaylistEditDialog({
   playlist, customCoverId, coverQuadIds, onClose, onSave,
-}: EditModalProps) {
+}: PlaylistEditProps) {
   const { t } = useTranslation();
-  const [name, setName] = useState(playlistDisplayName(playlist));
-  const [comment, setComment] = useState(playlist.comment ?? '');
-  const [isPublic, setIsPublic] = useState(playlist.public ?? false);
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string | null>(null);
-  const [coverRemoved, setCoverRemoved] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const coverInputRef = useRef<HTMLInputElement>(null);
-
-  const hasExistingCover = !coverRemoved && (coverPreview || customCoverId);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    setCoverFile(file);
-    setCoverRemoved(false);
-    const reader = new FileReader();
-    reader.onload = ev => setCoverPreview(ev.target?.result as string);
-    reader.readAsDataURL(file);
-  };
-
-  const handleRemoveCover = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCoverFile(null);
-    setCoverPreview(null);
-    setCoverRemoved(true);
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      await onSave({ name, comment, isPublic, coverFile, coverRemoved });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const {
+    name, setName, comment, setComment, isPublic, setIsPublic,
+    coverPreview, coverRemoved, hasExistingCover, saving, canSave,
+    coverInputRef, pickCover, handleFileChange, handleRemoveCover, handleSave,
+  } = usePlaylistEditForm(playlist, customCoverId, onSave);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) onClose();
@@ -75,34 +37,19 @@ export default function PlaylistEditModal({
           {/* Left: cover */}
           <div
             className="playlist-edit-cover-wrap"
-            onClick={() => coverInputRef.current?.click()}
+            onClick={pickCover}
           >
-            {coverPreview ? (
-              <img src={coverPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            ) : !coverRemoved && customCoverId ? (
-              <AlbumCoverArtImage
-                albumId={customCoverId}
-                coverArt={customCoverId}
-                displayCssPx={PLAYLIST_MAIN_COVER_CSS_PX}
-                surface="dense"
-                libraryResolve={false}
-                alt=""
-                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-              />
-            ) : (
-              <div className="playlist-cover-grid" style={{ width: '100%', height: '100%' }}>
-                {coverQuadIds.map((coverId, i) =>
-                  coverId
-                    ? <PlaylistSmartCoverCell key={i} coverId={coverId} />
-                    : <div key={i} className="playlist-cover-cell playlist-cover-cell--empty" />
-                )}
-              </div>
-            )}
+            <PlaylistEditCover
+              coverPreview={coverPreview}
+              coverRemoved={coverRemoved}
+              customCoverId={customCoverId}
+              coverQuadIds={coverQuadIds}
+            />
             <div className="playlist-edit-cover-overlay">
               <div className="playlist-edit-cover-menu">
                 <button
                   className="playlist-edit-cover-menu-item"
-                  onClick={e => { e.stopPropagation(); coverInputRef.current?.click(); }}
+                  onClick={e => { e.stopPropagation(); pickCover(); }}
                 >
                   <Camera size={14} />
                   {t('playlists.changeCoverLabel')}
@@ -150,7 +97,7 @@ export default function PlaylistEditModal({
             <button className="btn btn-surface" onClick={onClose}>
               {t('playlists.editCancel')}
             </button>
-            <button className="btn btn-primary" onClick={handleSave} disabled={saving || !name.trim()}>
+            <button className="btn btn-primary" onClick={handleSave} disabled={!canSave}>
               {saving ? <Loader2 size={14} className="spin-slow" /> : null}
               {t('playlists.editSave')}
             </button>

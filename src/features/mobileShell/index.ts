@@ -10,6 +10,7 @@ export { default as MobileSwipeNavigation } from './components/MobileSwipeNaviga
 export { default as MobilePlayer } from './components/MobilePlayer';
 export { default as MobileBackButton } from './components/MobileBackButton';
 export { default as MobileMoreMenu } from './components/MobileMoreMenu';
+export { default as MobileSheet } from './components/MobileSheet';
 export type { MobileMoreMenuAction, MobileMoreMenuItem, MobileMoreMenuShare } from './components/MobileMoreMenu';
 export { useMobileBack } from './hooks/useMobileBack';
 export { activeMobileTab, isMobileTabRoot, MOBILE_TAB_ROOTS } from './utils/mobileTabs';
