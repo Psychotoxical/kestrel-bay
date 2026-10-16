@@ -19,9 +19,10 @@ vi.mock('@tauri-apps/api/webview', async importOriginal => ({
 import { act, screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
 import { resetAllStores } from '@/test/helpers/storeReset';
-import { makeTrack, seedQueue } from '@/test/helpers/factories';
+import { makeServer, makeTrack, seedQueue } from '@/test/helpers/factories';
 import { onInvoke, registerDefaultCoverInvokeHandlers } from '@/test/mocks/tauri';
 import { useFontStore } from '@/store/fontStore';
+import { useHelpModalStore, useOrbitAccountPickerStore } from '@/features/orbit';
 import { AppShell } from './AppShell';
 
 describe('AppShell in the touch shell build', () => {
@@ -73,5 +74,20 @@ describe('AppShell in the touch shell build', () => {
     renderWithProviders(<AppShell />, { route: '/' });
     await act(async () => { await Promise.resolve(); });
     expect(setZoom).not.toHaveBeenCalled();
+  });
+
+  it('opens the Orbit help as a touch sheet, not the desktop modal', async () => {
+    renderWithProviders(<AppShell />, { route: '/' });
+    await act(async () => { useHelpModalStore.getState().open(); });
+    expect(document.querySelector('.mobile-sheet--orbit-help')).not.toBeNull();
+    expect(document.querySelector('.orbit-help-modal')).toBeNull();
+  });
+
+  it('asks for the account as a touch sheet, not the desktop modal', async () => {
+    renderWithProviders(<AppShell />, { route: '/' });
+    await act(async () => { void useOrbitAccountPickerStore.getState().request([makeServer({ id: 'a' }), makeServer({ id: 'b' })]); });
+    expect(document.querySelector('.mobile-sheet--orbit-form')).not.toBeNull();
+    expect(document.querySelector('.orbit-account-picker')).toBeNull();
+    act(() => { useOrbitAccountPickerStore.getState().cancel(); });
   });
 });

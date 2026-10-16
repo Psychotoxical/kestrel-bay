@@ -32,7 +32,7 @@ import ConnectionIndicator from '@/app/ConnectionIndicator';
 import { MusicNetworkIndicator } from '@/music-network/ui';
 import AppUpdater from '@/features/updater/components/AppUpdater';
 import TitleBar from '@/app/TitleBar';
-import { OrbitSessionBar, OrbitStartTrigger } from '@/features/orbit';
+import { OrbitExitModal, OrbitSessionBar, OrbitStartTrigger } from '@/features/orbit';
 import { useOrbitHost } from '@/features/orbit';
 import { useOrbitGuest } from '@/features/orbit';
 import { useOrbitBodyAttrs } from '@/features/orbit';
@@ -60,6 +60,8 @@ import { AppShellQueueResizerSeam } from '@/app/AppShellQueueResizerSeam';
 import { IS_LINUX, IS_MACOS, IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
   MobileMiniPlayer,
+  MobileOrbitAccountSheet,
+  MobileOrbitHelpSheet,
   MobileRadioBridge,
   MobileTabBar,
   MobileTopBar,
@@ -293,8 +295,9 @@ export function AppShell() {
       <DownloadFolderModal />
       <GlobalConfirmModal />
       <ThemeMigrationNotice />
-      <OrbitAccountPicker />
-      <OrbitHelpModal />
+      {IS_MOBILE_SHELL ? <MobileOrbitAccountSheet /> : <OrbitAccountPicker />}
+      {/* Touch shell: the same help as a sheet, in touch wording. */}
+      {IS_MOBILE_SHELL ? <MobileOrbitHelpSheet /> : <OrbitHelpModal />}
       {!perfFlags.disableTooltipPortal && <TooltipPortal />}
       {/* App-store builds update through the store, not the GitHub updater. */}
       {!IS_MOBILE_SHELL && <AppUpdater />}
@@ -314,7 +317,9 @@ export function AppShell() {
       >
         <main className="main-content">
           <div className="main-content-zoom">
-            <OrbitSessionBar />
+            {/* No desktop session strip on the phone: the Orbit tab is the session room
+                (MobileOrbitRoom). The exit notices (ended, removed, …) still show. */}
+            <OrbitExitModal />
             {connStatus === 'disconnected' && (
               <OfflineBanner onRetry={connRetry} isChecking={connRetrying} showSettingsLink={!hasOfflineBrowse} serverName={serverName} />
             )}

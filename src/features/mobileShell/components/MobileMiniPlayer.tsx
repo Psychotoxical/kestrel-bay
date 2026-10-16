@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Music, Pause, Play, Radio, SkipForward } from 'lucide-react';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
+import { isOrbitGuestFollowingHost, useOrbitStore } from '@/features/orbit';
 import { getPlaybackProgressSnapshot, subscribePlaybackProgress } from '@/features/playback/store/playbackProgress';
 import { usePlaybackCoverArt } from '@/cover/usePlaybackCoverArt';
 import { usePlaybackTrackCoverRef } from '@/cover/useLibraryCoverRef';
@@ -30,6 +31,8 @@ export default function MobileMiniPlayer() {
   const navigate = useNavigate();
   const currentTrack = usePlayerStore(s => s.currentTrack);
   const currentRadio = usePlayerStore(s => s.currentRadio);
+  // An Orbit guest follows the host; skipping would only stop the local player.
+  const guestFollowsHost = useOrbitStore(s => isOrbitGuestFollowingHost(s.role, s.phase));
   const isPlaying = usePlayerStore(s => s.isPlaying);
   const togglePlay = usePlayerStore(s => s.togglePlay);
   const next = usePlayerStore(s => s.next);
@@ -91,7 +94,7 @@ export default function MobileMiniPlayer() {
           ? <Pause size={24} fill="currentColor" aria-hidden="true" />
           : <Play size={24} fill="currentColor" aria-hidden="true" />}
       </button>
-      {!currentRadio && (
+      {!currentRadio && !guestFollowsHost && (
         <button
           type="button"
           className="mobile-icon-btn mobile-miniplayer__next"

@@ -12,3 +12,14 @@ export function isOrbitPlaybackSyncActive(
   if (role !== 'host' && role !== 'guest') return false;
   return phase === 'active' || phase === 'joining' || phase === 'starting';
 }
+
+/**
+ * True while this client is a guest whose playback follows the host (joining
+ * or active): skipping and transitions are the host's then.
+ */
+export function isOrbitGuestFollowingHost(
+  role: OrbitRole | null = useOrbitStore.getState().role,
+  phase: OrbitPhase = useOrbitStore.getState().phase,
+): boolean {
+  return role === 'guest' && (phase === 'active' || phase === 'joining');
+}

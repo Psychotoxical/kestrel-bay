@@ -20,8 +20,9 @@ const CHIPS: ReadonlyArray<{ mode: Exclude<TransitionMode, 'none'>; icon: Lucide
  * exclusive (see `playbackTransition`); tapping the active chip turns it off.
  */
 export default function TransitionModeChips({ layout = 'wrap', children }: {
-  /** `scroll`: one swipeable row (queue sheet); `wrap`: centred lines (player). */
-  layout?: 'wrap' | 'scroll';
+  /** `wrap`: centred chips (player); `scroll`: one swipeable row; `segmented`: a compact
+   *  three-way switch with the further controls beside it (queue header, no swiping). */
+  layout?: 'wrap' | 'scroll' | 'segmented';
   /** Further chips appended after the three modes. */
   children?: ReactNode;
 }) {
@@ -34,13 +35,41 @@ export default function TransitionModeChips({ layout = 'wrap', children }: {
   // Transitions follow the host while a guest is in a live Orbit session.
   const locked = useOrbitStore(s => s.role === 'guest' && (s.phase === 'active' || s.phase === 'joining'));
 
+  const labelFor = (chipMode: Exclude<TransitionMode, 'none'>, labelKey: string) => (chipMode === 'crossfade'
+    ? `${t(labelKey)} ${crossfadeSecs.toFixed(crossfadeSecs % 1 === 0 ? 0 : 1)} s`
+    : t(labelKey));
+
+  if (layout === 'segmented') {
+    return (
+      <div className="mobile-transition-bar">
+        <div className="mobile-segmented mobile-transition-bar__modes" role="group" aria-label={t('settings.transitionsTitle')}>
+          {CHIPS.map(({ mode: chipMode, labelKey }) => {
+            const active = mode === chipMode;
+            return (
+              <button
+                key={chipMode}
+                type="button"
+                className={`mobile-segmented__item${active ? ' is-active' : ''}`}
+                aria-pressed={active}
+                disabled={locked}
+                title={locked ? t('settings.transitionsHostControlled') : undefined}
+                onClick={() => setTransitionMode(active ? 'none' : chipMode)}
+              >
+                {labelFor(chipMode, labelKey)}
+              </button>
+            );
+          })}
+        </div>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className={`mobile-chips mobile-chips--${layout}`} role="group" aria-label={t('settings.transitionsTitle')}>
       {CHIPS.map(({ mode: chipMode, icon: Icon, labelKey }) => {
         const active = mode === chipMode;
-        const label = chipMode === 'crossfade'
-          ? `${t(labelKey)} ${crossfadeSecs.toFixed(crossfadeSecs % 1 === 0 ? 0 : 1)} s`
-          : t(labelKey);
+        const label = labelFor(chipMode, labelKey);
         return (
           <button
             key={chipMode}

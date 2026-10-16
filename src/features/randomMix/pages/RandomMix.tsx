@@ -32,7 +32,7 @@ export default function RandomMix() {
   const [songs, setSongs] = useState<SubsonicSong[]>([]);
   const [loading, setLoading] = useState(true);
   const playTrack = usePlayerStore(s => s.playTrack);
-  const { orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit } = useOrbitSongRowBehavior();
+  const { orbitActive, doubleClickToPlay, orbitRowClick, addTrackToOrbit } = useOrbitSongRowBehavior();
   const openContextMenu = usePlayerStore(s => s.openContextMenu);
   const contextMenuOpen = usePlayerStore(s => s.contextMenu.isOpen);
   const currentTrack = usePlayerStore(s => s.currentTrack);
@@ -353,7 +353,7 @@ export default function RandomMix() {
                     showGenreCol={false}
                     isGenreBlocked={false}
                     onPlay={() => playTrack(track, queueSongs)}
-                    onQueueHint={queueHint}
+                    onOrbitRowClick={orbitRowClick}
                     onAddTrackToOrbit={addTrackToOrbit}
                     onOpenContextMenu={e => {
                       e.preventDefault();
@@ -433,7 +433,7 @@ export default function RandomMix() {
                 showGenreCol
                 isGenreBlocked={isGenreBlocked}
                 onPlay={() => playTrack(track, queueSongs)}
-                onQueueHint={queueHint}
+                onOrbitRowClick={orbitRowClick}
                 onAddTrackToOrbit={addTrackToOrbit}
                 onOpenContextMenu={e => {
                   e.preventDefault();

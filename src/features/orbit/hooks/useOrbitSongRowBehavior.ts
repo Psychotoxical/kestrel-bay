@@ -8,7 +8,11 @@ import {
   OrbitSuggestBlockedError,
 } from '@/features/orbit/utils/orbit';
 import { showToast } from '@/lib/dom/toast';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useThemeStore } from '@/store/themeStore';
+
+/** Touch shell: a quick double tap can also fire click + click + dblclick; one add is enough. */
+const TOUCH_REPEAT_ADD_MS = 1000;
 
 /**
  * Shared behaviour for song rows that in "normal mode" swallow a full list
@@ -25,6 +29,10 @@ import { useThemeStore } from '@/store/themeStore';
  *   - `addTrackToOrbit(songId, serverId)` — cancel any pending hint and add just that
  *                       one track: suggestOrbitTrack for guests,
  *                       hostEnqueueToOrbit for the host.
+ *   - `orbitRowClick(songId, serverId)` — what a single click / tap on a row
+ *                       does in a session: the hint on the desktop (the
+ *                       double click adds); in the touch shell, which has no
+ *                       double tap, the tap itself adds that one track.
  *
  * `orbitActive` is the gate — when false, callers should skip the hint and
  * run their original bulk-play path unchanged.
@@ -39,6 +47,7 @@ export function useOrbitSongRowBehavior() {
   const orbitActive = orbitRole === 'host' || orbitRole === 'guest';
   const doubleClickToPlay = useThemeStore(s => s.trackRowPlayClick === 'double');
   const clickTimerRef = useRef<number | null>(null);
+  const lastTouchAddRef = useRef<{ songId: string; at: number } | null>(null);
 
   const queueHint = useCallback(() => {
     if (clickTimerRef.current !== null) return;
@@ -52,6 +61,12 @@ export function useOrbitSongRowBehavior() {
     if (clickTimerRef.current !== null) {
       clearTimeout(clickTimerRef.current);
       clickTimerRef.current = null;
+    }
+    if (IS_MOBILE_SHELL) {
+      const now = Date.now();
+      const last = lastTouchAddRef.current;
+      if (last && last.songId === songId && now - last.at < TOUCH_REPEAT_ADD_MS) return;
+      lastTouchAddRef.current = { songId, at: now };
     }
     if (orbitRole === 'guest') {
       const gate = evaluateOrbitSuggestGate();
@@ -75,5 +90,10 @@ export function useOrbitSongRowBehavior() {
     }
   }, [orbitRole, t]);
 
-  return { orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit };
+  const orbitRowClick = useCallback((songId: string, serverId?: string) => {
+    if (IS_MOBILE_SHELL) addTrackToOrbit(songId, serverId);
+    else queueHint();
+  }, [addTrackToOrbit, queueHint]);
+
+  return { orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit, orbitRowClick };
 }

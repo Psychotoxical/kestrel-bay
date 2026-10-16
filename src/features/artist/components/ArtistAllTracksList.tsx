@@ -82,7 +82,7 @@ export default function ArtistAllTracksList({ songs, albums = NO_ALBUMS, loading
   const psyDrag = useDragDrop();
   // Rows are virtualised, so one can be recycled out from under a held button.
   const dragPress = useDragPressHandle();
-  const { orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit } = useOrbitSongRowBehavior();
+  const { orbitActive, doubleClickToPlay, orbitRowClick, addTrackToOrbit } = useOrbitSongRowBehavior();
 
   const [sort, setSort] = useState<ArtistAllTracksSortState>({ key: 'natural', dir: 'asc' });
 
@@ -164,15 +164,15 @@ export default function ArtistAllTracksList({ songs, albums = NO_ALBUMS, loading
   const { setCursorFromClick } = cursor;
 
   // Latest-value box so the row callbacks stay stable across renders.
-  const latest = useRef({ displayed, orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit, onPlay, psyDrag, setCursorFromClick });
-  latest.current = { displayed, orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit, onPlay, psyDrag, setCursorFromClick };
+  const latest = useRef({ displayed, orbitActive, doubleClickToPlay, orbitRowClick, addTrackToOrbit, onPlay, psyDrag, setCursorFromClick });
+  latest.current = { displayed, orbitActive, doubleClickToPlay, orbitRowClick, addTrackToOrbit, onPlay, psyDrag, setCursorFromClick };
 
   const cb = useMemo<ArtistAllTracksRowCallbacks>(() => ({
     activate: (song, index, e) => {
       if ((e.target as HTMLElement).closest('button, a, input')) return;
       const L = latest.current;
       L.setCursorFromClick(index, e);
-      if (L.orbitActive) { L.queueHint(); return; }
+      if (L.orbitActive) { L.orbitRowClick(song.id, song.serverId); return; }
       if (L.doubleClickToPlay) return;
       L.onPlay(L.displayed, index);
     },
@@ -197,7 +197,7 @@ export default function ArtistAllTracksList({ songs, albums = NO_ALBUMS, loading
     },
     play: index => {
       const L = latest.current;
-      if (L.orbitActive) { L.queueHint(); return; }
+      if (L.orbitActive) { L.orbitRowClick(L.displayed[index].id, L.displayed[index].serverId); return; }
       L.onPlay(L.displayed, index);
     },
     startPreview: song => usePreviewStore.getState().startPreview(previewInputFromSong(song), 'artist'),

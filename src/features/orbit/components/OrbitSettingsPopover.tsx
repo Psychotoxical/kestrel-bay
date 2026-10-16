@@ -8,7 +8,8 @@ import { ORBIT_DEFAULT_SETTINGS, ORBIT_SHUFFLE_INTERVAL_PRESETS_MIN, type OrbitS
 import { showToast } from '@/lib/dom/toast';
 
 interface Props {
-  anchorRef: React.RefObject<HTMLElement | null>;
+  /** Omit to render the content inline (the touch shell puts it in a sheet, which handles closing). */
+  anchorRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
 }
 
@@ -23,10 +24,11 @@ export default function OrbitSettingsPopover({ anchorRef, onClose }: Props) {
   const popRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!anchorRef) return;
     const onDown = (e: MouseEvent) => {
       const target = e.target as Node | null;
       if (popRef.current?.contains(target)) return;
-      if (anchorRef.current?.contains(target)) return;
+      if (anchorRef?.current?.contains(target)) return;
       onClose();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -40,8 +42,8 @@ export default function OrbitSettingsPopover({ anchorRef, onClose }: Props) {
 
   // React Compiler refs rule: ref read imperatively outside reactive rendering; not used to compute the render output.
   // eslint-disable-next-line react-hooks/refs
-  const anchor = anchorRef.current?.getBoundingClientRect();
-  const style: React.CSSProperties = anchor
+  const anchor = anchorRef?.current?.getBoundingClientRect();
+  const style: React.CSSProperties | undefined = !anchorRef ? undefined : anchor
     ? {
         position: 'fixed',
         top:   anchor.bottom + 12,
@@ -50,8 +52,8 @@ export default function OrbitSettingsPopover({ anchorRef, onClose }: Props) {
       }
     : { display: 'none' };
 
-  return createPortal(
-    <div ref={popRef} className="orbit-settings-pop" style={style} role="menu">
+  const content = (
+    <div ref={popRef} className={anchorRef ? 'orbit-settings-pop' : 'orbit-settings-pop orbit-pop--inline'} style={style} role="menu">
       <div className="orbit-settings-pop__head">{t('orbit.settingsTitle')}</div>
 
       <label className="orbit-settings-pop__row">
@@ -127,7 +129,7 @@ export default function OrbitSettingsPopover({ anchorRef, onClose }: Props) {
         <Shuffle size={13} />
         <span>{t('orbit.settingShuffleNow')}</span>
       </button>
-    </div>,
-    document.body,
+    </div>
   );
+  return anchorRef ? createPortal(content, document.body) : content;
 }

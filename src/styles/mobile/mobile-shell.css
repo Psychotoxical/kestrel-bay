@@ -1777,6 +1777,11 @@ html[data-mobile-app] .app-shell {
   display: none;
 }
 
+/* The Orbit guest queue has no header of its own: keep the sheet title and Close. */
+.mobile-sheet--queue.mobile-sheet--queue-guest .mobile-sheet__header-row {
+  display: flex;
+}
+
 .mobile-sheet--queue .mobile-sheet__header {
   padding-bottom: 0;
 }
@@ -3608,4 +3613,496 @@ button.mobile-artist-bio__card:active {
 .settings-touch .settings-card.user-row button {
   min-width: 40px;
   min-height: 40px;
+}
+
+/* ─── Orbit tab during a session (MobileOrbitRoom) ─── */
+/* Exactly the visible area between the route's top and the floating player bar +
+ * tab bar, so the page itself does not scroll and the queue list scrolls inside. */
+.mobile-orbit-room {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: calc(
+    100dvh - env(safe-area-inset-top, 0px) - 4px
+    - var(--mobile-tabbar-height) - var(--mobile-bar-gap) - var(--mobile-miniplayer-height)
+    - var(--mobile-bottom-edge) - 8px
+  );
+  transition: height var(--mobile-bars-motion);
+}
+
+/* Scrolling the queue folds the bars into one row; the room grows into the freed space. */
+html[data-mobile-bars='collapsed'] .mobile-orbit-room {
+  height: calc(
+    100dvh - env(safe-area-inset-top, 0px) - 4px
+    - var(--mobile-folded-height) - var(--mobile-bottom-edge) - 8px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-orbit-room {
+    transition: none;
+  }
+}
+
+.mobile-orbit-room__head {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 14px;
+}
+
+.mobile-orbit-room__title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mobile-orbit-room__dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--positive, #4ade80);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--positive, #4ade80) 22%, transparent);
+}
+
+.mobile-orbit-room__name {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mobile-orbit-room__people {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+}
+
+.mobile-orbit-room__people > span {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-orbit-room__people:active {
+  background: var(--bg-hover);
+}
+
+.mobile-orbit-room__chevron {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.mobile-orbit-room__shuffle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.mobile-orbit-room__shuffle strong {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mobile-orbit-room__primary {
+  min-height: 48px;
+  justify-content: center;
+  border-radius: 24px;
+  font-size: 16px;
+}
+
+.mobile-orbit-room__primary::first-letter {
+  text-transform: uppercase;
+}
+
+/* The shared queue under the head: the sheet's queue panel, its list scrolls on its own.
+ * The page already has the 16 px gutter the sheet adds itself (no negative margins:
+ * they widened the page, which then scrolled sideways). */
+.mobile-orbit-room .queue-panel {
+  flex: 1;
+  min-height: 0;
+}
+
+.mobile-orbit-room .queue-touch-header {
+  padding: 0 0 12px;
+}
+
+/* The room already stops above the floating bars; the page-end spacer would only add
+ * a few pixels of page scroll on top of the list's own. */
+.mobile-orbit-hub:has(.mobile-orbit-room) ~ .mobile-shell-bottom-spacer {
+  display: none;
+}
+
+.mobile-orbit-room .queue-panel--touch .queue-list-wrap {
+  padding: 0;
+}
+
+/* Orbit popovers rendered inline in a sheet (MobileOrbitRoom): the sheet is the box. */
+.orbit-pop--inline {
+  position: static;
+  width: auto !important; /* the diagnostics popover sets its desktop width inline */
+  min-width: 0;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+/* The sheet title already names it. */
+.orbit-settings-pop.orbit-pop--inline .orbit-settings-pop__head {
+  display: none;
+}
+
+.orbit-pop--inline button {
+  min-height: 40px;
+  min-width: 40px;
+}
+
+.orbit-diag-pop.orbit-pop--inline .orbit-diag-pop__head {
+  display: none;
+}
+
+/* Orbit tab while a session runs (MobileTabBar). */
+.mobile-tabbar__tab.is-live {
+  position: relative;
+}
+
+.mobile-tabbar__live-dot {
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 9px);
+  width: 9px;
+  height: 9px;
+  border: 2px solid var(--mobile-glass-bg, var(--bg-card));
+  border-radius: 50%;
+  background: var(--positive, #4ade80);
+}
+
+/* Queue header transitions (TransitionModeChips layout="segmented"): one compact row,
+ * no swiping — the three exclusive modes as a switch, infinite queue as a toggle beside it. */
+.mobile-transition-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.mobile-transition-bar__modes {
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-transition-bar__modes .mobile-segmented__item {
+  padding: 0 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* "On" is the accent, unlike the neutral queue/playlist/timeline switch. */
+.mobile-transition-bar__modes .mobile-segmented__item.is-active {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--accent);
+}
+
+.mobile-transition-bar__modes .mobile-segmented__item:disabled {
+  opacity: 0.5;
+}
+
+.mobile-transition-bar__toggle {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+}
+
+.mobile-transition-bar__toggle.is-active {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--accent);
+}
+
+/* Host approvals in the touch queue (Orbit room, queue sheet): a capped strip that
+ * scrolls on its own, so many waiting suggestions never push the queue itself off
+ * the screen; approve / decline at finger size. */
+.queue-panel--touch .host-approval {
+  flex: none;
+  margin: 0 0 12px;
+}
+
+.queue-panel--touch .host-approval__list {
+  max-height: 148px; /* two and a half rows: the cut-off row shows that it scrolls */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.queue-panel--touch .host-approval__btn {
+  width: 40px;
+  height: 40px;
+}
+
+/* ─── Orbit start / join sheets (MobileOrbitStartSheet, MobileOrbitJoinSheet) ─── */
+.mobile-orbit-form__intro {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.mobile-orbit-form__intro strong {
+  color: var(--text-primary);
+}
+
+.mobile-orbit-form__tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.mobile-orbit-form__tip > svg {
+  flex: none;
+  margin-top: 1px;
+  color: var(--accent);
+}
+
+.mobile-orbit-form__tip.is-warn {
+  background: color-mix(in srgb, var(--warning, #f5a524) 14%, transparent);
+  color: var(--text-primary);
+}
+
+.mobile-orbit-form__tip.is-warn > svg {
+  color: var(--warning, #f5a524);
+}
+
+.mobile-orbit-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-orbit-form__label {
+  margin: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mobile-orbit-form__label strong {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.mobile-orbit-form__helper {
+  margin: 0 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+/* A field with its button beside it (dice, paste), in one rounded group. */
+.mobile-orbit-form__input-row {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-orbit-form__input-row > .mobile-orbit-form__field-btn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin-right: 4px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  color: var(--accent);
+}
+
+.mobile-orbit-form__input-row > .mobile-orbit-form__field-btn:active {
+  background: var(--bg-hover);
+}
+
+/* Same look as the queue's crossfade slider; pan-x keeps a sideways drag off the sheet. */
+.mobile-orbit-form__range {
+  width: 100%;
+  margin: 8px 0;
+  accent-color: var(--accent);
+  touch-action: pan-x;
+}
+
+.mobile-orbit-form__error {
+  margin: 0 4px;
+  font-size: 14px;
+  color: var(--danger);
+}
+
+.mobile-orbit-form__submit {
+  flex: none;
+  width: 100%;
+  min-height: 52px;
+  justify-content: center;
+  border-radius: 26px;
+  font-size: 17px;
+}
+
+/* Not ready yet (empty link, starting): visibly off, like iOS buttons. */
+.mobile-orbit-form__submit:disabled {
+  opacity: 0.45;
+}
+
+/* ─── Orbit help (MobileOrbitHelpSheet) ─── */
+.mobile-orbit-help__intro {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.mobile-orbit-help__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--bg-card);
+}
+
+.mobile-orbit-help__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mobile-orbit-help__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  color: var(--accent);
+}
+
+.mobile-orbit-help__body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.mobile-orbit-help__warn {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--warning, #f5a524) 14%, transparent);
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-primary);
+}
+
+.mobile-orbit-help__warn strong {
+  color: var(--warning, #f5a524);
+}
+
+/* Host: guest suggestions waiting for approval, in place of the live dot. */
+.mobile-tabbar__badge {
+  position: absolute;
+  top: 4px;
+  left: calc(50% + 6px);
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border: 2px solid var(--mobile-glass-bg, var(--bg-card));
+  border-radius: 9px;
+  background: var(--accent);
+  color: var(--text-on-accent, #000);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Orbit account picker sheet (MobileOrbitAccountSheet): the profile name after the user. */
+.mobile-orbit-account__server {
+  color: var(--text-muted);
+}
+
+/* Participants in the room's sheet (OrbitParticipantsPopover inline): touch-sized
+ * names and icons; the desktop popover keeps its compact look. */
+.orbit-participants-pop.orbit-pop--inline .orbit-participants-pop__head {
+  font-size: 13px;
+  padding: 0 4px 8px;
+}
+
+.orbit-participants-pop.orbit-pop--inline .orbit-participants-pop__row {
+  min-height: 52px;
+  font-size: 16px;
+}
+
+.orbit-participants-pop.orbit-pop--inline .orbit-participants-pop__name {
+  font-size: 16px;
+}
+
+.orbit-participants-pop.orbit-pop--inline .orbit-participants-pop__meta {
+  font-size: 13px;
+}
+
+.orbit-participants-pop.orbit-pop--inline svg {
+  width: 18px;
+  height: 18px;
+}
+
+.orbit-participants-pop.orbit-pop--inline .orbit-participants-pop__empty {
+  font-size: 15px;
+  padding: 12px 0;
+}
+
+/* Invite link in the room's share sheet (no iOS share sheet available). */
+.mobile-orbit-share__link {
+  display: block;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  color: var(--accent);
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-all;
+  user-select: all;
+  -webkit-user-select: all;
 }

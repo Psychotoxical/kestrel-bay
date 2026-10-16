@@ -38,7 +38,7 @@ interface Props {
   showGenreCol: boolean;
   isGenreBlocked: boolean;
   onPlay: () => void;
-  onQueueHint: () => void;
+  onOrbitRowClick: (songId: string) => void;
   onAddTrackToOrbit: (id: string) => void;
   onOpenContextMenu: (e: React.MouseEvent) => void;
   onToggleStar: (e: React.MouseEvent) => void;
@@ -51,7 +51,7 @@ export default function RandomMixTrackRow({
   isCurrentTrack, isPlaying, isContextActive, orbitActive, doubleClickToPlay,
   cursorRowId, onCursorClick, previewingId, previewAudioStarted, isStarred,
   customGenreBlacklist, addedArtist, addedGenre, showGenreCol, isGenreBlocked,
-  onPlay, onQueueHint, onAddTrackToOrbit, onOpenContextMenu, onToggleStar,
+  onPlay, onOrbitRowClick, onAddTrackToOrbit, onOpenContextMenu, onToggleStar,
   onBlacklistArtist, onBlacklistGenre,
 }: Props) {
   const { t } = useTranslation();
@@ -81,7 +81,7 @@ export default function RandomMixTrackRow({
       onClick={e => {
         if ((e.target as HTMLElement).closest('button, a, input')) return;
         onCursorClick(e);
-        if (orbitActive) { onQueueHint(); return; }
+        if (orbitActive) { onOrbitRowClick(song.id); return; }
         if (doubleClickToPlay) return;
         onPlay();
       }}
@@ -106,7 +106,7 @@ export default function RandomMixTrackRow({
         <button
           type="button"
           className="playlist-suggestion-play-btn"
-          onClick={e => { e.stopPropagation(); if (orbitActive) { onQueueHint(); return; } onPlay(); }}
+          onClick={e => { e.stopPropagation(); if (orbitActive) { onOrbitRowClick(song.id); return; } onPlay(); }}
           data-tooltip={t('common.play')}
           aria-label={t('common.play')}
         >

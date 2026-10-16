@@ -42,21 +42,23 @@ interface QueuePanelProps {
   touch?: boolean;
   /** Close button in the touch header. */
   onClose?: () => void;
+  /** Leave out the Orbit session head (name, participants): the touch Orbit tab shows its own. */
+  hideOrbitHead?: boolean;
 }
 
-export default function QueuePanel({ touch = false, onClose }: QueuePanelProps = {}) {
+export default function QueuePanel({ touch = false, onClose, hideOrbitHead = false }: QueuePanelProps = {}) {
   const orbitRole = useOrbitStore(s => s.role);
   if (orbitRole === 'guest') {
     return (
       <aside className={`queue-panel queue-panel--orbit-guest${touch ? ' queue-panel--touch' : ''}`}>
-        <OrbitGuestQueue />
+        <OrbitGuestQueue hideHead={hideOrbitHead} />
       </aside>
     );
   }
-  return <QueuePanelHostOrSolo touch={touch} onClose={onClose} />;
+  return <QueuePanelHostOrSolo touch={touch} onClose={onClose} hideOrbitHead={hideOrbitHead} />;
 }
 
-function QueuePanelHostOrSolo({ touch, onClose }: QueuePanelProps) {
+function QueuePanelHostOrSolo({ touch, onClose, hideOrbitHead }: QueuePanelProps) {
   const { t } = useTranslation();
   const navigatePlaybackLibrary = usePlaybackLibraryNavigate();
   const orbitRole = useOrbitStore(s => s.role);
@@ -307,7 +309,7 @@ function QueuePanelHostOrSolo({ touch, onClose }: QueuePanelProps) {
     >
       {orbitRole === 'host' && orbitState && (
         <>
-          <OrbitQueueHead state={orbitState} />
+          {!hideOrbitHead && <OrbitQueueHead state={orbitState} />}
           <HostApprovalQueue />
         </>
       )}

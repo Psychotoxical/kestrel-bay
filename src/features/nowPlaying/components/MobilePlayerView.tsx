@@ -292,7 +292,7 @@ export default function MobilePlayerView() {
     return (
       <div className="mp-view">
         <div className="mp-header">
-          <button className="mp-back" onClick={() => navigate(-1)} aria-label={t('common.back')}>
+          <button className="mp-back" onClick={() => navigate(-1)} aria-label={t('player.back')}>
             <ChevronDown size={28} />
           </button>
           <span className="mp-header-title">{t('sidebar.nowPlaying')}</span>
@@ -319,7 +319,7 @@ export default function MobilePlayerView() {
     <div className="mp-view" style={bgStyle}>
       {/* Header */}
       <div className="mp-header">
-        <button className="mp-back" onClick={() => navigate(-1)} aria-label={t('common.back')}>
+        <button className="mp-back" onClick={() => navigate(-1)} aria-label={t('player.back')}>
           <ChevronDown size={28} />
         </button>
         <span className="mp-header-title">{t('sidebar.nowPlaying')}</span>

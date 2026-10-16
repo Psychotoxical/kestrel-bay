@@ -72,7 +72,7 @@ export default function FavoritesSongsTracklist({
   const psyDrag = useDragDrop();
   // Rows are virtualised, so one can be recycled out from under a held button.
   const dragPress = useDragPressHandle();
-  const { orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit } = useOrbitSongRowBehavior();
+  const { orbitActive, doubleClickToPlay, orbitRowClick, addTrackToOrbit } = useOrbitSongRowBehavior();
 
   const visibleTracks = useMemo(() => visibleSongs.map(songToTrack), [visibleSongs]);
 
@@ -93,7 +93,7 @@ export default function FavoritesSongsTracklist({
   const latestVals = {
     visibleSongs, visibleTracks, selectedIds, inSelectMode, orbitActive, doubleClickToPlay,
     toggleSelect, handleRate, removeSong, playTrack, openContextMenu,
-    navigate, queueHint, addTrackToOrbit, psyDrag, setCursorFromClick,
+    navigate, orbitRowClick, addTrackToOrbit, psyDrag, setCursorFromClick,
     cursorIndex: cursor.cursorIndex,
   };
   const latest = useRef(latestVals);
@@ -115,7 +115,7 @@ export default function FavoritesSongsTracklist({
       }
       if (L.inSelectMode) { L.toggleSelect(key, index, e.shiftKey); return; }
       L.setCursorFromClick(index, e);
-      if (L.orbitActive) L.queueHint();
+      if (L.orbitActive) L.orbitRowClick(song.id, song.serverId);
       else if (!L.doubleClickToPlay) L.playTrack(L.visibleTracks[index], L.visibleTracks, true, false, index);
     },
     doubleClick: (song, index, e) => {
@@ -158,7 +158,7 @@ export default function FavoritesSongsTracklist({
     toggleSelect: (songId, index, shift) => latest.current.toggleSelect(songId, index, shift),
     play: (index) => {
       const L = latest.current;
-      if (L.orbitActive) { L.queueHint(); return; }
+      if (L.orbitActive) { L.orbitRowClick(L.visibleTracks[index].id, L.visibleTracks[index].serverId); return; }
        L.playTrack(L.visibleTracks[index], L.visibleTracks, true, false, index);
     },
     startPreview: (song) => usePreviewStore.getState().startPreview(

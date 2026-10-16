@@ -1,22 +1,11 @@
-import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
   X, Check, Copy, Orbit as OrbitIcon,
   Dices, AlertTriangle, Globe2,
 } from 'lucide-react';
-import {
-  startOrbitSession,
-  buildOrbitShareLink,
-  generateSessionId,
-} from '@/features/orbit/utils/orbit';
-import { randomOrbitSessionName } from '@/features/orbit/utils/orbitNames';
-import { useAuthStore } from '@/store/authStore';
-import { isLanUrl, serverShareBaseUrl } from '@/lib/server/serverEndpoint';
-import { serverListDisplayLabel } from '@/lib/server/serverDisplayName';
-import { ORBIT_DEFAULT_MAX_USERS } from '@/features/orbit/api/orbit';
 import ServerChoiceList from '@/ui/ServerChoiceList';
-import { useUnavailableServerIds } from '@/lib/network/serverReachability';
+import { useOrbitStartForm } from '@/features/orbit/hooks/useOrbitStartForm';
 
 interface Props { onClose: () => void; }
 
@@ -26,89 +15,16 @@ interface Props { onClose: () => void; }
  * One-screen flow: a share-link is shown immediately (built from a
  * pre-generated session id + a slug derived from the live name). The host
  * can copy it any time; pressing "Start" creates the session under that
- * same id and auto-copies the link if it hasn't been copied yet.
+ * same id and auto-copies the link if it hasn't been copied yet. The form
+ * state lives in `useOrbitStartForm` (shared with the touch shell's sheet).
  */
 export default function OrbitStartModal({ onClose }: Props) {
   const { t } = useTranslation();
-  const [sid]                     = useState(() => generateSessionId());
-  const [name, setName]           = useState(() => randomOrbitSessionName());
-  const [maxUsers, setMaxUsers]   = useState(ORBIT_DEFAULT_MAX_USERS);
-  const [busy, setBusy]           = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-  const [copied, setCopied]       = useState(false);
-  const [hasCopied, setHasCopied] = useState(false);
-  const [clearQueue, setClearQueue] = useState(false);
-
-  const servers = useAuthStore(state => state.servers);
-  const libraryBrowseServerIds = useAuthStore(state => state.libraryBrowseServerIds);
-  const unavailableServerIds = useUnavailableServerIds();
-  const [serverId, setServerId] = useState(() => {
-    const auth = useAuthStore.getState();
-    return auth.libraryBrowseServerIds.includes(auth.activeServerId ?? '')
-      ? auth.activeServerId ?? ''
-      : auth.libraryBrowseServerIds[0] ?? auth.activeServerId ?? '';
-  });
-  const serverOptions = servers
-    .filter(server => libraryBrowseServerIds.includes(server.id))
-    .map(server => {
-      const label = serverListDisplayLabel(server, servers);
-      return {
-        id: server.id,
-        label,
-        warning: unavailableServerIds.has(server.id)
-          ? t('connection.offlineSubtitle', { server: label })
-          : undefined,
-      };
-    });
-  const server = servers.find(candidate => candidate.id === serverId);
-  // Orbit links go to remote guests — use the share URL (public by default
-  // when both are set; LAN only if shareUsesLocalUrl is on). The LAN warning
-  // then correctly reads the address the guest will actually see.
-  const serverBase = server ? serverShareBaseUrl(server) : '';
-  const serverName = server?.name ?? server?.url ?? t('orbit.fallbackServer');
-  const onLan      = isLanUrl(serverBase);
-
-  const shareLink = buildOrbitShareLink(serverBase, sid);
-
-  const writeLinkToClipboard = async (): Promise<boolean> => {
-    try {
-      await navigator.clipboard.writeText(shareLink);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const onCopy = async () => {
-    const ok = await writeLinkToClipboard();
-    if (ok) {
-      setCopied(true);
-      setHasCopied(true);
-      window.setTimeout(() => setCopied(false), 1500);
-    }
-  };
-
-  const onStart = async () => {
-    setError(null);
-    const trimmed = name.trim();
-    if (!trimmed) { setError(t('orbit.errNameRequired')); return; }
-    if (!server) { setError(t('orbit.joinErrNoUser')); return; }
-
-    if (!hasCopied) {
-      const ok = await writeLinkToClipboard();
-      if (ok) setHasCopied(true);
-    }
-
-    setBusy(true);
-    try {
-      await startOrbitSession({ name: trimmed, maxUsers, sid, serverId: server.id, clearQueue });
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : t('orbit.errStartFailed'));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const {
+    name, setName, reshuffleName, maxUsers, setMaxUsers, clearQueue, setClearQueue,
+    serverId, serverOptions, selectServer, server, serverName, onLan,
+    shareLink, copied, hasCopied, onCopy, busy, error, onStart,
+  } = useOrbitStartForm(onClose);
 
   const heroSubParts = t('orbit.heroSub', { server: serverName }).split(String(serverName));
 
@@ -154,11 +70,7 @@ export default function OrbitStartModal({ onClose }: Props) {
             <ServerChoiceList
               value={serverId}
               options={serverOptions}
-              onChange={(nextServerId) => {
-                setServerId(nextServerId);
-                setHasCopied(false);
-                setError(null);
-              }}
+              onChange={selectServer}
               ariaLabel={t('orbit.serverAria')}
               disabled={busy}
             />
@@ -176,7 +88,7 @@ export default function OrbitStartModal({ onClose }: Props) {
               type="text"
               autoFocus
               value={name}
-              onChange={e => { setName(e.target.value); setHasCopied(false); }}
+              onChange={e => setName(e.target.value)}
               onKeyDown={e => {
                 if (e.key !== 'Enter') return;
                 if (busy || !name.trim() || !server) return;
@@ -190,7 +102,7 @@ export default function OrbitStartModal({ onClose }: Props) {
             <button
               type="button"
               className="orbit-start-modal__reshuffle"
-              onClick={() => { setName(randomOrbitSessionName()); setHasCopied(false); }}
+              onClick={reshuffleName}
               data-tooltip={t('orbit.reshuffleTooltip')}
               aria-label={t('orbit.reshuffleAria')}
             >
@@ -259,7 +171,7 @@ export default function OrbitStartModal({ onClose }: Props) {
           <button
             type="button"
             className="btn btn-primary"
-            onClick={onStart}
+            onClick={() => { void onStart(); }}
             disabled={busy || !name.trim() || !server}
           >
             {busy

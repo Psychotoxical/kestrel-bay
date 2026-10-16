@@ -2,31 +2,29 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HelpCircle, LogIn, Plus } from 'lucide-react';
 import {
-  OrbitGuestQueue,
-  OrbitJoinModal,
-  OrbitQueueHead,
-  OrbitStartModal,
   OrbitWordmark,
+  useHelpModalStore,
   useOrbitStore,
 } from '@/features/orbit';
-import HostApprovalQueue from '@/features/orbit/components/HostApprovalQueue';
-import { useHelpModalStore } from '@/features/orbit/store/helpModalStore';
+import MobileOrbitRoom from '@/features/mobileShell/components/MobileOrbitRoom';
+import MobileOrbitStartSheet from '@/features/mobileShell/components/MobileOrbitStartSheet';
+import MobileOrbitJoinSheet from '@/features/mobileShell/components/MobileOrbitJoinSheet';
 
 /**
- * Orbit tab root. Without a session: create / join / help. In a session the
- * session bar sits above every page; this tab adds the host's queue head and
- * approval list, or the guest queue.
+ * Orbit tab root. Without a session: create / join / help. In a session it is
+ * the session room (MobileOrbitRoom): head with the session controls, and the
+ * shared queue right below.
  */
 export default function MobileOrbitHub() {
   const { t } = useTranslation();
   const role = useOrbitStore(s => s.role);
-  const state = useOrbitStore(s => s.state);
   const [startOpen, setStartOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
 
   return (
     <div className="mobile-page mobile-orbit-hub">
-      <h1 className="mobile-large-title mobile-orbit-hub__title">
+      {/* In a session the room's head names it; the wordmark stays for VoiceOver only. */}
+      <h1 className={role === null ? 'mobile-large-title mobile-orbit-hub__title' : 'mobile-visually-hidden'}>
         <OrbitWordmark height={30} />
         <span className="mobile-visually-hidden">{t('orbit.triggerLabel')}</span>
       </h1>
@@ -49,17 +47,12 @@ export default function MobileOrbitHub() {
             </button>
           </div>
         </>
-      ) : role === 'guest' ? (
-        <div className="mobile-orbit-hub__panel"><OrbitGuestQueue /></div>
       ) : (
-        <div className="mobile-orbit-hub__panel">
-          {state && <OrbitQueueHead state={state} />}
-          <HostApprovalQueue />
-        </div>
+        <MobileOrbitRoom />
       )}
 
-      {startOpen && <OrbitStartModal onClose={() => setStartOpen(false)} />}
-      {joinOpen && <OrbitJoinModal onClose={() => setJoinOpen(false)} />}
+      {startOpen && <MobileOrbitStartSheet onClose={() => setStartOpen(false)} />}
+      {joinOpen && <MobileOrbitJoinSheet onClose={() => setJoinOpen(false)} />}
     </div>
   );
 }

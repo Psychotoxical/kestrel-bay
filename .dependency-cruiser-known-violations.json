@@ -29004,7 +29004,7 @@
   },
   {
     "type": "dependency",
-    "from": "src/features/orbit/components/OrbitSessionBar.tsx",
+    "from": "src/features/orbit/hooks/useOrbitSessionControls.ts",
     "to": "src/features/playback/store/playerStore.ts",
     "unresolvedTo": "@/features/playback/store/playerStore",
     "dependencyTypes": [

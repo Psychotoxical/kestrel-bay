@@ -3,6 +3,8 @@
 // Library and Orbit tab roots. Desktop builds never render any of it.
 export { default as MobileTabBar } from './components/MobileTabBar';
 export { default as MobileMiniPlayer } from './components/MobileMiniPlayer';
+export { default as MobileOrbitHelpSheet } from './components/MobileOrbitHelpSheet';
+export { default as MobileOrbitAccountSheet } from './components/MobileOrbitAccountSheet';
 export { default as MobileTopBar } from './components/MobileTopBar';
 export { default as MobileRadioBridge } from './components/MobileRadioBridge';
 export { default as MobileTouchContextMenu } from './components/MobileTouchContextMenu';

@@ -8,7 +8,8 @@ import ConfirmModal from '@/ui/ConfirmModal';
 
 interface Props {
   /** Anchor — we position the popover directly below its bottom-right. */
-  anchorRef: React.RefObject<HTMLElement | null>;
+  /** Omit to render the content inline (the touch shell puts it in a sheet, which handles closing). */
+  anchorRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
 }
 
@@ -36,11 +37,12 @@ export default function OrbitParticipantsPopover({ anchorRef, onClose }: Props) 
   // (otherwise outside-clicking the modal would dismiss the popover too,
   // and re-opening would lose the in-flight confirm context).
   useEffect(() => {
+    if (!anchorRef) return;
     const onDown = (e: MouseEvent) => {
       if (confirm) return;
       const t = e.target as Node | null;
       if (popRef.current?.contains(t)) return;
-      if (anchorRef.current?.contains(t)) return;
+      if (anchorRef?.current?.contains(t)) return;
       onClose();
     };
     const onKey = (e: KeyboardEvent) => {
@@ -59,8 +61,8 @@ export default function OrbitParticipantsPopover({ anchorRef, onClose }: Props) 
 
   // React Compiler refs rule: ref read imperatively outside reactive rendering; not used to compute the render output.
   // eslint-disable-next-line react-hooks/refs
-  const anchor = anchorRef.current?.getBoundingClientRect();
-  const style: React.CSSProperties = anchor
+  const anchor = anchorRef?.current?.getBoundingClientRect();
+  const style: React.CSSProperties | undefined = !anchorRef ? undefined : anchor
     ? {
         position: 'fixed',
         top:  anchor.bottom + 12,
@@ -77,9 +79,9 @@ export default function OrbitParticipantsPopover({ anchorRef, onClose }: Props) 
     else                   await kickOrbitParticipant(user);
   };
 
-  return createPortal(
+  const content = (
     <>
-    <div ref={popRef} className="orbit-participants-pop" style={style} role="menu">
+    <div ref={popRef} className={anchorRef ? 'orbit-participants-pop' : 'orbit-participants-pop orbit-pop--inline'} style={style} role="menu">
       <div className="orbit-participants-pop__head">
         {t('orbit.participantsCountLabel', { count: state.participants.length + 1 })}
       </div>
@@ -155,7 +157,7 @@ export default function OrbitParticipantsPopover({ anchorRef, onClose }: Props) 
       onConfirm={() => { void onConfirm(); }}
       onCancel={() => setConfirm(null)}
     />
-    </>,
-    document.body,
+    </>
   );
+  return anchorRef ? createPortal(content, document.body) : content;
 }

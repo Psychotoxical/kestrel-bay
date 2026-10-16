@@ -25,6 +25,7 @@ import { formatTrackTime } from '@/lib/format/formatDuration';
 import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';
+import { isOrbitGuestFollowingHost, useOrbitStore } from '@/features/orbit';
 import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet';
 import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
 import CrossfadeLengthSlider from '@/features/mobileShell/components/CrossfadeLengthSlider';
@@ -151,6 +152,9 @@ export default function MobilePlayer() {
   const navigatePlaybackLibrary = usePlaybackLibraryNavigate();
   const currentTrack = usePlayerStore(s => s.currentTrack);
   const currentRadio = usePlayerStore(s => s.currentRadio);
+  // An Orbit guest follows the host; skipping would only stop the local player.
+  const guestFollowsHost = useOrbitStore(s => isOrbitGuestFollowingHost(s.role, s.phase));
+  const skipLockedTitle = guestFollowsHost ? t('settings.transitionsHostControlled') : undefined;
   const resolvedStreamFormat = usePlayerStore(s => s.resolvedStreamFormat);
   const isPlaying = usePlayerStore(s => s.isPlaying);
   const togglePlay = usePlayerStore(s => s.togglePlay);
@@ -335,7 +339,8 @@ export default function MobilePlayer() {
                 className="mobile-icon-btn mobile-icon-btn--large"
                 onClick={() => previous()}
                 aria-label={t('player.prev')}
-                disabled={!!currentRadio}
+                title={skipLockedTitle}
+                disabled={!!currentRadio || guestFollowsHost}
               >
                 <SkipBack size={36} fill="currentColor" aria-hidden="true" />
               </button>
@@ -364,7 +369,8 @@ export default function MobilePlayer() {
                 className="mobile-icon-btn mobile-icon-btn--large"
                 onClick={() => next()}
                 aria-label={t('player.next')}
-                disabled={!!currentRadio}
+                title={skipLockedTitle}
+                disabled={!!currentRadio || guestFollowsHost}
               >
                 <SkipForward size={36} fill="currentColor" aria-hidden="true" />
               </button>

@@ -286,10 +286,10 @@ const handleShuffleAll = () => {
      if (shuffled[0]) playTrack(shuffled[0], shuffled);
    };
 
-   const { orbitActive, queueHint, addTrackToOrbit } = useOrbitSongRowBehavior();
+   const { orbitActive, orbitRowClick, addTrackToOrbit } = useOrbitSongRowBehavior();
 
    const handlePlaySong = (song: SubsonicSong) => {
-     if (orbitActive) { queueHint(); return; }
+     if (orbitActive) { orbitRowClick(song.id, song.serverId); return; }
      if (!album || !effectiveSongs) return;
      const albumGenre = album.album.genre;
      const tracks = effectiveSongs.map(s => {

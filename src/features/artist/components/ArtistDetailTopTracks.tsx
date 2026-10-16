@@ -38,7 +38,7 @@ export default function ArtistDetailTopTracks({
   const openContextMenu = usePlayerStore(s => s.openContextMenu);
   const previewingId = usePreviewStore(s => s.previewingId);
   const previewAudioStarted = usePreviewStore(s => s.audioStarted);
-  const { orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit } = useOrbitSongRowBehavior();
+  const { orbitActive, doubleClickToPlay, orbitRowClick, addTrackToOrbit } = useOrbitSongRowBehavior();
   const psyDrag = useDragDrop();
   const dragPress = useDragPressHandle();
   const cursorKeys = useMemo(() => topSongs.map((song, idx) => `${song.id}:${idx}`), [topSongs]);
@@ -78,7 +78,7 @@ export default function ArtistDetailTopTracks({
               isActive={active}
               showEq={active && isPlaying}
               onPlay={i => {
-                if (orbitActive) { queueHint(); return; }
+                if (orbitActive) { orbitRowClick(song.id, song.serverId); return; }
                 void playTopSongWithContinuation(i);
               }}
               onMore={(s, at) => openContextMenu(at.x, at.y, songToTrack(s), 'song')}
@@ -129,7 +129,7 @@ export default function ArtistDetailTopTracks({
                onClick={e => {
                  if ((e.target as HTMLElement).closest('button, a, input')) return;
                  cursor.setCursorFromClick(idx, e);
-                 if (orbitActive) { queueHint(); return; }
+                 if (orbitActive) { orbitRowClick(song.id, song.serverId); return; }
                  if (doubleClickToPlay) return;
                  playTopSongWithContinuation(idx);
                }}
@@ -163,7 +163,7 @@ export default function ArtistDetailTopTracks({
           <button
             type="button"
             className="playlist-suggestion-play-btn"
-            onClick={e => { e.stopPropagation(); if (orbitActive) { queueHint(); return; } playTopSongWithContinuation(idx); }}
+            onClick={e => { e.stopPropagation(); if (orbitActive) { orbitRowClick(song.id, song.serverId); return; } playTopSongWithContinuation(idx); }}
             data-tooltip={t('common.play')}
             aria-label={t('common.play')}
           >

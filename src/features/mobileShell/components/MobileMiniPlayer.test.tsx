@@ -6,6 +6,7 @@ import { resetAllStores } from '@/test/helpers/storeReset';
 import { makeTrack, seedQueue } from '@/test/helpers/factories';
 import { registerDefaultCoverInvokeHandlers } from '@/test/mocks/tauri';
 import { swipe } from '@/test/helpers/touch';
+import { useOrbitStore } from '@/features/orbit';
 import MobileMiniPlayer from './MobileMiniPlayer';
 
 function Location() {
@@ -51,5 +52,16 @@ describe('MobileMiniPlayer', () => {
     const bar = container.querySelector('.mobile-miniplayer') as HTMLElement;
     act(() => { swipe(bar, { x: 100, y: 830 }, { x: 300, y: 810 }); });
     expect(screen.getByTestId('location')).toHaveTextContent('/');
+  });
+
+  it('an Orbit guest gets no Next button (the host skips); the host keeps it', () => {
+    seedQueue([makeTrack({ title: 'Chaos' })]);
+    useOrbitStore.setState({ role: 'guest', phase: 'active' });
+    const { unmount } = renderMini();
+    expect(screen.queryByRole('button', { name: 'Next Track' })).toBeNull();
+    unmount();
+    useOrbitStore.setState({ role: 'host', phase: 'active' });
+    renderMini();
+    expect(screen.getByRole('button', { name: 'Next Track' })).toBeInTheDocument();
   });
 });

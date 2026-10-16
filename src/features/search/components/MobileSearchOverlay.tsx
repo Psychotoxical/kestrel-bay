@@ -22,6 +22,8 @@ import { ArtistCoverArtImage } from '@/cover/ArtistCoverArtImage';
 import { CoverArtImage } from '@/cover/CoverArtImage';
 import { albumCoverRefForSong } from '@/cover/ref';
 import { showToast } from '@/lib/dom/toast';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { useOrbitSongRowBehavior } from '@/features/orbit';
 import { albumArtistDisplayName } from '@/features/album';
 import { useShareSearch } from '@/features/search/hooks/useShareSearch';
 import ShareSearchResults from '@/features/search/components/ShareSearchResults';
@@ -126,6 +128,7 @@ function MobileSearchArtistThumb({ artist }: { artist: Pick<SubsonicArtist, 'id'
 
 export default function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
+  const { orbitActive, addTrackToOrbit } = useOrbitSongRowBehavior();
   const navigate = useNavigate();
   const location = useLocation();
   const enqueue = usePlayerStore(s => s.enqueue);
@@ -186,6 +189,13 @@ export default function MobileSearchOverlay({ onClose }: { onClose: () => void }
   const goCategory = (path: string) => { navigate(path); onClose(); };
   const enqueueSong = (song: SearchResults['songs'][number]) => {
     commit(query);
+    // Touch shell, Orbit session: a tap adds the song to the session (host) or
+    // suggests it (guest), as in every song list; the session confirms it itself.
+    if (IS_MOBILE_SHELL && orbitActive) {
+      addTrackToOrbit(song.id, song.serverId);
+      onClose();
+      return;
+    }
     const track = songToTrack(song);
     enqueue([track]);
     showToast(t('search.addedToQueueToast', { title: track.title }), 2200, 'info');

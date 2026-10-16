@@ -32,6 +32,8 @@ export interface OrbitRuntime {
   getSnapshot(): OrbitSnapshot;
   bulkGuard(count: number): Promise<boolean>;
   allowsTrackServer(serverId?: string): boolean;
+  /** Guest: send tracks to the host as suggestions (touch shell). */
+  suggestTracks?(tracks: ReadonlyArray<{ id: string; serverId?: string }>): Promise<void>;
 }
 
 let runtime: OrbitRuntime | null = null;
@@ -57,6 +59,20 @@ export function orbitSnapshot(): OrbitSnapshot {
  */
 export function orbitBulkGuard(count: number): Promise<boolean> {
   return runtime ? runtime.bulkGuard(count) : Promise.resolve(true);
+}
+
+/**
+ * Touch shell: a guest who follows the host has no queue of their own (the
+ * next host sync replaces it, Psysonic #1754 on the desktop), so queue
+ * additions go to the host as suggestions instead. True when the runtime took
+ * the tracks over; callers then skip their local queue change. Callers gate it
+ * behind `IS_MOBILE_SHELL`, so the desktop never reaches it.
+ */
+export function orbitGuestTakesQueueAdd(tracks: ReadonlyArray<{ id: string; serverId?: string }>): boolean {
+  const { role, phase } = orbitSnapshot();
+  if (role !== 'guest' || phase !== 'active' || !runtime?.suggestTracks) return false;
+  void runtime.suggestTracks(tracks);
+  return true;
 }
 
 /** Host queue mutations may only carry tracks owned by the bound Orbit server. */

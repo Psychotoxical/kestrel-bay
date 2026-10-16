@@ -8,6 +8,7 @@ import { registerDefaultCoverInvokeHandlers } from '@/test/mocks/tauri';
 import { swipe } from '@/test/helpers/touch';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { setTransitionMode } from '@/features/playback/utils/playback/playbackTransition';
+import { useOrbitStore } from '@/features/orbit';
 import MobilePlayer from './MobilePlayer';
 
 function Location() {
@@ -31,6 +32,24 @@ describe('MobilePlayer', () => {
     const player = container.querySelector('.mobile-player') as HTMLElement;
     act(() => { swipe(player, { x: 200, y: 200 }, { x: 205, y: 450 }); });
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
+  });
+
+  it('an Orbit guest cannot skip and is told why; the host can', () => {
+    useOrbitStore.setState({ role: 'guest', phase: 'active' });
+    const { unmount } = renderPlayer();
+    for (const name of ['Previous Track', 'Next Track']) {
+      const button = screen.getByRole('button', { name }) as HTMLButtonElement;
+      expect(button.disabled).toBe(true);
+      expect(button.title).toMatch(/Orbit host/);
+    }
+    unmount();
+    useOrbitStore.setState({ role: 'host', phase: 'active' });
+    renderPlayer();
+    for (const name of ['Previous Track', 'Next Track']) {
+      const button = screen.getByRole('button', { name }) as HTMLButtonElement;
+      expect(button.disabled).toBe(false);
+      expect(button.title).toBe('');
+    }
   });
 
   it('names the close button for VoiceOver with a real translation, not a raw key', () => {

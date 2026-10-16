@@ -131,7 +131,7 @@ export default function PlaylistTracklist({
   const showBitrate = useThemeStore(s => s.showBitrate);
   const trackListCoversOn = useTrackListCoverArtEnabled('pages');
   const { isDragging } = useDragDrop();
-  const { orbitActive, doubleClickToPlay, queueHint, addTrackToOrbit } = useOrbitSongRowBehavior();
+  const { orbitActive, doubleClickToPlay, orbitRowClick, addTrackToOrbit } = useOrbitSongRowBehavior();
   const { active: offlineBrowseActive } = useOfflineBrowseContext();
   const policy = offlineActionPolicy('playlistDetail', offlineBrowseActive);
   const selectedSongs = useMemo(
@@ -157,7 +157,7 @@ export default function PlaylistTracklist({
     selectedIds, orbitActive, doubleClickToPlay, displayedTracks, isFiltered, id, songs, serverId,
     toggleSelect, handleRowMouseDown, handleRowMouseEnter, handleToggleStar,
     handleRate, removeSong, playTrack, openContextMenu, setContextMenuSongId,
-    navigate, location, queueHint, addTrackToOrbit, tracksReadOnly, setCursorFromClick,
+    navigate, location, orbitRowClick, addTrackToOrbit, tracksReadOnly, setCursorFromClick,
     displayedSongs, cursorIndex: cursor.cursorIndex,
   };
   const latest = useRef(latestVals);
@@ -178,7 +178,7 @@ export default function PlaylistTracklist({
       }
       if (L.selectedIds.size > 0) { L.toggleSelect(song.id, index, e.shiftKey); return; }
       L.setCursorFromClick(index, e);
-      if (L.orbitActive) L.queueHint();
+      if (L.orbitActive) L.orbitRowClick(song.id, song.serverId);
       else if (!L.doubleClickToPlay) L.playTrack(L.displayedTracks[index], L.displayedTracks);
     },
     doubleClick: (song, index, e) => {
@@ -226,7 +226,7 @@ export default function PlaylistTracklist({
     toggleSelect: (songId, index, shift) => latest.current.toggleSelect(songId, index, shift),
     play: (index) => {
       const L = latest.current;
-      if (L.orbitActive) { L.queueHint(); return; }
+      if (L.orbitActive) { L.orbitRowClick(L.displayedTracks[index].id, L.displayedTracks[index].serverId); return; }
       L.playTrack(L.displayedTracks[index], L.displayedTracks);
     },
     startPreview: (song) => usePreviewStore.getState().startPreview(

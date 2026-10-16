@@ -9,6 +9,11 @@ import {
   isGlobalShortcutActionId,
   isShortcutAction,
 } from '@/config/shortcutActions';
+import { isOrbitGuestFollowingHost } from '@/features/orbit';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+
+/** Phone: an Orbit guest follows the host, so lock-screen skips would only stop the local player. */
+const ignoreSkip = () => IS_MOBILE_SHELL && isOrbitGuestFollowingHost();
 
 /** Media keys, tray actions, global / cross-window shortcut events, and seek/volume. */
 export function useMediaAndWindowBridge(navigate: NavigateFunction) {
@@ -22,8 +27,8 @@ export function useMediaAndWindowBridge(navigate: NavigateFunction) {
         ['media:play-pause', () => executeRuntimeAction('play-pause', { navigate, previewPolicy: 'ignore' })],
         ['media:play',       () => executeRuntimeAction('play', { navigate, previewPolicy: 'ignore' })],
         ['media:pause',      () => executeRuntimeAction('pause', { navigate, previewPolicy: 'ignore' })],
-        ['media:next',       () => executeRuntimeAction('next', { navigate, previewPolicy: 'ignore' })],
-        ['media:prev',       () => executeRuntimeAction('prev', { navigate, previewPolicy: 'ignore' })],
+        ['media:next',       () => { if (!ignoreSkip()) executeRuntimeAction('next', { navigate, previewPolicy: 'ignore' }); }],
+        ['media:prev',       () => { if (!ignoreSkip()) executeRuntimeAction('prev', { navigate, previewPolicy: 'ignore' }); }],
         ['media:stop',       () => executeRuntimeAction('stop', { navigate, previewPolicy: 'ignore' })],
         ['media:volume-up',  () => executeRuntimeAction('volume-up', { navigate, previewPolicy: 'ignore' })],
         ['media:volume-down', () => executeRuntimeAction('volume-down', { navigate, previewPolicy: 'ignore' })],

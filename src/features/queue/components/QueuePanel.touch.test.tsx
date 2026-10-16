@@ -145,10 +145,21 @@ describe('QueuePanel touch layout', () => {
     expect(screen.getByRole('heading', { name: 'Load Playlist' })).toBeInTheDocument();
   });
 
-  it('the infinite-queue chip toggles infinite queue', () => {
+  it('the infinite-queue toggle toggles infinite queue and shows its state', () => {
+    useAuthStore.setState({ infiniteQueueEnabled: false });
     renderWithProviders(<QueuePanel touch />);
-    const before = useAuthStore.getState().infiniteQueueEnabled;
-    fireEvent.click(screen.getByRole('button', { name: /Infinite/ }));
-    expect(useAuthStore.getState().infiniteQueueEnabled).toBe(!before);
+    const toggle = screen.getByRole('button', { name: /Infinite/ });
+    expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    fireEvent.click(toggle);
+    expect(useAuthStore.getState().infiniteQueueEnabled).toBe(true);
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('puts the transition modes and infinite queue in one row without swiping', () => {
+    const { container } = renderWithProviders(<QueuePanel touch />);
+    const bar = container.querySelector('.queue-touch-header .mobile-transition-bar');
+    expect(bar).not.toBeNull();
+    expect(container.querySelector('.queue-touch-header .mobile-chips--scroll')).toBeNull();
+    expect(bar?.querySelector('[aria-label*="Infinite"]')).not.toBeNull();
   });
 });

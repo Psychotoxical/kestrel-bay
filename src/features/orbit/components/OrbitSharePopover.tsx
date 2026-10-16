@@ -8,7 +8,8 @@ import { buildOrbitShareLink } from '@/features/orbit/utils/orbit';
 import { serverShareBaseUrl } from '@/lib/server/serverEndpoint';
 
 interface Props {
-  anchorRef: React.RefObject<HTMLElement | null>;
+  /** Omit to render the content inline (the touch shell puts it in a sheet, which handles closing). */
+  anchorRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
 }
 
@@ -30,10 +31,11 @@ export default function OrbitSharePopover({ anchorRef, onClose }: Props) {
     : null;
 
   useEffect(() => {
+    if (!anchorRef) return;
     const onDown = (e: MouseEvent) => {
       const target = e.target as Node | null;
       if (popRef.current?.contains(target)) return;
-      if (anchorRef.current?.contains(target)) return;
+      if (anchorRef?.current?.contains(target)) return;
       onClose();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -58,8 +60,8 @@ export default function OrbitSharePopover({ anchorRef, onClose }: Props) {
 
   // React Compiler refs rule: ref read imperatively outside reactive rendering; not used to compute the render output.
   // eslint-disable-next-line react-hooks/refs
-  const anchor = anchorRef.current?.getBoundingClientRect();
-  const style: React.CSSProperties = anchor
+  const anchor = anchorRef?.current?.getBoundingClientRect();
+  const style: React.CSSProperties | undefined = !anchorRef ? undefined : anchor
     ? {
         position: 'fixed',
         top:   anchor.bottom + 12,
@@ -68,8 +70,8 @@ export default function OrbitSharePopover({ anchorRef, onClose }: Props) {
       }
     : { display: 'none' };
 
-  return createPortal(
-    <div ref={popRef} className="orbit-share-pop" style={style} role="menu">
+  const content = (
+    <div ref={popRef} className={anchorRef ? 'orbit-share-pop' : 'orbit-share-pop orbit-pop--inline'} style={style} role="menu">
       <div className="orbit-share-pop__label">{t('orbit.participantsInviteLabel')}</div>
       <div className="orbit-share-pop__row">
         <code className="orbit-share-pop__link">{shareLink}</code>
@@ -83,7 +85,7 @@ export default function OrbitSharePopover({ anchorRef, onClose }: Props) {
           {copied ? <Check size={13} /> : <Copy size={13} />}
         </button>
       </div>
-    </div>,
-    document.body,
+    </div>
   );
+  return anchorRef ? createPortal(content, document.body) : content;
 }

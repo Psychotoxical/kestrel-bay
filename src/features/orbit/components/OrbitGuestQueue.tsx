@@ -21,7 +21,7 @@ const ORBIT_QUEUE_COVER_SM_CSS_PX = 48;
  * Track metadata is resolved lazily via `getSong` and cached locally so the
  * list doesn't flicker while the 2.5 s state tick refreshes the snapshot.
  */
-export default function OrbitGuestQueue() {
+export default function OrbitGuestQueue({ hideHead = false }: { hideHead?: boolean } = {}) {
   const { t } = useTranslation();
   const state        = useOrbitStore(s => s.state);
   const serverId     = useOrbitStore(s => s.serverId);
@@ -74,7 +74,7 @@ export default function OrbitGuestQueue() {
 
   return (
     <div className="orbit-guest-queue">
-      <OrbitQueueHead state={state} />
+      {!hideHead && <OrbitQueueHead state={state} />}
 
       {currentTrack && (
         <div className="orbit-guest-queue__current">

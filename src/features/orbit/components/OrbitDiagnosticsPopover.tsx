@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useOrbitStore } from '@/features/orbit/store/orbitStore';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { showToast } from '@/lib/dom/toast';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { computeOrbitDriftMs } from '@/features/orbit/utils/orbit';
 import {
   clearOrbitEvents,
@@ -14,7 +15,8 @@ import {
 } from '@/features/orbit/utils/orbitDiag';
 
 interface Props {
-  anchorRef: React.RefObject<HTMLElement | null>;
+  /** Omit to render the content inline (the touch shell puts it in a sheet, which handles closing). */
+  anchorRef?: React.RefObject<HTMLElement | null>;
   onClose: () => void;
 }
 
@@ -50,10 +52,11 @@ export default function OrbitDiagnosticsPopover({ anchorRef, onClose }: Props) {
   }, [formatted]);
 
   useEffect(() => {
+    if (!anchorRef) return;
     const onDown = (e: MouseEvent) => {
       const target = e.target as Node | null;
       if (popRef.current?.contains(target)) return;
-      if (anchorRef.current?.contains(target)) return;
+      if (anchorRef?.current?.contains(target)) return;
       onClose();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
@@ -67,8 +70,8 @@ export default function OrbitDiagnosticsPopover({ anchorRef, onClose }: Props) {
 
   // React Compiler refs rule: ref read imperatively outside reactive rendering; not used to compute the render output.
   // eslint-disable-next-line react-hooks/refs
-  const anchor = anchorRef.current?.getBoundingClientRect();
-  const style: React.CSSProperties = anchor
+  const anchor = anchorRef?.current?.getBoundingClientRect();
+  const style: React.CSSProperties | undefined = !anchorRef ? undefined : anchor
     ? {
         position: 'fixed',
         top:   anchor.bottom + 12,
@@ -106,8 +109,8 @@ export default function OrbitDiagnosticsPopover({ anchorRef, onClose }: Props) {
     showToast(t('orbit.diag.cleared'), 2000, 'info');
   };
 
-  return createPortal(
-    <div ref={popRef} className="orbit-diag-pop" style={style} role="dialog" aria-label={t('orbit.diag.title')}>
+  const content = (
+    <div ref={popRef} className={anchorRef ? 'orbit-diag-pop' : 'orbit-diag-pop orbit-pop--inline'} style={style} role="dialog" aria-label={t('orbit.diag.title')}>
       <div className="orbit-diag-pop__head">{t('orbit.diag.title')}</div>
 
       <div className="orbit-diag-pop__live">
@@ -180,8 +183,8 @@ export default function OrbitDiagnosticsPopover({ anchorRef, onClose }: Props) {
         spellCheck={false}
         placeholder={t('orbit.diag.empty')}
       />
-      <div className="orbit-diag-pop__hint">{t('orbit.diag.hint')}</div>
-    </div>,
-    document.body,
+      <div className="orbit-diag-pop__hint">{t(IS_MOBILE_SHELL ? 'orbit.diag.hintTouch' : 'orbit.diag.hint')}</div>
+    </div>
   );
+  return anchorRef ? createPortal(content, document.body) : content;
 }

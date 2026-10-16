@@ -7,6 +7,7 @@ import { OPEN_SEARCH_EVENT } from '@/lib/dom/openSearch';
 import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
 import { activeMobileTab, MOBILE_TAB_ROOTS, type MobileTabId } from '@/features/mobileShell/utils/mobileTabs';
 import { useCollapseBarsOnScroll } from '@/features/mobileShell/hooks/useCollapseBarsOnScroll';
+import { useOrbitPendingApprovalCount, useOrbitStore } from '@/features/orbit';
 
 const TABS: ReadonlyArray<{ id: MobileTabId; icon: typeof Disc3; labelKey: string }> = [
   { id: 'mainstage', icon: Disc3, labelKey: 'sidebar.mainstage' },
@@ -25,6 +26,9 @@ export default function MobileTabBar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const active = activeMobileTab(pathname);
+  const orbitLive = useOrbitStore(s => s.role !== null && s.phase === 'active');
+  // Host: guest suggestions waiting for approval, shown on the tab wherever you are.
+  const pendingApprovals = useOrbitPendingApprovalCount();
   const [searchOpen, setSearchOpen] = useState(false);
   useCollapseBarsOnScroll();
 
@@ -54,12 +58,24 @@ export default function MobileTabBar() {
             <button
               key={id}
               type="button"
-              className={`mobile-tabbar__tab${active === id ? ' is-active' : ''}`}
+              className={`mobile-tabbar__tab${active === id ? ' is-active' : ''}${id === 'orbit' && orbitLive ? ' is-live' : ''}`}
               aria-current={active === id ? 'page' : undefined}
               onClick={() => openTab(id)}
             >
               <Icon size={23} strokeWidth={1.8} aria-hidden="true" />
               <span>{t(labelKey)}</span>
+              {/* A session is running: the Orbit tab is its room. */}
+              {id === 'orbit' && orbitLive && (pendingApprovals > 0 ? (
+                <>
+                  <span className="mobile-tabbar__badge" aria-hidden="true">{pendingApprovals > 99 ? '99+' : pendingApprovals}</span>
+                  <span className="mobile-visually-hidden">{`${pendingApprovals} ${t('orbit.approvalTitle')}`}</span>
+                </>
+              ) : (
+                <>
+                  <span className="mobile-tabbar__live-dot" aria-hidden="true" />
+                  <span className="mobile-visually-hidden">{t('orbit.guestLive')}</span>
+                </>
+              ))}
             </button>
           ))}
         </nav>

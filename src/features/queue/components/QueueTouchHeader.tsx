@@ -122,15 +122,16 @@ export function QueueTouchHeader({
         </div>
       </div>
 
-      <TransitionModeChips layout="scroll">
+      <TransitionModeChips layout="segmented">
         <button
           type="button"
-          className={`mobile-chip${infiniteQueueEnabled ? ' is-active' : ''}`}
+          className={`mobile-transition-bar__toggle${infiniteQueueEnabled ? ' is-active' : ''}`}
           aria-pressed={infiniteQueueEnabled}
+          aria-label={t('queue.infiniteQueue')}
+          title={t('queue.infiniteQueue')}
           onClick={() => setInfiniteQueueEnabled(!infiniteQueueEnabled)}
         >
-          <InfinityIcon size={17} strokeWidth={1.9} aria-hidden="true" />
-          <span>{t('queue.infiniteQueue')}</span>
+          <InfinityIcon size={20} strokeWidth={1.9} aria-hidden="true" />
         </button>
       </TransitionModeChips>
       <CrossfadeLengthSlider />
