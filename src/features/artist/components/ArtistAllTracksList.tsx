@@ -1,9 +1,9 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { ArrowDown, ArrowUp } from 'lucide-react';
-import type { SubsonicSong } from '@/lib/api/subsonicTypes';
+import type { SubsonicAlbum, SubsonicSong } from '@/lib/api/subsonicTypes';
 import type { useTracklistColumns } from '@/lib/hooks/useTracklistColumns';
 import {
   previewInputFromSong,
@@ -27,6 +27,8 @@ import { useWarmTrackListAlbumCovers } from '@/cover/useWarmTrackListAlbumCovers
 import { useTrackListCoverArtEnabled } from '@/cover/useTrackListCoverArtSettings';
 import { useResolvedTracklistBpm } from '@/lib/hooks/useResolvedTracklistBpm';
 import ArtistAllTracksRow, { type ArtistAllTracksRowCallbacks } from '@/features/artist/components/ArtistAllTracksRow';
+import ArtistTrackTouchRow from '@/features/artist/components/ArtistTrackTouchRow';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
   ARTIST_ALL_TRACKS_CENTERED_COLS,
   ARTIST_ALL_TRACKS_SORTABLE,
@@ -39,10 +41,13 @@ import {
   type ArtistAllTracksSortState,
 } from '@/features/artist/utils/artistAllTracksSort';
 
-const ROW_HEIGHT = 48;
+// Touch rows: 52 px minimum height plus the 1 px separator.
+const ROW_HEIGHT = IS_MOBILE_SHELL ? 53 : 48;
 
 interface Props {
   songs: SubsonicSong[];
+  /** The artist's albums, for the touch rows' covers (same lookup as the ranking). */
+  albums?: ReadonlyArray<SubsonicAlbum>;
   loading: boolean;
   /** The index could not answer — shown as an empty state, not an endless spinner. */
   failed: boolean;
@@ -62,7 +67,9 @@ interface Props {
  * Virtualised because this list is unbounded — a prolific artist can reach into the
  * thousands, where the album tracklist tops out at one record.
  */
-export default function ArtistAllTracksList({ songs, loading, failed, onPlay, columns }: Props) {
+const NO_ALBUMS: ReadonlyArray<SubsonicAlbum> = [];
+
+export default function ArtistAllTracksList({ songs, albums = NO_ALBUMS, loading, failed, onPlay, columns }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const currentTrack = usePlayerStore(s => s.currentTrack);
@@ -112,6 +119,11 @@ export default function ArtistAllTracksList({ songs, loading, failed, onPlay, co
     estimateSize: () => ROW_HEIGHT,
     overscan: Math.max(8, Math.ceil(viewportH / ROW_HEIGHT)),
     scrollMargin,
+    // The list mounts when its tab opens, usually after the page was scrolled.
+    // On attach the virtualiser writes its offset into the scroll element it is
+    // given — here the page's own — and the default offset is 0, which threw the
+    // page back to the top. Start from where the page already is.
+    initialOffset: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID)?.scrollTop ?? 0,
     // Index-suffixed: the same track can legitimately appear twice (an album and
     // its compilation reissue), and a duplicate key would drop one of the rows.
     getItemKey: i => `${displayed[i].id}:${i}`,
@@ -196,6 +208,19 @@ export default function ArtistAllTracksList({ songs, loading, failed, onPlay, co
     },
   }), [dragPress, navigate, openContextMenu]);
 
+  const openTouchMenu = useCallback(
+    (song: SubsonicSong, at: { x: number; y: number }) => openContextMenu(at.x, at.y, songToTrack(song), 'song'),
+    [openContextMenu],
+  );
+
+  const rowStyle = (start: number): React.CSSProperties => ({
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: '100%',
+    transform: `translateY(${start - rowVirtualizer.options.scrollMargin}px)`,
+  });
+
   if (loading && songs.length === 0) {
     return (
       <div className="empty-state" style={{ padding: '2rem 0' }} aria-busy="true">
@@ -207,6 +232,34 @@ export default function ArtistAllTracksList({ songs, loading, failed, onPlay, co
     return (
       <div className="empty-state" style={{ padding: '2rem 0' }}>
         {t(failed ? 'artistDetail.allTracksUnavailable' : 'artistDetail.allTracksEmpty')}
+      </div>
+    );
+  }
+
+  if (IS_MOBILE_SHELL) {
+    // Same rows as the ranking tab; no column header, sorting or keyboard cursor on touch.
+    return (
+      <div className="mobile-tracklist mobile-top-tracks" data-preview-loc="artist">
+        <div ref={listWrapRef} style={{ height: rowVirtualizer.getTotalSize(), width: '100%', position: 'relative' }}>
+          {virtualItems.map(vi => {
+            const song = displayed[vi.index];
+            const isActive = sameQueueTrack(currentTrack, song);
+            return (
+              <div key={vi.key} ref={rowVirtualizer.measureElement} data-index={vi.index} style={rowStyle(vi.start)}>
+                <ArtistTrackTouchRow
+                  as="div"
+                  song={song}
+                  index={vi.index}
+                  albums={albums}
+                  isActive={isActive}
+                  showEq={isActive && isPlaying}
+                  onPlay={cb.play}
+                  onMore={openTouchMenu}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
@@ -273,13 +326,7 @@ export default function ArtistAllTracksList({ songs, loading, failed, onPlay, co
                 key={vi.key}
                 ref={rowVirtualizer.measureElement}
                 data-index={vi.index}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${vi.start - rowVirtualizer.options.scrollMargin}px)`,
-                }}
+                style={rowStyle(vi.start)}
               >
                 <ArtistAllTracksRow
                   song={song}

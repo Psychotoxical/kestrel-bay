@@ -94,7 +94,7 @@ export default function MobileMiniPlayer() {
       {!currentRadio && (
         <button
           type="button"
-          className="mobile-icon-btn"
+          className="mobile-icon-btn mobile-miniplayer__next"
           onClick={() => next()}
           aria-label={t('player.next')}
         >

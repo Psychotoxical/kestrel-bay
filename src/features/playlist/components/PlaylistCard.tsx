@@ -14,6 +14,7 @@ import { PlaylistCardMainCover, PlaylistSmartCoverCell } from '@/features/playli
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { playlistDetailPath, runLatestPlaylistServerIntent } from '@/features/playlist/utils/playlistServer';
 import { NowPlayingMarker, useIsNowPlaying } from '@/features/playback';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface Props {
   pl: SubsonicPlaylist;
@@ -86,7 +87,10 @@ export default function PlaylistCard({
       }}
       onMouseLeave={() => { if (deleteConfirmId === playlistKey) setDeleteConfirmId(null); }}
     >
-      {!selectionMode && (
+      {/* Touch: no hover strip. iOS treats a first tap that reveals content on
+          :hover as a hover only, so the card needed two taps to open. Delete stays
+          in the long-press menu, editing on the detail page. */}
+      {!selectionMode && !IS_MOBILE_SHELL && (
         <div className="playlist-card-actions">
           {isPlaylistDeletable(pl) && (
             <button

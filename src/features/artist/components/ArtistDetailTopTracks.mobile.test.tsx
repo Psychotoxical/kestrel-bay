@@ -37,6 +37,17 @@ describe('ArtistDetailTopTracks in the touch shell', () => {
     expect(play).toHaveBeenCalledWith(1);
   });
 
+  // A fixed 32 px inline size would beat the 44 px box and leave the cover in its corner.
+  it('the cover fills its box', () => {
+    const { container } = renderWithProviders(
+      <ArtistDetailTopTracks topSongs={songs} albums={[]} playTopSongWithContinuation={vi.fn(async () => {})} />,
+    );
+    const cover = container.querySelector<HTMLElement>('.mobile-track__cover > *');
+    expect(cover).not.toBeNull();
+    expect(cover?.style.width).toBe('100%');
+    expect(cover?.style.height).toBe('100%');
+  });
+
   it('the more button opens the song menu', () => {
     const openContextMenu = vi.fn();
     usePlayerStore.setState({ openContextMenu });

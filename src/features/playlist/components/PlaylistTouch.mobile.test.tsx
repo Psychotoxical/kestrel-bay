@@ -25,7 +25,7 @@ const playlist: SubsonicPlaylist = {
   id: 'pl-1', name: 'Death', songCount: 1, duration: 276, created: '', changed: '', serverId: 'srv-a', public: true,
 };
 
-function renderHero(over: { handleShuffleAll?: () => void } = {}) {
+function renderHero(over: { handleShuffleAll?: () => void; handleEnqueueAll?: () => void } = {}) {
   return renderWithProviders(
     <PlaylistHero
       playlist={playlist}
@@ -51,7 +51,7 @@ function renderHero(over: { handleShuffleAll?: () => void } = {}) {
       setSearchPlPickerOpen={vi.fn()}
       handlePlayAll={vi.fn()}
       handleShuffleAll={over.handleShuffleAll ?? vi.fn()}
-      handleEnqueueAll={vi.fn()}
+      handleEnqueueAll={over.handleEnqueueAll ?? vi.fn()}
       handleImportCsv={vi.fn()}
       handleDownload={vi.fn()}
       handleRefreshSmart={vi.fn()}
@@ -84,14 +84,28 @@ describe('playlist page in the touch shell', () => {
     expect(cb.context).toHaveBeenCalledWith(song, 5, expect.anything(), { x: expect.any(Number), y: expect.any(Number) });
   });
 
-  it('the header has play and shuffle as big buttons, the other actions as labelled chips', () => {
+  it('the header has play and shuffle as big buttons, the other actions in the "…" menu', () => {
     const handleShuffleAll = vi.fn();
-    renderHero({ handleShuffleAll });
+    const { container } = renderHero({ handleShuffleAll });
     fireEvent.click(screen.getByRole('button', { name: /^Shuffle$/ }));
     expect(handleShuffleAll).toHaveBeenCalledTimes(1);
-    // Shuffle is a big button here, so the configured action row must not repeat it.
-    expect(screen.getAllByRole('button', { name: /Shuffle/ })).toHaveLength(1);
-    expect(screen.getByRole('button', { name: /Add to Queue/ })).toBeInTheDocument();
     expect(screen.getByText('1 song · 5m · Public')).toBeInTheDocument();
+    // No action chips on the page: the configured actions wait behind "…".
+    expect(container.querySelector('.mobile-playlist .mobile-chip-row .btn')).toBeNull();
+    expect(screen.queryByRole('menuitem', { name: /Add to Queue/ })).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+    expect(screen.getByRole('menuitem', { name: /Add to Queue/ })).toBeInTheDocument();
+    // Shuffle is a big button here, so the menu must not repeat it.
+    expect(screen.queryByRole('menuitem', { name: /Shuffle/ })).toBeNull();
+  });
+
+  it('a menu entry runs its action and closes the menu', () => {
+    const handleEnqueueAll = vi.fn();
+    renderHero({ handleEnqueueAll });
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /Add to Queue/ }));
+    expect(handleEnqueueAll).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 });

@@ -22,7 +22,7 @@ import { PlaylistSmartCoverCell } from '@/features/playlist/components/PlaylistC
 import type { OfflineActionPolicy } from '@/features/offline';
 import { coverServerScopeForServerId } from '@/cover/serverScope';
 import { ShareMethodMenuButton } from '@/features/share';
-import { MobileBackButton } from '@/features/mobileShell';
+import { MobileBackButton, MobileMoreMenu, type MobileMoreMenuItem } from '@/features/mobileShell';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { tooltipAttrs } from '@/ui/tooltipAttrs';
 import PlaylistCommentLinks from '@/features/playlist/components/PlaylistCommentLinks';
@@ -90,8 +90,16 @@ export default function PlaylistHero({
   const controls = playlistDetailControls(playlist);
   const totalBytes = songs.reduce((acc, s) => acc + (s.size ?? 0), 0);
 
-  // Touch has no tooltips, so the chips there carry their label as text.
-  const chipLabel = (text: string) => (IS_MOBILE_SHELL ? <span>{text}</span> : null);
+  const runOfflineAction = () => {
+    if (!id) return;
+    if (offlineStatus === 'cached') {
+      deleteAlbum(id, activeServerId, { kind: 'playlist', sourceId: id });
+    } else if (offlineStatus === 'queued') {
+      dequeueOfflinePin(id, activeServerId);
+    } else {
+      downloadPlaylist(id, playlist.name, playlist.coverArt, songs, activeServerId, playlist.smart);
+    }
+  };
 
   // One entry per action-bar id; `null` when the button does not apply here.
   // `suggestions` is a page section, not a bar button, so it never renders.
@@ -117,7 +125,6 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.addToQueue'))}
           >
             <ListPlus size={16} />
-            {chipLabel(t('playlists.addToQueue'))}
           </button>
         );
       case 'share':
@@ -141,7 +148,6 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.refreshSmart'))}
           >
             <RefreshCw size={16} className={refreshingSmart ? 'is-spinning' : undefined} />
-            {chipLabel(t('playlists.refreshSmart'))}
           </button>
         ) : null;
       case 'editRules':
@@ -155,7 +161,6 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.editRules'))}
           >
             <Sparkles size={16} />
-            {chipLabel(t('playlists.editRules'))}
           </button>
         ) : null;
       case 'addSongs':
@@ -166,7 +171,6 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.addSongsTooltip'))}
           >
             <Search size={16} />
-            {chipLabel(t('playlists.addSongs'))}
           </button>
         ) : null;
       case 'importCsv':
@@ -178,7 +182,6 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.importCSVTooltip'))}
           >
             {csvImporting ? <Loader2 size={16} className="spin-slow" /> : <FileUp size={16} />}
-            {chipLabel(t('playlists.importCSV'))}
           </button>
         ) : null;
       case 'downloadZip':
@@ -198,7 +201,6 @@ export default function PlaylistHero({
             {...tooltipAttrs(`${t('playlists.downloadZip')}${totalBytes > 0 ? ` · ${formatSize(totalBytes)}` : ''}`)}
           >
             <Download size={16} />
-            {chipLabel(t('playlists.downloadZip'))}
           </button>
         );
       case 'offlineCache':
@@ -219,15 +221,7 @@ export default function PlaylistHero({
         return (
           <button
             className={`btn btn-ghost${offlineStatus === 'cached' ? ' btn-danger' : ''}${offlineStatus === 'queued' ? ' offline-cache-btn--queued' : ''}`}
-            onClick={() => {
-              if (offlineStatus === 'cached') {
-                deleteAlbum(id, activeServerId, { kind: 'playlist', sourceId: id });
-              } else if (offlineStatus === 'queued') {
-                dequeueOfflinePin(id, activeServerId);
-              } else {
-                downloadPlaylist(id, playlist.name, playlist.coverArt, songs, activeServerId, playlist.smart);
-              }
-            }}
+            onClick={runOfflineAction}
             {...tooltipAttrs(offlineStatus === 'queued'
               ? t('albumDetail.removeFromOfflineQueue')
               : offlineStatus === 'cached'
@@ -235,10 +229,86 @@ export default function PlaylistHero({
                 : t('playlists.cacheOffline'))}
           >
             {offlineStatus === 'cached' ? <Trash2 size={16} /> : <HardDriveDownload size={16} />}
-            {chipLabel(offlineStatus === 'cached' ? t('playlists.removeOffline') : t('playlists.cacheOffline'))}
           </button>
         );
       case 'suggestions':
+        return null;
+    }
+  };
+
+  // Touch "…" menu: the same actions as the bar, as menu rows and under the same
+  // conditions as `renderActionButton`. Shuffle is a big button on touch, and
+  // `suggestions` is a page section.
+  const touchMenuItem = (itemId: PlaylistLayoutItemId): MobileMoreMenuItem | null => {
+    const icon = (Icon: typeof Search) => <Icon size={19} aria-hidden="true" />;
+    switch (itemId) {
+      case 'enqueue':
+        return {
+          id: itemId, label: t('playlists.addToQueue'), icon: icon(ListPlus),
+          disabled: songs.length === 0, onSelect: handleEnqueueAll,
+        };
+      case 'share':
+        return {
+          id: itemId,
+          share: { kind: 'playlist', resourceIds: [playlist.id], serverIds: [playlist.serverId ?? activeServerId].filter(Boolean) },
+        };
+      case 'refreshSmart':
+        return actionPolicy.canEditPlaylist && controls.showRefreshTracks ? {
+          id: itemId, label: t('playlists.refreshSmart'), icon: icon(RefreshCw),
+          disabled: refreshingSmart, onSelect: handleRefreshSmart,
+        } : null;
+      case 'editRules':
+        return actionPolicy.canEditPlaylist && controls.showEditRules ? {
+          id: itemId, label: t('playlists.editRules'), icon: icon(Sparkles),
+          onSelect: () => {
+            const dest = playlistsOpenSmartEditorState(playlist);
+            if (dest) navigate(dest.pathname, { state: dest.state });
+          },
+        } : null;
+      case 'addSongs':
+        return actionPolicy.canEditPlaylist && controls.canAddTracks ? {
+          id: itemId, label: t('playlists.addSongs'), icon: icon(Search),
+          onSelect: () => {
+            setSearchOpen(true); setSearchQuery(''); setSearchResults([]);
+            setSelectedSearchIds(new Set()); setSearchPlPickerOpen(false);
+          },
+        } : null;
+      case 'importCsv':
+        return actionPolicy.canEditPlaylist && controls.canImportCsv ? {
+          id: itemId, label: t('playlists.importCSV'), icon: icon(FileUp),
+          disabled: csvImporting, onSelect: handleImportCsv,
+        } : null;
+      case 'downloadZip': {
+        if (!actionPolicy.canDownload || songs.length === 0) return null;
+        const zipBusy = !!activeZip && !activeZip.done && !activeZip.error;
+        const pct = activeZip?.total ? Math.round((activeZip.bytes / activeZip.total) * 100) : null;
+        return {
+          id: itemId,
+          label: zipBusy ? `${t('playlists.downloadZip')} · ${pct ?? '…'}%` : t('playlists.downloadZip'),
+          icon: icon(Download), disabled: zipBusy, onSelect: handleDownload,
+        };
+      }
+      case 'offlineCache': {
+        if (!actionPolicy.canPinOffline || songs.length === 0 || !id) return null;
+        if (!controls.canPinNewOfflineCache && offlineStatus === 'none') return null;
+        if (offlineStatus === 'downloading') {
+          return {
+            id: itemId,
+            label: t('albumDetail.offlineDownloading', { n: offlineProgress?.done ?? 0, total: offlineProgress?.total ?? 0 }),
+            icon: icon(HardDriveDownload), disabled: true, onSelect: () => {},
+          };
+        }
+        return {
+          id: itemId,
+          label: offlineStatus === 'queued'
+            ? t('albumDetail.removeFromOfflineQueue')
+            : offlineStatus === 'cached' ? t('playlists.removeOffline') : t('playlists.cacheOffline'),
+          icon: icon(offlineStatus === 'cached' ? Trash2 : HardDriveDownload),
+          danger: offlineStatus === 'cached',
+          onSelect: runOfflineAction,
+        };
+      }
+      default:
         return null;
     }
   };
@@ -267,14 +337,18 @@ export default function PlaylistHero({
 
   if (IS_MOBILE_SHELL) {
     // Touch layout (as the album page): big cover, play / shuffle, the user's
-    // configured action buttons as one swipeable row. The top row is a sibling of
-    // the header block so it stays sticky for the whole page.
+    // configured actions in the "…" menu. The top row is a sibling of the header
+    // block so it stays sticky for the whole page.
+    const menuItems = layoutItems
+      .filter(item => item.visible)
+      .map(item => touchMenuItem(item.id))
+      .filter((item): item is MobileMoreMenuItem => item !== null);
     return (
       <>
         <div className="mobile-album__top">
           <MobileBackButton variant="round" />
-          {actionPolicy.canEditPlaylist && (
-            <div className="mobile-album__top-actions">
+          <div className="mobile-album__top-actions">
+            {actionPolicy.canEditPlaylist && (
               <button
                 type="button"
                 className="mobile-round-btn"
@@ -283,8 +357,9 @@ export default function PlaylistHero({
               >
                 <Pencil size={19} aria-hidden="true" />
               </button>
-            </div>
-          )}
+            )}
+            <MobileMoreMenu items={menuItems} />
+          </div>
         </div>
         <div className="mobile-playlist">
           <div className="mobile-album__hero">
@@ -317,13 +392,10 @@ export default function PlaylistHero({
               {t('albumDetail.shuffle')}
             </button>
           </div>
-          <div className="mobile-chip-row mobile-playlist__actions">
+          {/* Resuming is the one action that stays visible: it only appears while
+              there is a resume point, and then it is the likely next tap. */}
+          <div className="mobile-chip-row mobile-playlist__resume">
             <ResumeButton kind="playlist" id={id} serverId={playlist.serverId ?? activeServerId} className="btn btn-ghost" />
-            {layoutItems.map(item => {
-              if (!item.visible || item.id === 'shuffle') return null;
-              const node = renderActionButton(item.id);
-              return node ? <Fragment key={item.id}>{node}</Fragment> : null;
-            })}
           </div>
         </div>
       </>

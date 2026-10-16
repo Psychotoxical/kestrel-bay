@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AudioLines, ChevronRight, MoreHorizontal, Play, Square } from 'lucide-react';
+import { AudioLines, ChevronRight, Play, Square } from 'lucide-react';
 import type { SubsonicAlbum, SubsonicSong } from '@/lib/api/subsonicTypes';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { previewInputFromSong, usePreviewStore } from '@/features/playback/store/previewStore';
@@ -11,6 +11,7 @@ import { useDragDrop } from '@/lib/dnd/DragDropContext';
 import { useDragPressHandle } from '@/lib/dnd/useDragPress';
 import { useTrackListCursor } from '@/lib/hooks/useTrackListCursor';
 import ArtistTopTrackCover from '@/features/artist/components/ArtistTopTrackCover';
+import ArtistTrackTouchRow from '@/features/artist/components/ArtistTrackTouchRow';
 import { topSongAlbumForCover } from '@/features/artist/components/topSongAlbumForCover';
 import { ExplicitTitle } from '@/ui/ExplicitBadge';
 import ExplicitCoverVeil from '@/ui/ExplicitCoverVeil';
@@ -68,45 +69,20 @@ export default function ArtistDetailTopTracks({
       <ol className="mobile-tracklist mobile-top-tracks" aria-busy={loading}>
         {topSongs.map((song, idx) => {
           const active = currentTrack?.id === song.id;
-          const albumForCover = topSongAlbumForCover(song, albums);
           return (
-            <li key={`${song.id}-${idx}`} className={`mobile-track${active ? ' is-active' : ''}`}>
-              <button
-                type="button"
-                className="mobile-track__main"
-                aria-current={active ? 'true' : undefined}
-                onClick={() => {
-                  if (orbitActive) { queueHint(); return; }
-                  void playTopSongWithContinuation(idx);
-                }}
-              >
-                <span className="mobile-track__num">
-                  {active && isPlaying
-                    ? <span className="mobile-playing-bars" aria-hidden="true"><span /><span /><span /></span>
-                    : idx + 1}
-                </span>
-                <span className="mobile-track__cover">
-                  {albumForCover ? <ArtistTopTrackCover album={albumForCover} /> : null}
-                </span>
-                <span className="mobile-track__text">
-                  <span className="mobile-track__title">{song.title}</span>
-                  {song.album && <span className="mobile-track__artist">{song.album}</span>}
-                </span>
-                <span className="mobile-track__time">{formatTrackTime(song.duration)}</span>
-              </button>
-              <button
-                type="button"
-                className="mobile-track__more"
-                aria-label={`${t('player.moreOptions')}: ${song.title}`}
-                aria-haspopup="menu"
-                onClick={e => {
-                  const r = e.currentTarget.getBoundingClientRect();
-                  openContextMenu(r.right, r.bottom, songToTrack(song), 'song');
-                }}
-              >
-                <MoreHorizontal size={20} aria-hidden="true" />
-              </button>
-            </li>
+            <ArtistTrackTouchRow
+              key={`${song.id}-${idx}`}
+              song={song}
+              index={idx}
+              albums={albums}
+              isActive={active}
+              showEq={active && isPlaying}
+              onPlay={i => {
+                if (orbitActive) { queueHint(); return; }
+                void playTopSongWithContinuation(i);
+              }}
+              onMore={(s, at) => openContextMenu(at.x, at.y, songToTrack(s), 'song')}
+            />
           );
         })}
       </ol>

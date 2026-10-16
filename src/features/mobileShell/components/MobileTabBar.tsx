@@ -6,6 +6,7 @@ import { MobileSearchOverlay } from '@/features/search';
 import { OPEN_SEARCH_EVENT } from '@/lib/dom/openSearch';
 import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
 import { activeMobileTab, MOBILE_TAB_ROOTS, type MobileTabId } from '@/features/mobileShell/utils/mobileTabs';
+import { useCollapseBarsOnScroll } from '@/features/mobileShell/hooks/useCollapseBarsOnScroll';
 
 const TABS: ReadonlyArray<{ id: MobileTabId; icon: typeof Disc3; labelKey: string }> = [
   { id: 'mainstage', icon: Disc3, labelKey: 'sidebar.mainstage' },
@@ -14,13 +15,18 @@ const TABS: ReadonlyArray<{ id: MobileTabId; icon: typeof Disc3; labelKey: strin
   { id: 'playlists', icon: ListMusic, labelKey: 'sidebar.playlists' },
 ];
 
-/** Floating glass tab bar with the round search button beside it. */
+/**
+ * Floating glass tab bar with the round search button beside it. While the page
+ * scrolls down it folds to a single Mainstage button (its first tab), with the
+ * player bar moving in between it and the search button.
+ */
 export default function MobileTabBar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const active = activeMobileTab(pathname);
   const [searchOpen, setSearchOpen] = useState(false);
+  useCollapseBarsOnScroll();
 
   useEffect(() => {
     const openSearch = (event: Event) => {

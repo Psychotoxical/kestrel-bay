@@ -7,6 +7,9 @@ html[data-mobile-app] {
   --mobile-bar-gap: 10px;
   --mobile-tabbar-height: 64px;
   --mobile-miniplayer-height: 64px;
+  /* One-row height of both bars while the page scrolls down (`data-mobile-bars`). */
+  --mobile-folded-height: 52px;
+  --mobile-bars-motion: 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
   --mobile-bottom-edge: max(12px, calc(env(safe-area-inset-bottom, 0px) - 8px));
   --mobile-glass-bg: color-mix(in srgb, var(--bg-elevated, var(--bg-card)) 74%, transparent);
   --mobile-glass-border: color-mix(in srgb, var(--text-primary) 12%, transparent);
@@ -180,13 +183,22 @@ html[data-mobile-app] .mobile-search-overlay {
   bottom: var(--mobile-bottom-edge);
   height: var(--mobile-tabbar-height);
   display: flex;
+  justify-content: space-between;
   gap: var(--mobile-bar-gap);
   z-index: 150;
+  /* Folded, the player bar sits in the middle of this row: let taps through to it. */
+  pointer-events: none;
+  transition: height var(--mobile-bars-motion);
+}
+
+.mobile-tabbar > * {
+  pointer-events: auto;
 }
 
 .mobile-tabbar__tabs {
-  flex: 1;
-  min-width: 0;
+  flex: none;
+  width: calc(100% - var(--mobile-tabbar-height) - var(--mobile-bar-gap));
+  transition: width var(--mobile-bars-motion), padding var(--mobile-bars-motion);
   height: 100%;
   border-radius: 32px;
   display: flex;
@@ -213,6 +225,7 @@ html[data-mobile-app] .mobile-search-overlay {
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
+  transition: flex-grow var(--mobile-bars-motion), flex-basis var(--mobile-bars-motion), opacity 0.2s, visibility 0s;
 }
 
 .mobile-tabbar__tab span {
@@ -238,6 +251,7 @@ html[data-mobile-app] .mobile-search-overlay {
   justify-content: center;
   padding: 0;
   cursor: pointer;
+  transition: width var(--mobile-bars-motion), height var(--mobile-bars-motion);
 }
 
 /* ─── Mini player ─── */
@@ -255,6 +269,8 @@ html[data-mobile-app] .mobile-search-overlay {
   box-sizing: border-box;
   overflow: hidden;
   z-index: 150;
+  transition: left var(--mobile-bars-motion), right var(--mobile-bars-motion),
+    bottom var(--mobile-bars-motion), height var(--mobile-bars-motion), border-radius var(--mobile-bars-motion);
 }
 
 .mobile-miniplayer__open {
@@ -335,6 +351,86 @@ html[data-mobile-app] .mobile-search-overlay {
   height: 100%;
   background: var(--accent);
   transform-origin: left center;
+}
+
+/* ─── Folded bars: one row while the page scrolls down ───
+   `data-mobile-bars` is set by `useCollapseBarsOnScroll`. The tab bar shrinks to its
+   first tab (Mainstage), the search button stays right, the player bar moves down
+   between them and drops its next button. */
+html[data-mobile-bars='collapsed'] .mobile-tabbar {
+  height: var(--mobile-folded-height);
+}
+
+html[data-mobile-bars='collapsed'] .mobile-tabbar__tabs {
+  width: var(--mobile-folded-height);
+  padding: 0;
+}
+
+html[data-mobile-bars='collapsed'] .mobile-tabbar__tab {
+  flex: 0 0 0;
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: flex-grow var(--mobile-bars-motion), flex-basis var(--mobile-bars-motion), opacity 0.2s, visibility 0s linear 0.2s;
+}
+
+html[data-mobile-bars='collapsed'] .mobile-tabbar__tab:first-child {
+  flex: 0 0 44px;
+  height: 44px;
+  margin: 0 auto;
+  opacity: 1;
+  visibility: visible;
+  transition: flex-grow var(--mobile-bars-motion), flex-basis var(--mobile-bars-motion);
+}
+
+/* Visually hidden, so the Mainstage button keeps its accessible name. */
+html[data-mobile-bars='collapsed'] .mobile-tabbar__tab:first-child span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+html[data-mobile-bars='collapsed'] .mobile-tabbar__search {
+  width: var(--mobile-folded-height);
+  height: var(--mobile-folded-height);
+}
+
+html[data-mobile-bars='collapsed'] .mobile-miniplayer {
+  left: calc(12px + var(--mobile-folded-height) + var(--mobile-bar-gap));
+  right: calc(12px + var(--mobile-folded-height) + var(--mobile-bar-gap));
+  bottom: var(--mobile-bottom-edge);
+  height: var(--mobile-folded-height);
+  border-radius: 26px;
+}
+
+html[data-mobile-bars='collapsed'] .mobile-miniplayer__next {
+  display: none;
+}
+
+html[data-mobile-bars='collapsed'] .mobile-miniplayer__cover {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+}
+
+html[data-mobile-bars='collapsed'] .mobile-miniplayer__title {
+  font-size: 14px;
+}
+
+html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-tabbar,
+  .mobile-tabbar__tabs,
+  .mobile-tabbar__tab,
+  .mobile-tabbar__search,
+  .mobile-miniplayer {
+    transition: none !important;
+  }
 }
 
 /* ─── Mainstage header ─── */
@@ -1609,6 +1705,14 @@ html[data-mobile-app] .mobile-search-overlay {
   padding-right: 0 !important;
 }
 
+/* The page scrolls vertically only. `overflow-y: auto` alone turns the other axis
+   into `auto` as well, so anything reaching past the edge (the full-bleed chip rows'
+   negative margins) let a sideways swipe pan the whole page. Chip rows and rails
+   keep scrolling sideways in their own containers. */
+.app-shell[data-mobile-app] .app-shell-route-scroll__viewport {
+  overflow-x: hidden;
+}
+
 /* No iOS image callout / drag preview on long press (the shell opens menus instead). */
 html[data-mobile-app] img,
 html[data-mobile-app] .app-shell {
@@ -1758,6 +1862,20 @@ html[data-mobile-app] .app-shell {
   color: var(--danger);
 }
 
+.queue-touch-menu__item:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* "…" menu of the detail pages (`MobileMoreMenu`): the queue menu's list under a round button. */
+.mobile-more-menu {
+  position: relative;
+}
+
+.mobile-more-menu__list {
+  top: 52px;
+}
+
 .queue-touch-label {
   display: block;
   padding: 4px 20px 2px;
@@ -1854,6 +1972,25 @@ html[data-mobile-app] .app-shell {
 .queue-panel--touch .queue-item.active .queue-item-title {
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Rows are held to reorder them: no text selection or iOS callout on the hold
+   (the sheet is portaled outside `.app-shell`, so the shell-wide rule misses it). */
+.queue-panel--touch .queue-item {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The held row (`useTouchQueueReorder`) lifts off and follows the finger. */
+.queue-panel--touch .queue-item.queue-item--lifted {
+  position: relative;
+  transform: translateY(var(--lift-dy, 0px)) scale(1.03);
+  background: var(--bg-elevated, var(--bg-card));
+  border-radius: 12px;
+  border-bottom-color: transparent;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  transition: box-shadow 0.15s;
 }
 
 /* ─── Mainstage sections: tighter rhythm, swipe rails, iOS headings ─── */
@@ -2368,8 +2505,13 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
   border-radius: 0;
 }
 
-.mobile-playlist__actions {
+.mobile-playlist__resume {
   padding-top: 14px;
+}
+
+/* Only there while a resume point exists. */
+.mobile-playlist__resume:empty {
+  display: none;
 }
 
 /* Column headers and the column picker mean nothing on a phone. */
@@ -2413,7 +2555,8 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
 }
 
 /* Virtualized: every row sits in its own wrapper, so `:last-child` would drop all borders. */
-.mobile-track[data-playlist-touch-row] {
+.mobile-track[data-playlist-touch-row],
+.mobile-track[data-artist-track-row] {
   border-bottom: 1px solid var(--mobile-row-border);
 }
 

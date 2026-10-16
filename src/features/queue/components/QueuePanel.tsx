@@ -30,6 +30,7 @@ import { QueueTabBar } from '@/features/queue/components/QueueTabBar';
 import { QueueTouchHeader } from '@/features/queue/components/QueueTouchHeader';
 import { QueueTouchNowPlaying } from '@/features/queue/components/QueueTouchNowPlaying';
 import { useQueueAutoScroll } from '@/features/queue/hooks/useQueueAutoScroll';
+import { useTouchQueueReorder } from '@/features/queue/hooks/useTouchQueueReorder';
 import { useQueueShare } from '@/features/queue/hooks/useQueueShare';
 import { useTimelineBootstrapOnMode, useTimelineHistoryResolver, useTimelinePlayHistory } from '@/features/playback/hooks/useTimelinePlayHistory';
 import { buildTimelineDisplayRows } from '@/features/playback/utils/buildTimelineDisplayRows';
@@ -183,6 +184,9 @@ function QueuePanelHostOrSolo({ touch, onClose }: QueuePanelProps) {
     removeTrack,
     removeQueueItems,
   });
+
+  // Touch: hold a row to lift it, then drag it (no mouse drag on a phone).
+  const touchDropTarget = useTouchQueueReorder({ listRef: queueListRef, enabled: !!touch, moveQueueItems });
 
   useQueueAutoScroll({
     queue: queueItems,
@@ -434,9 +438,9 @@ function QueuePanelHostOrSolo({ touch, onClose }: QueuePanelProps) {
         activeTab={activeTab}
         queueListRef={queueListRef}
         suppressNextAutoScrollRef={suppressNextAutoScrollRef}
-        isQueueDrag={isQueueDrag}
+        isQueueDrag={isQueueDrag || touchDropTarget !== null}
         psyDragFromIdxRef={psyDragFromIdxRef}
-        externalDropTarget={externalDropTarget}
+        externalDropTarget={touchDropTarget ?? externalDropTarget}
         startDrag={startDrag}
         orbitAttributionLabel={orbitAttributionLabel}
         luckyRolling={luckyRolling}

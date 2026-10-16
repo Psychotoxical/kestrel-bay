@@ -1,29 +1,28 @@
 import { useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Check, HardDriveDownload, Heart, ListPlus, MoreHorizontal, Play, Radio, Shuffle, Users } from 'lucide-react';
+import { Check, HardDriveDownload, Heart, ListPlus, Play, Radio, Shuffle, Users } from 'lucide-react';
 import { ArtistHeroCover } from '@/cover/artistHero';
 import { useOfflineStore, offlineActionPolicy } from '@/features/offline';
-import { ShareMethodMenuButton } from '@/features/share';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { useArtistOfflineState } from '@/features/artist/hooks/useArtistOfflineState';
 import { useArtistHeaderBackdrop } from '@/features/artist/hooks/useArtistHeaderBackdrop';
 import { lastFmArtistUrl } from '@/features/artist/utils/lastFmArtistUrl';
 import type { ArtistDetailHeroProps } from '@/features/artist/components/ArtistDetailHero';
-import { MobileBackButton } from '@/features/mobileShell';
+import { MobileBackButton, MobileMoreMenu, type MobileMoreMenuItem } from '@/features/mobileShell';
 import { useAuthStore } from '@/store/authStore';
 import StarRating from '@/ui/StarRating';
 import EntitySourcePicker from '@/ui/EntitySourcePicker';
 import LastfmIcon from '@/ui/LastfmIcon';
 import WikipediaIcon from '@/ui/WikipediaIcon';
-import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import { buildArtistDetailPath } from '@/lib/navigation/detailServerScope';
 import { useFitTextToWidth } from '@/lib/hooks/useFitTextToWidth';
 
 /**
  * Artist page header in the touch shell: image card with the name, play /
- * shuffle, one swipeable row of further actions. Same props and handlers as
- * the desktop hero.
+ * shuffle, the further actions in the "…" menu. Long-pressing the image opens
+ * the artist's context menu (add to playlist, rating, …), as on artist cards.
+ * Same props and handlers as the desktop hero.
  */
 export default function ArtistDetailHeroMobile({
   artist, id, albums, info, isStarred, artistEntityRating, handleArtistEntityRating,
@@ -49,6 +48,35 @@ export default function ArtistDetailHeroMobile({
   const showBackdrop = backdrop.enabled && !!backdrop.url;
   const hasAlbums = albums.length > 0;
 
+  const menuIcon = (Icon: typeof Radio) => <Icon size={19} aria-hidden="true" />;
+  const menuItems: MobileMoreMenuItem[] = [
+    {
+      id: 'radio', label: radioLoading ? t('artistDetail.loading') : t('artistDetail.radio'),
+      icon: menuIcon(Radio), disabled: radioLoading, onSelect: handleStartRadio,
+    },
+    ...(hasAlbums ? [{
+      id: 'enqueue', label: t('artistDetail.enqueue'), icon: menuIcon(ListPlus),
+      disabled: playAllLoading, onSelect: handleEnqueueAll,
+    }] : []),
+    ...(id ? [{
+      id: 'share',
+      share: { kind: 'artist' as const, resourceIds: [artist.id], serverIds: [artist.serverId ?? serverId].filter(Boolean) },
+    }] : []),
+    ...(policy.canCacheDiscography && hasAlbums ? [{
+      id: 'offline',
+      label: offlineStatus === 'cached' ? t('artistDetail.offlineCached') : t('artistDetail.cacheOffline'),
+      icon: menuIcon(offlineStatus === 'cached' ? Check : HardDriveDownload),
+      disabled: offlineStatus === 'downloading' || offlineStatus === 'queued' || offlineStatus === 'cached',
+      onSelect: () => { if (id && offlineStatus !== 'cached') downloadArtist(id, artist.name, serverId); },
+    }] : []),
+    ...(lastFmUrl ? [{
+      id: 'lastfm', label: 'Last.fm', icon: <LastfmIcon size={17} />, onSelect: () => openLink(lastFmUrl, 'lastfm'),
+    }] : []),
+    {
+      id: 'wikipedia', label: 'Wikipedia', icon: <WikipediaIcon size={17} />, onSelect: () => openLink(wikiUrl, 'wiki'),
+    },
+  ];
+
   // The top row is a sibling of the header block so it stays sticky for the whole page.
   return (
     <>
@@ -66,24 +94,18 @@ export default function ArtistDetailHeroMobile({
               <Heart size={21} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
             </button>
           )}
-          <button
-            type="button"
-            className="mobile-round-btn"
-            aria-label={t('player.moreOptions')}
-            aria-haspopup="menu"
-            onClick={e => {
-              prepareTransientUiOpen();
-              const r = e.currentTarget.getBoundingClientRect();
-              openContextMenu(r.right, r.bottom, artist, 'artist');
-            }}
-          >
-            <MoreHorizontal size={22} aria-hidden="true" />
-          </button>
+          <MobileMoreMenu items={menuItems} />
         </div>
       </div>
 
       <div className="mobile-artist">
-        <div className="mobile-artist__hero">
+        <div
+          className="mobile-artist__hero"
+          onContextMenu={e => {
+            e.preventDefault();
+            openContextMenu(e.clientX, e.clientY, artist, 'artist');
+          }}
+        >
           {showBackdrop ? (
             <div
               className="mobile-artist__image"
@@ -157,46 +179,6 @@ export default function ArtistDetailHeroMobile({
           </div>
         )}
 
-        <div className="mobile-chip-row mobile-artist__actions">
-          <button type="button" className="btn btn-surface" onClick={handleStartRadio} disabled={radioLoading}>
-            <Radio size={16} aria-hidden="true" />
-            <span>{radioLoading ? t('artistDetail.loading') : t('artistDetail.radio')}</span>
-          </button>
-          {hasAlbums && (
-            <button type="button" className="btn btn-surface" onClick={handleEnqueueAll} disabled={playAllLoading}>
-              <ListPlus size={16} aria-hidden="true" />
-              <span>{t('artistDetail.enqueue')}</span>
-            </button>
-          )}
-          {id && (
-            <ShareMethodMenuButton
-              request={{ kind: 'artist', resourceIds: [artist.id], serverIds: [artist.serverId ?? serverId].filter(Boolean) }}
-              className="btn btn-surface"
-              label={t('artistDetail.shareArtist')}
-            />
-          )}
-          {policy.canCacheDiscography && hasAlbums && (
-            <button
-              type="button"
-              className={`btn btn-surface${offlineStatus === 'cached' ? ' btn-sort-active' : ''}`}
-              disabled={offlineStatus === 'downloading' || offlineStatus === 'queued' || offlineStatus === 'cached'}
-              onClick={() => { if (id && offlineStatus !== 'cached') downloadArtist(id, artist.name, serverId); }}
-            >
-              {offlineStatus === 'cached' ? <Check size={16} aria-hidden="true" /> : <HardDriveDownload size={16} aria-hidden="true" />}
-              <span>{offlineStatus === 'cached' ? t('artistDetail.offlineCached') : t('artistDetail.cacheOffline')}</span>
-            </button>
-          )}
-          {lastFmUrl && (
-            <button type="button" className="btn btn-surface" onClick={() => openLink(lastFmUrl, 'lastfm')}>
-              <LastfmIcon size={14} />
-              <span>Last.fm</span>
-            </button>
-          )}
-          <button type="button" className="btn btn-surface" onClick={() => openLink(wikiUrl, 'wiki')}>
-            <WikipediaIcon size={14} />
-            <span>Wikipedia</span>
-          </button>
-        </div>
       </div>
     </>
   );

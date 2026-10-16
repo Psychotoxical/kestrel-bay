@@ -7,6 +7,7 @@ import { TracklistColumnPicker } from '@/ui/TracklistColumnPicker';
 import ArtistDetailTopTracks from '@/features/artist/components/ArtistDetailTopTracks';
 import ArtistAllTracksList from '@/features/artist/components/ArtistAllTracksList';
 import { useArtistAllTracks } from '@/features/artist/hooks/useArtistAllTracks';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
   ARTIST_ALL_TRACKS_COLUMNS,
   ARTIST_ALL_TRACKS_STORAGE_KEY,
@@ -115,22 +116,25 @@ export default function ArtistDetailTracksSection({
             on the ranking tab: removing it would let the group re-centre and make
             the tabs jump sideways on every switch. `visibility: hidden` also takes
             it out of the tab order and off the accessibility tree.
+            Touch rows have no columns, so the touch shell has no picker at all.
           */}
-          <div
-            className={`artist-tracks-picker${tab === 'all' ? '' : ' is-hidden'}`}
-            aria-hidden={tab !== 'all'}
-          >
-            <TracklistColumnPicker
-              allColumns={ARTIST_ALL_TRACKS_COLUMNS}
-              pickerRef={columns.pickerRef}
-              pickerOpen={columns.pickerOpen}
-              setPickerOpen={columns.setPickerOpen}
-              colVisible={columns.colVisible}
-              toggleColumn={columns.toggleColumn}
-              resetColumns={columns.resetColumns}
-              t={t}
-            />
-          </div>
+          {!IS_MOBILE_SHELL && (
+            <div
+              className={`artist-tracks-picker${tab === 'all' ? '' : ' is-hidden'}`}
+              aria-hidden={tab !== 'all'}
+            >
+              <TracklistColumnPicker
+                allColumns={ARTIST_ALL_TRACKS_COLUMNS}
+                pickerRef={columns.pickerRef}
+                pickerOpen={columns.pickerOpen}
+                setPickerOpen={columns.setPickerOpen}
+                colVisible={columns.colVisible}
+                toggleColumn={columns.toggleColumn}
+                resetColumns={columns.resetColumns}
+                t={t}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -150,6 +154,7 @@ export default function ArtistDetailTracksSection({
         ) : (
           <ArtistAllTracksList
             songs={allTracks.tracks}
+            albums={albums}
             loading={allTracks.loading}
             failed={allTracks.failed}
             onPlay={onPlayAllTracks}
