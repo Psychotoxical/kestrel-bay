@@ -1,102 +1,25 @@
-import { CoverArtImage } from '@/cover/CoverArtImage';
-import { usePresenceCoverRef } from '@/cover/useLibraryCoverRef';
-import { coverServerScopeForServerId } from '@/cover/serverScope';
-import { getNowPlayingForServers } from '@/lib/api/subsonicScrobble';
-import type { SubsonicNowPlaying } from '@/lib/api/subsonicTypes';
-import React, { useState, useEffect, useRef, useCallback, useLayoutEffect, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { PlayCircle, Pause, User, Radio, RefreshCw } from 'lucide-react';
 import { nowPlayingPresence } from '@/features/nowPlaying/api/nowPlayingPresence';
-import { useAuthStore } from '@/store/authStore';
-import { deriveEffectiveLibraryBrowseServerIds } from '@/lib/library/libraryBrowseScope';
-import { useUnavailableServerIds } from '@/lib/network/serverReachability';
-import { usePlayerStore } from '@/features/playback/store/playerStore';
+import PresenceCover from '@/features/nowPlaying/components/PresenceCover';
+import { formatNowPlayingClock, useNowPlayingFeed } from '@/features/nowPlaying/hooks/useNowPlayingFeed';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { appendServerQuery } from '@/lib/navigation/detailServerScope';
-import { serverListDisplayLabel } from '@/lib/server/serverDisplayName';
-import { findServerByIdOrIndexKey } from '@/lib/server/serverLookup';
-
-/**
- * Cover thumb for a presence row. Resolves via {@link usePresenceCoverRef} so a
- * multi-disc Navidrome album shows the disc the person is actually playing
- * (`dc-<albumId>:<disc>`), and single-disc / other servers show the shared album
- * cover — never the track's own `mf-*` art forced into the album cache slot.
- */
-function PresenceCover({ stream }: { stream: SubsonicNowPlaying }) {
-  const serverScope = useMemo(
-    () => coverServerScopeForServerId(stream.serverId),
-    [stream.serverId],
-  );
-  const coverRef = usePresenceCoverRef(
-    { albumId: stream.albumId, discNumber: stream.discNumber, serverId: stream.serverId },
-    serverScope,
-  );
-  if (!coverRef) {
-    return <PlayCircle size={24} style={{ margin: '12px', color: 'var(--text-muted)' }} />;
-  }
-  return (
-    <CoverArtImage
-      coverRef={coverRef}
-      displayCssPx={50}
-      surface="sparse"
-      alt="Cover"
-      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-    />
-  );
-}
 
 export default function NowPlayingDropdown() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [nowPlaying, setNowPlaying] = useState<SubsonicNowPlaying[]>([]);
-  const isPlaying = usePlayerStore(s => s.isPlaying);
-  const playbackServerKey = usePlayerStore(s => s.queueItems[s.queueIndex]?.serverId ?? s.queueServerId ?? '');
-  const servers = useAuthStore(s => s.servers);
-  const activeServerId = useAuthStore(s => s.activeServerId);
-  const libraryBrowseServerIds = useAuthStore(s => s.libraryBrowseServerIds);
-  const unavailableServerIds = useUnavailableServerIds();
-  const effectiveLibraryServerIds = useMemo(() => deriveEffectiveLibraryBrowseServerIds({
-    servers,
-    activeServerId,
-    libraryBrowseServerIds,
-  }, unavailableServerIds), [activeServerId, libraryBrowseServerIds, servers, unavailableServerIds]);
-  const [loading, setLoading] = useState(false);
-  const [spinning, setSpinning] = useState(false);
+  const {
+    visible, visibleGroups, multiServerScope, loading, spinning, handleRefresh, livePositionSec,
+  } = useNowPlayingFeed(isOpen);
+  const formatClock = formatNowPlayingClock;
   const triggerWrapRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const [panelPos, setPanelPos] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  // Wall-clock baseline for the last poll: between polls we extrapolate the
-  // position of `playing` entries locally so the progress bar glides instead
-  // of snapping. The server already extrapolates positionMs at fetch time.
-  const fetchedAtRef = useRef(0);
-  const requestSeqRef = useRef(0);
-  const [, forceTick] = useState(0);
   const PANEL_WIDTH = 340;
-  const LIVE_POLL_OPEN_MS = 10_000;
-  const LIVE_POLL_BACKGROUND_MS = 30_000;
-
-  const formatClock = (totalSec: number) => {
-    const s = Math.max(0, Math.floor(totalSec));
-    const m = Math.floor(s / 60);
-    return `${m}:${String(s % 60).padStart(2, '0')}`;
-  };
-
-  // Live position in seconds: advance `playing` entries by elapsed × playbackRate
-  // since the last poll; freeze everything else at the reported position.
-  const livePositionSec = (entry: SubsonicNowPlaying): number | undefined => {
-    if (typeof entry.positionMs !== 'number') return undefined;
-    let ms = entry.positionMs;
-    if (entry.state === 'playing') {
-      const rate = entry.playbackRate && entry.playbackRate > 0 ? entry.playbackRate : 1;
-      // React Compiler purity rule: intentional live-timestamp read at render (Date.now()); the value is allowed to differ between renders.
-      // eslint-disable-next-line react-hooks/purity
-      ms += (Date.now() - fetchedAtRef.current) * rate;
-    }
-    const maxMs = entry.duration > 0 ? entry.duration * 1000 : ms;
-    return Math.min(ms, maxMs) / 1000;
-  };
 
   const updatePanelPos = useCallback(() => {
     const el = triggerWrapRef.current;
@@ -108,61 +31,6 @@ export default function NowPlayingDropdown() {
     const left = Math.max(margin, Math.min(r.right - PANEL_WIDTH, maxLeft));
     setPanelPos({ top, left });
   }, []);
-
-  const fetchNowPlaying = useCallback(async (opts?: { silent?: boolean }) => {
-    const requestSeq = ++requestSeqRef.current;
-    if (!opts?.silent) setLoading(true);
-    try {
-      const data = await getNowPlayingForServers(effectiveLibraryServerIds);
-      if (requestSeq !== requestSeqRef.current) return;
-      fetchedAtRef.current = Date.now();
-      setNowPlaying(data);
-    } catch (e) {
-      console.error('Failed to load Now Playing', e);
-    } finally {
-      if (!opts?.silent && requestSeq === requestSeqRef.current) setLoading(false);
-    }
-  }, [effectiveLibraryServerIds]);
-
-  const handleRefresh = () => {
-    setSpinning(true);
-    fetchNowPlaying().finally(() => {
-      setTimeout(() => setSpinning(false), 600);
-    });
-  };
-
-  // Poll while the page is visible: every 30 s for the header badge, every 10 s
-  // while the popover is open so the list stays fresher.
-  useEffect(() => {
-    const poll = (silent: boolean) => {
-      if (document.visibilityState === 'visible') void fetchNowPlaying({ silent });
-    };
-
-    poll(!isOpen);
-    const intervalMs = isOpen ? LIVE_POLL_OPEN_MS : LIVE_POLL_BACKGROUND_MS;
-    const id = setInterval(() => poll(true), intervalMs);
-
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') poll(true);
-    };
-    document.addEventListener('visibilitychange', onVisibility);
-
-    return () => {
-      clearInterval(id);
-      document.removeEventListener('visibilitychange', onVisibility);
-    };
-  }, [isOpen, fetchNowPlaying]);
-
-  // Re-render once per second while a `playing` entry exposes a position, so the
-  // locally-extrapolated bar advances smoothly between polls.
-  const hasLivePosition = nowPlaying.some(
-    e => e.state === 'playing' && typeof e.positionMs === 'number',
-  );
-  useEffect(() => {
-    if (!isOpen || !hasLivePosition) return;
-    const id = setInterval(() => forceTick(v => v + 1), 1000);
-    return () => clearInterval(id);
-  }, [isOpen, hasLivePosition]);
 
   useLayoutEffect(() => {
     if (!isOpen) return;
@@ -187,34 +55,6 @@ export default function NowPlayingDropdown() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // For the current user, trust the local player state — the server keeps stale
-  // "now playing" entries for minutes after playback stops.
-  const playbackServerId = findServerByIdOrIndexKey(playbackServerKey)?.id ?? playbackServerKey;
-  const ownUsernameByServer = new Map(servers.map(server => [server.id, server.username]));
-  const serverLabelById = new Map(servers.map(server => [server.id, serverListDisplayLabel(server, servers)]));
-  const multiServerScope = effectiveLibraryServerIds.length > 1;
-  const visible = nowPlaying.filter(entry => {
-    if (entry.state === 'stopped') return false;
-    const entryServerId = entry.serverId ?? '';
-    const ownUsername = ownUsernameByServer.get(entryServerId);
-    if (!ownUsername || entry.username !== ownUsername) return true;
-    return entryServerId === playbackServerId && isPlaying;
-  });
-  const visibleByServer = new Map<string, SubsonicNowPlaying[]>();
-  for (const entry of visible) {
-    const serverId = entry.serverId ?? '';
-    const rows = visibleByServer.get(serverId);
-    if (rows) rows.push(entry);
-    else visibleByServer.set(serverId, [entry]);
-  }
-  const visibleGroups = effectiveLibraryServerIds
-    .map(serverId => ({
-      serverId,
-      serverLabel: serverLabelById.get(serverId) ?? serverId,
-      rows: visibleByServer.get(serverId) ?? [],
-    }))
-    .filter(group => group.rows.length > 0);
 
   return (
     <div className="now-playing-dropdown" ref={triggerWrapRef} style={{ position: 'relative' }}>
@@ -281,8 +121,6 @@ export default function NowPlayingDropdown() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {/* React Compiler refs rule: nested row rendering reads fetchedAtRef for live position extrapolation. */}
-              {/* eslint-disable-next-line react-hooks/refs */}
               {visibleGroups.map(group => (
                 <section key={group.serverId} className="nav-library-server-group" aria-label={group.serverLabel}>
                   {multiServerScope ? (

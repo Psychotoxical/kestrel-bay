@@ -10,6 +10,8 @@ vi.mock('@/features/offline', async importOriginal => ({
   useOfflineBrowseContext: () => ({ active: false }),
 }));
 
+vi.mock('@/lib/api/subsonicScrobble', () => ({ getNowPlayingForServers: vi.fn(async () => []) }));
+
 import MobileTopBar from './MobileTopBar';
 
 const HOME = { id: 'home', name: 'Home', url: 'https://music.example.org', username: 'frank', password: 'p' };
@@ -59,6 +61,13 @@ describe('MobileTopBar server chip', () => {
     useAuthStore.setState({ servers: [HOME, ASRA], libraryBrowseServerIds: ['home', 'asra'] });
     renderHeader();
     expect(chip()).toHaveTextContent('2 servers');
+  });
+
+  it('the Live button sits right before the account button', () => {
+    renderHeader();
+    const live = screen.getByRole('button', { name: 'Who is listening?' });
+    const account = screen.getByRole('button', { name: /Servers · Settings/ });
+    expect(live.nextElementSibling).toBe(account);
   });
 
   it('a library filter shows on the chip', () => {

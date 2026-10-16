@@ -7,6 +7,14 @@
  * `ArtistCard` is also reused by the Artist Detail page.
  */
 export { default as NowPlayingDropdown } from './components/NowPlayingDropdown';
+export { default as PresenceCover } from './components/PresenceCover';
+export {
+  formatNowPlayingClock,
+  useNowPlayingFeed,
+  type NowPlayingFeed,
+  type NowPlayingGroup,
+} from './hooks/useNowPlayingFeed';
+export { nowPlayingPresence } from './api/nowPlayingPresence';
 export { default as NowPlayingInfo } from './components/NowPlayingInfo';
 export { default as ArtistCard } from './components/ArtistCard';
 export { useNowPlayingPrewarm } from './hooks/useNowPlayingPrewarm';

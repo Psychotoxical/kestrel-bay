@@ -8,6 +8,7 @@ import { usePrivateModeStore } from '@/features/privateMode';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import MobileProfileSheet from '@/features/mobileShell/components/MobileProfileSheet';
 import MobileSourceSheet from '@/features/mobileShell/components/MobileSourceSheet';
+import MobileLiveButton from '@/features/mobileShell/components/MobileLiveButton';
 import { useMobileSourceScope } from '@/features/mobileShell/hooks/useMobileSourceScope';
 import MobileBackButton from '@/features/mobileShell/components/MobileBackButton';
 import MobilePullToRefresh from '@/features/mobileShell/components/MobilePullToRefresh';
@@ -67,6 +68,7 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
             <EyeOff size={19} aria-hidden="true" />
           </span>
         )}
+        <MobileLiveButton />
         <button
           type="button"
           className="mobile-round-btn"

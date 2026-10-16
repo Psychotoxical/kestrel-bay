@@ -3889,6 +3889,147 @@ button.mobile-source-check::after {
   inset: -10px;
 }
 
+/* ─── Live (MobileLiveButton): who is listening, next to the account button ─── */
+.mobile-live-btn--active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: mobile-live-pulse 2s ease-out infinite;
+}
+
+.mobile-live-btn--active > svg {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* A ring in the theme accent grows out of the button and fades. */
+@keyframes mobile-live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 9px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-live-btn--active,
+  .mobile-live-btn--active > svg {
+    animation: none;
+  }
+}
+
+.mobile-live-empty {
+  margin: 8px 4px 16px;
+  font-size: 15px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.mobile-live-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: none;
+  border-bottom: 1px solid var(--mobile-row-border);
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.mobile-live-row:last-child {
+  border-bottom: none;
+}
+
+button.mobile-live-row:active {
+  background: var(--bg-hover);
+}
+
+.mobile-live-row__cover {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--card-placeholder-bg);
+  color: var(--text-muted);
+}
+
+.mobile-live-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-live-row__ellipsis {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mobile-live-row__title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.mobile-live-row__sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.mobile-live-row__who {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.mobile-live-row__progress {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.mobile-live-row__bar {
+  flex: 1;
+  min-width: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.mobile-live-row__fill {
+  display: block;
+  height: 100%;
+  background: var(--text-muted);
+}
+
+.mobile-live-row__fill--playing {
+  background: var(--accent);
+  transition: width 1s linear;
+}
+
+.mobile-live-row__time {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Analytics / cover-cache strategy tables: one stacked block per server instead of
  * 520–560 px wide rows that scrolled sideways. Cells name their column (data-label). */
 .settings-touch .settings-strategy-table,

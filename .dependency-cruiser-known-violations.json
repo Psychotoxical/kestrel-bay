@@ -28749,23 +28749,6 @@
   },
   {
     "type": "dependency",
-    "from": "src/features/nowPlaying/components/NowPlayingDropdown.tsx",
-    "to": "src/features/playback/store/playerStore.ts",
-    "unresolvedTo": "@/features/playback/store/playerStore",
-    "dependencyTypes": [
-      "aliased",
-      "aliased-tsconfig",
-      "aliased-tsconfig-paths",
-      "local",
-      "import"
-    ],
-    "rule": {
-      "severity": "error",
-      "name": "no-deep-cross-feature"
-    }
-  },
-  {
-    "type": "dependency",
     "from": "src/features/nowPlaying/components/NowPlayingInfo.tsx",
     "to": "src/features/playback/hooks/usePlaybackServerId.ts",
     "unresolvedTo": "@/features/playback/hooks/usePlaybackServerId",
