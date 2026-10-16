@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router';
 import { open as openUrl } from '@tauri-apps/plugin-shell';
 import { AlertTriangle, CheckCircle2, Info, Lock, LogOut, Pencil, Plus, Power, Server, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
-import { formatServerSoftware, isNavidromeAudiomuseSoftwareEligible, type InstantMixProbeResult, type SubsonicServerIdentity } from '@/lib/server/subsonicServerIdentity';
-import { buildCapabilityContext } from '@/lib/serverCapabilities/context';
+import { formatServerSoftware } from '@/lib/server/subsonicServerIdentity';
 import { useLibraryIndexStore } from '@/store/libraryIndexStore';
 import { libraryDeleteServerData, librarySyncClearSession } from '@/lib/api/library';
 import { bootstrapIndexedServer } from '@/lib/library/librarySession';
@@ -39,7 +38,6 @@ import { useConfirmModalStore } from '@/store/confirmModalStore';
 import { showToast } from '@/lib/dom/toast';
 import { FEATURE_AUDIOMUSE_SIMILAR_TRACKS } from '@/lib/serverCapabilities/catalog';
 import { isFeatureActiveForServer, resolveFeatureForServer } from '@/lib/serverCapabilities/storeView';
-import type { ResolvedCapability } from '@/lib/serverCapabilities/types';
 import { serverIdentityLabel, serverListDisplayLabel, serverSettingsEntryTitle } from '@/lib/server/serverDisplayName';
 import { serverIndexKeyForProfile } from '@/lib/server/serverIndexKey';
 import { serverProfileBaseUrl } from '@/lib/server/serverBaseUrl';
@@ -52,8 +50,9 @@ import { ReorderGripHandle } from '@/features/settings/components/ReorderGripHan
 import { tooltipAttrs } from '@/ui/tooltipAttrs';
 import { publishServerConnectionStatus } from '@/lib/network/serverReachability';
 import { confirmChoice } from '@/features/settings/utils/confirmChoice';
-
-const AUDIOMUSE_NV_PLUGIN_URL = 'https://github.com/NeptuneHub/AudioMuse-AI-NV-plugin';
+import { AUDIOMUSE_NV_PLUGIN_URL, showLegacyAudiomuseToggleRow } from '@/features/settings/utils/serverAudiomuseRows';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { ServersTouchView } from '@/features/settings/components/ServersTouchView';
 
 function hasDuplicateServerLogin(
   servers: ServerProfile[],
@@ -65,24 +64,6 @@ function hasDuplicateServerLogin(
   return servers.some(server => server.id !== excludeServerId
     && serverProfileBaseUrl({ url: server.url.trim() }) === url
     && server.username.trim() === username);
-}
-
-/** Row visibility: same as main — hide only when manual strategy proves the feature absent. */
-function showAudiomuseRow(resolved: ResolvedCapability | null): boolean {
-  if (!resolved || resolved.strategyId === null || resolved.status === 'ineligible') return false;
-  return !(resolved.activation === 'manual' && resolved.status === 'absent');
-}
-
-/** Legacy Navidrome (< 0.62): manual toggle row below the card (not the auto header badge). */
-function showLegacyAudiomuseToggleRow(
-  identity: SubsonicServerIdentity | undefined,
-  instantMixProbe: InstantMixProbeResult | undefined,
-  resolved: ResolvedCapability | null,
-): boolean {
-  const ctx = buildCapabilityContext(identity);
-  if (ctx.isNavidrome && ctx.semverGte([0, 62, 0])) return false;
-  if (showAudiomuseRow(resolved)) return true;
-  return isNavidromeAudiomuseSoftwareEligible(identity) && instantMixProbe !== 'empty';
 }
 
 export function ServersTab({
@@ -507,6 +488,43 @@ export function ServersTab({
     auth.logout();
     navigate('/login');
   };
+
+  // Touch shell: an iOS list with one row per server; everything else opens in sheets.
+  if (IS_MOBILE_SHELL) {
+    return (
+      <ServersTouchView
+        servers={auth.servers}
+        activeServerId={auth.activeServerId}
+        connStatus={connStatus}
+        librarySync={librarySync}
+        setReorderContainer={setContainer}
+        dropEdge={dropEdge}
+        addFormOpen={showAddForm}
+        addFormInvite={pastedServerInvite}
+        onOpenAddForm={() => {
+          setPastedServerInvite(null);
+          setShowAddForm(true);
+        }}
+        onCloseAddForm={closeAddServerForm}
+        onAddServer={handleAddServer}
+        editingServerId={editingServerId}
+        onStartEdit={id => {
+          setShowAddForm(false);
+          setPastedServerInvite(null);
+          setEditingServerId(id);
+        }}
+        onCancelEdit={() => setEditingServerId(null)}
+        onEditServer={handleEditServer}
+        onDeleteServer={async srv => {
+          await deleteServer(srv);
+          setEditingServerId(null);
+        }}
+        onTestConnection={srv => void testConnection(srv)}
+        onUseServer={srv => void switchToServer(srv)}
+        onLogout={handleLogout}
+      />
+    );
+  }
 
   return (
     <>

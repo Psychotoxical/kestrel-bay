@@ -474,12 +474,39 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   background: color-mix(in srgb, var(--text-primary) 7%, transparent);
   font-size: 12px;
   color: var(--text-secondary);
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.mobile-server-chip:active {
+  background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+
+/* Finger-sized tap target around the small chip. */
+.mobile-server-chip {
+  position: relative;
+}
+
+.mobile-server-chip::after {
+  content: '';
+  position: absolute;
+  inset: -8px -4px;
 }
 
 .mobile-server-chip__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.mobile-server-chip__icon {
+  flex: none;
+  color: var(--text-muted);
+}
+
+.mobile-server-chip__unavailable {
+  color: var(--text-muted);
 }
 
 .mobile-quick-cards {
@@ -3548,6 +3575,318 @@ button.mobile-artist-bio__card:active {
 /* Servers / Users tabs: their own section heading repeats the page title. */
 .settings-touch .settings-section > .settings-section-header {
   display: none;
+}
+
+.settings-touch-row:disabled {
+  opacity: 0.45;
+}
+
+/* ─── Settings → Servers (ServersTouchView): server list + one sheet per server ─── */
+.server-touch {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* The rounded list clips its rows; let the lifted one leave it. */
+.server-touch-list:has(.is-reorder-lifted) {
+  overflow: visible;
+}
+
+.server-touch-row {
+  min-height: 64px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.server-touch-row.drop-before {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.server-touch-row.drop-after {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.server-touch-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.server-touch-row__name,
+.server-touch-row__sub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.server-touch-row__name {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.server-touch-row__sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.server-touch-row__active {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--positive) 18%, transparent);
+  color: var(--positive);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.server-touch__ok {
+  flex: none;
+  color: var(--positive);
+}
+
+.server-touch__error {
+  flex: none;
+  color: var(--danger);
+}
+
+.server-touch__warning {
+  flex: none;
+  color: var(--warning, #f59e0b);
+}
+
+.server-touch__spinner {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+.settings-touch-row__icon.server-touch__icon--danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.settings-touch-row__icon.server-touch__icon--positive {
+  background: var(--positive);
+  color: var(--bg-app);
+}
+
+.server-touch-logout {
+  color: var(--danger);
+}
+
+.server-touch__note,
+.server-touch__empty {
+  margin: -12px 16px 0;
+}
+
+.server-touch__empty {
+  margin-top: 0;
+}
+
+/* Server sheet: address, version and badges on top, then grouped actions. */
+.mobile-sheet--server .mobile-sheet__body {
+  gap: 20px;
+}
+
+.server-touch-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 0 4px;
+}
+
+.server-touch-head__line {
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.server-touch-head__line--muted {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.server-touch-head__text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.server-touch-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.server-touch-section__title {
+  margin: 0;
+  padding: 0 4px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.server-touch-section__note {
+  margin: 0 4px;
+}
+
+.server-touch-section__note a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+.server-touch-index__status {
+  margin: 0;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.server-touch-index__status--busy {
+  color: var(--accent);
+}
+
+/* Add / edit server: the desktop form inside a sheet (the sheet carries the title). */
+.mobile-sheet--server-form .settings-card {
+  margin-top: 0 !important;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.mobile-sheet--server-form .settings-card > h3 {
+  display: none;
+}
+
+.mobile-sheet--server-form .input {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.mobile-sheet--server-form .btn {
+  min-height: 44px;
+}
+
+/* ─── Server + library scope sheet (MobileSourceSheet, behind the Mainstage server chip) ─── */
+.mobile-source-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-source-section__title {
+  margin: 0;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mobile-source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding-right: 12px;
+  border-bottom: 1px solid var(--mobile-row-border);
+}
+
+.mobile-source-row:last-child {
+  border-bottom: none;
+}
+
+.mobile-source-row__main {
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 8px 0 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-source-row__main:active {
+  opacity: 0.6;
+}
+
+.mobile-source-row__label {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 17px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.mobile-source-row__sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.mobile-source-row__sub--warning {
+  color: var(--warning, #f59e0b);
+}
+
+.mobile-source-row__spinner {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 0 3px;
+}
+
+/* iOS selection circle: empty when out, filled with a check when in. */
+.mobile-source-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 2px solid color-mix(in srgb, var(--text-primary) 28%, transparent);
+  border-radius: 50%;
+  background: none;
+  color: var(--bg-app);
+  box-sizing: border-box;
+}
+
+.mobile-source-check[aria-pressed='true'],
+.mobile-source-check[data-on] {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* The circle of the only server left in the scope cannot be emptied. */
+.mobile-source-check:disabled {
+  opacity: 0.55;
+}
+
+/* The tappable circle gets a finger-sized target without growing. */
+button.mobile-source-check {
+  position: relative;
+}
+
+button.mobile-source-check::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
 }
 
 /* Analytics / cover-cache strategy tables: one stacked block per server instead of

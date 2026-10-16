@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { useTranslation } from 'react-i18next';
-import { EyeOff, Shuffle, TrendingUp, UserRound } from 'lucide-react';
+import { Trans, useTranslation } from 'react-i18next';
+import { ChevronDown, EyeOff, Music2, Shuffle, TrendingUp, UserRound } from 'lucide-react';
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import { useAuthStore } from '@/store/authStore';
 import { usePrivateModeStore } from '@/features/privateMode';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import MobileProfileSheet from '@/features/mobileShell/components/MobileProfileSheet';
+import MobileSourceSheet from '@/features/mobileShell/components/MobileSourceSheet';
+import { useMobileSourceScope } from '@/features/mobileShell/hooks/useMobileSourceScope';
 import MobileBackButton from '@/features/mobileShell/components/MobileBackButton';
 import MobilePullToRefresh from '@/features/mobileShell/components/MobilePullToRefresh';
 import { hasOwnMobileHeader, isMobileTabRoot } from '@/features/mobileShell/utils/mobileTabs';
@@ -23,6 +25,21 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
   const randomNavMode = useAuthStore(s => s.randomNavMode);
   const privateMode = usePrivateModeStore(s => s.active);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const scope = useMobileSourceScope();
+  // Nothing to choose (one server, at most one library): the chip leads to the server settings, as on desktop.
+  const canChoose = scope.multiServer || scope.showLibraries;
+  const openSource = () => {
+    if (canChoose) setSourceOpen(true);
+    else navigate('/settings', { state: { tab: 'servers' } });
+  };
+  const chipLabel = !scope.multiScope ? serverName : scope.unavailableSelection ? (
+    <Trans
+      i18nKey="sidebar.serverAvailabilityCount"
+      values={{ total: scope.selectedServerIds.length, available: scope.effectiveServerIds.length }}
+      components={{ unavailable: <del className="mobile-server-chip__unavailable" /> }}
+    />
+  ) : t('sidebar.serverSelectionCount', { count: scope.selectedServerIds.length });
   const mixHub = randomNavMode === 'hub';
   const mixRoute = mixHub ? '/random' : '/random/mix';
 
@@ -32,10 +49,17 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
       <div className="mobile-mainstage-header__brand">
         <PsysonicLogo className="mobile-mainstage-header__logo" gradientIdSuffix="mobile-mainstage" />
         {serverName && (
-          <span className="mobile-server-chip">
+          <button
+            type="button"
+            className="mobile-server-chip"
+            aria-haspopup={canChoose ? 'dialog' : undefined}
+            onClick={openSource}
+          >
             <span className="mobile-status-dot" data-status={connStatus} aria-hidden="true" />
-            <span className="mobile-server-chip__name">{serverName}</span>
-          </span>
+            <span className="mobile-server-chip__name">{chipLabel}</span>
+            {scope.hasLibrarySelection && <Music2 size={12} className="mobile-server-chip__icon" aria-label={t('sidebar.libraryScope')} />}
+            {canChoose && <ChevronDown size={13} className="mobile-server-chip__icon" aria-hidden="true" />}
+          </button>
         )}
         <span className="mobile-mainstage-header__spacer" />
         {privateMode && (
@@ -64,6 +88,7 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
           <span>{t('sidebar.mostPlayed')}</span>
         </button>
       </div>
+      {sourceOpen && <MobileSourceSheet onClose={() => setSourceOpen(false)} />}
       {profileOpen && (
         <MobileProfileSheet
           serverName={serverName}

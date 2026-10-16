@@ -1,11 +1,8 @@
 import { RefreshCw, ShieldCheck, WifiOff, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { SyncStateDto } from '@/lib/api/library';
-import {
-  libraryStatusDisplayTrackCount,
-  libraryStatusIsReady,
-} from '@/lib/library/libraryReady';
 import type { LibraryServerConnection } from '@/lib/library/hooks/useLibraryIndexSync';
+import { libraryIndexPhaseLabel } from '@/features/settings/utils/libraryIndexPhaseLabel';
 
 interface ServerLibraryIndexControlsProps {
   status: SyncStateDto | null;
@@ -32,28 +29,7 @@ export default function ServerLibraryIndexControls({
 }: ServerLibraryIndexControlsProps) {
   const { t } = useTranslation();
 
-  const phaseLabel = (() => {
-    if (connection === 'offline') {
-      return t('settings.libraryIndexServerOffline');
-    }
-    if (progressLabel) return progressLabel;
-    if (!status) return t('settings.libraryIndexStatusIdle');
-    if (libraryStatusIsReady(status)) {
-      return t('settings.libraryIndexStatusReady', {
-        count: libraryStatusDisplayTrackCount(status),
-      });
-    }
-    switch (status.syncPhase) {
-      case 'initial_sync':
-        return t('settings.libraryIndexStatusInitial');
-      case 'error':
-        return t('settings.libraryIndexStatusError');
-      case 'probing':
-        return t('settings.libraryIndexStatusProbing');
-      default:
-        return t('settings.libraryIndexStatusIdle');
-    }
-  })();
+  const phaseLabel = libraryIndexPhaseLabel(t, status, connection, progressLabel);
 
   return (
     <div

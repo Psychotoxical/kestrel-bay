@@ -195,6 +195,15 @@ beforeEach(() => {
   });
 });
 
+describe('ServersTab desktop layout', () => {
+  it('keeps the server cards with their buttons (the touch list is iPhone only)', () => {
+    const view = renderWithProviders(<ServersTab initialInvite={null} />);
+    expect(view.container.querySelector('.server-touch')).toBeNull();
+    expect(view.container.querySelector('#settings-add-server-btn')).not.toBeNull();
+    expect(view.container.querySelector('#settings-edit-server-a')).not.toBeNull();
+  });
+});
+
 describe('ServersTab duplicate server login validation', () => {
   it('blocks adding an existing URL and username before connecting', async () => {
     const user = userEvent.setup();
