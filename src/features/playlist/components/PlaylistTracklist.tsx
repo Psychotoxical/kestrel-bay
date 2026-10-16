@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import PlaylistRow, { type PlaylistRowCallbacks } from '@/features/playlist/components/PlaylistRow';
+import PlaylistTouchRow from '@/features/playlist/components/PlaylistTouchRow';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { TracklistColumnPicker } from '@/ui/TracklistColumnPicker';
 import { useTranslation } from 'react-i18next';
 import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
@@ -186,22 +188,24 @@ export default function PlaylistTracklist({
       if (L.orbitActive) L.addTrackToOrbit(song.id, song.serverId);
       else L.playTrack(L.displayedTracks[index], L.displayedTracks);
     },
-    context: (song, rIdx, e) => {
+    context: (song, rIdx, e, at) => {
       e.preventDefault();
       const L = latest.current;
+      const x = at?.x ?? e.clientX;
+      const y = at?.y ?? e.clientY;
       // A right-click inside a multi-row selection addresses the whole
       // selection (same as the album/artist grids); one row keeps its own menu.
       if (L.selectedIds.size > 1) {
         const selected = L.songs.filter(s => L.selectedIds.has(s.id));
         if (selected.length > 1) {
-          L.openContextMenu(e.clientX, e.clientY, selected.map(songToTrack), 'multi-song');
+          L.openContextMenu(x, y, selected.map(songToTrack), 'multi-song');
           return;
         }
       }
       L.setContextMenuSongId(song.id);
       L.openContextMenu(
-        e.clientX,
-        e.clientY,
+        x,
+        y,
         songToTrack(song),
         'album-song',
         undefined,
@@ -267,7 +271,7 @@ export default function PlaylistTracklist({
   const rowVirtualizer = useVirtualizer({
     count: displayedSongs.length,
     getScrollElement: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID),
-    estimateSize: () => 48,
+    estimateSize: () => (IS_MOBILE_SHELL ? 53 : 48),
     overscan: Math.max(8, Math.ceil(viewportH / 48)),
     scrollMargin,
     getItemKey: i => `${displayedSongs[i].id}:${i}`,
@@ -544,6 +548,16 @@ export default function PlaylistTracklist({
           ref={rowVirtualizer.measureElement}
           style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${vi.start - scrollMargin}px)` }}
         >
+          {IS_MOBILE_SHELL ? (
+            <PlaylistTouchRow
+              song={song}
+              index={i}
+              realIdx={realIdx}
+              isActive={currentTrack?.id === song.id}
+              showEq={currentTrack?.id === song.id && isPlaying}
+              cb={cb}
+            />
+          ) : (
           <PlaylistRow
             song={song}
             index={i}
@@ -564,6 +578,7 @@ export default function PlaylistTracklist({
             cursorRowId={cursor.cursorIndex === i ? cursor.cursorRowId : undefined}
             cb={cb}
           />
+          )}
         </div>
         );
       })}

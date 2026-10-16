@@ -2231,3 +2231,193 @@ html[data-mobile-app] .mobile-sheet .lyrics-plain-line {
 html[data-mobile-app] .mobile-sheet .lyrics-status {
   font-size: 17px;
 }
+
+/* ─── Artist page (ArtistDetailHeroMobile + touch top tracks) ─── */
+.mobile-artist {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.mobile-artist__hero {
+  position: relative;
+  height: 300px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.mobile-artist__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center 25%;
+  object-fit: cover;
+}
+
+.mobile-artist__image--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+}
+
+.mobile-artist__hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78) 0%, rgba(0, 0, 0, 0.25) 45%, transparent 70%);
+  pointer-events: none;
+}
+
+.mobile-artist__title {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 18px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: #fff;
+}
+
+.mobile-artist__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-artist__count {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.mobile-artist__rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+}
+
+.mobile-artist .mobile-album__buttons {
+  padding-top: 0;
+}
+
+.app-shell[data-mobile-app] .mobile-artist-page .section-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.mobile-track__cover {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.mobile-track__cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.mobile-top-tracks {
+  margin-top: 6px;
+}
+
+.mobile-artist {
+  margin-bottom: 26px;
+}
+
+.mobile-artist__rating > * {
+  flex: none;
+  white-space: nowrap;
+}
+
+.mobile-artist__rating .star-rating {
+  width: auto;
+  justify-content: flex-start;
+}
+
+/* ─── Playlist page (PlaylistHero touch + PlaylistTouchRow) ─── */
+.mobile-playlist {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 18px;
+}
+
+.mobile-playlist__cover .playlist-cover-grid {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.mobile-playlist__actions {
+  padding-top: 14px;
+}
+
+/* Column headers and the column picker mean nothing on a phone. */
+.app-shell[data-mobile-app] .tracklist-header,
+.app-shell[data-mobile-app] .tracklist-col-picker-wrapper {
+  display: none;
+}
+
+.app-shell[data-mobile-app] .playlist-suggestions-hint {
+  display: none;
+}
+
+.app-shell[data-mobile-app] .playlist-suggestions .section-title,
+.app-shell[data-mobile-app] .album-detail .section-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.mobile-track__add {
+  color: var(--accent);
+}
+
+.mobile-track .track-row-cover-thumb,
+.mobile-track [class*='cover-thumb'] {
+  flex: none;
+  border-radius: 6px;
+}
+
+.app-shell[data-mobile-app] .album-detail .tracklist {
+  padding: 0 0 24px;
+}
+
+/* The toolbar sets its padding and the search width inline (desktop). */
+.app-shell[data-mobile-app] .playlist-filter-toolbar {
+  padding: 4px 0 10px !important;
+}
+
+.app-shell[data-mobile-app] .playlist-filter-toolbar > div:first-child {
+  max-width: none !important;
+}
+
+/* Virtualized: every row sits in its own wrapper, so `:last-child` would drop all borders. */
+.mobile-track[data-playlist-touch-row] {
+  border-bottom: 1px solid var(--mobile-row-border);
+}
+
+.app-shell[data-mobile-app] .playlist-suggestions-header {
+  padding: 0;
+  margin-bottom: 4px;
+}

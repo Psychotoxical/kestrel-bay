@@ -18,7 +18,8 @@ import { isExplicit } from '@/lib/media/explicitStatus';
 export interface PlaylistRowCallbacks {
   activate: (song: SubsonicSong, index: number, e: React.MouseEvent) => void;
   doubleClick: (song: SubsonicSong, index: number, e: React.MouseEvent) => void;
-  context: (song: SubsonicSong, realIdx: number, e: React.MouseEvent) => void;
+  /** `at` places the menu explicitly (touch "…" button); default is the pointer. */
+  context: (song: SubsonicSong, realIdx: number, e: React.MouseEvent, at?: { x: number; y: number }) => void;
   mouseDownRow: (realIdx: number, e: React.MouseEvent) => void;
   mouseEnterRow: (index: number, e: React.MouseEvent) => void;
   toggleSelect: (songId: string, index: number, shift: boolean) => void;

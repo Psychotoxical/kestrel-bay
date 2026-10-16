@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeMobileTab, isMobileTabRoot } from './mobileTabs';
+import { activeMobileTab, hasOwnMobileHeader, isMobileTabRoot } from './mobileTabs';
 
 describe('activeMobileTab', () => {
   it('maps tab roots to their tab', () => {
@@ -34,5 +34,17 @@ describe('isMobileTabRoot', () => {
     expect(isMobileTabRoot('/library')).toBe(true);
     expect(isMobileTabRoot('/albums')).toBe(false);
     expect(isMobileTabRoot('/playlists/42')).toBe(false);
+  });
+});
+
+describe('hasOwnMobileHeader', () => {
+  it('is true for pages that draw their own top row', () => {
+    expect(hasOwnMobileHeader('/albums')).toBe(true);
+    expect(hasOwnMobileHeader('/album/1')).toBe(true);
+    expect(hasOwnMobileHeader('/artist/1')).toBe(true);
+    expect(hasOwnMobileHeader('/playlists/7')).toBe(true);
+    expect(hasOwnMobileHeader('/playlists')).toBe(false);
+    expect(hasOwnMobileHeader('/artists')).toBe(false);
+    expect(hasOwnMobileHeader('/settings')).toBe(false);
   });
 });

@@ -27,6 +27,7 @@ import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { trackPlayStats } from '@/lib/media/trackPlayStats';
 import { useResolvedTracklistBpm } from '@/lib/hooks/useResolvedTracklistBpm';
 import { navigateToAlbumDetail } from '@/lib/navigation/albumDetailNavigation';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 const PL_CENTERED = new Set(['favorite', 'rating', 'duration', 'playCount', 'bpm']);
 
@@ -90,6 +91,25 @@ export default function PlaylistSuggestions({
 
   if (!suggestionsVisible) return null;
 
+  // Insert the suggestion after the playing track and play it (thin-state:
+  // resolve the current queue first).
+  const playSuggestionNext = (song: SubsonicSong) => {
+    const { queueItems, queueIndex, currentTrack, playTrack } = usePlayerStore.getState();
+    const track = songToTrack(song);
+    if (!currentTrack || queueItems.length === 0) {
+      playTrack(track, [track]);
+      return;
+    }
+    const resolved = getQueueTracksView(queueItems);
+    const insertAt = Math.min(queueIndex + 1, resolved.length);
+    const newQueue = [
+      ...resolved.slice(0, insertAt),
+      track,
+      ...resolved.slice(insertAt),
+    ];
+    playTrack(track, newQueue, undefined, undefined, insertAt);
+  };
+
   return (
     <div className="playlist-suggestions tracklist" data-preview-loc="suggestions">
       <div className="playlist-suggestions-header compact-action-bar">
@@ -113,7 +133,33 @@ export default function PlaylistSuggestions({
         <div className="empty-state" style={{ padding: '1.5rem 0', fontSize: '0.85rem' }}>{t('playlists.noSuggestions')}</div>
       )}
 
-      {filteredSuggestions.length > 0 && (
+      {filteredSuggestions.length > 0 && IS_MOBILE_SHELL && (
+        <div className="mobile-tracklist mobile-suggestions">
+          {filteredSuggestions.map((song, idx) => (
+            <div key={song.id} className="mobile-track">
+              <button type="button" className="mobile-track__main" onClick={() => playSuggestionNext(song)}>
+                <span className="mobile-track__num">{idx + 1}</span>
+                <OptionalBrowseTrackRowCoverThumb song={song} size="dense" />
+                <span className="mobile-track__text">
+                  <span className="mobile-track__title">{song.title}</span>
+                  {song.artist && <span className="mobile-track__artist">{song.artist}</span>}
+                </span>
+                <span className="mobile-track__time">{formatTrackTime(song.duration ?? 0)}</span>
+              </button>
+              <button
+                type="button"
+                className="mobile-track__more mobile-track__add"
+                aria-label={`${t('playlists.addSong')}: ${song.title}`}
+                onClick={() => addSong(song)}
+              >
+                <Plus size={22} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {filteredSuggestions.length > 0 && !IS_MOBILE_SHELL && (
         <>
           <div className="tracklist-header tracklist-va" style={{ ...gridStyle, marginTop: 'var(--space-3)' }}>
             {visibleCols.map((colDef) => {
@@ -161,22 +207,7 @@ export default function PlaylistSuggestions({
                         className="playlist-suggestion-play-btn"
                         onClick={e => {
                           e.stopPropagation();
-                          const { queueItems, queueIndex, currentTrack, playTrack } = usePlayerStore.getState();
-                          const track = songToTrack(song);
-                          if (!currentTrack || queueItems.length === 0) {
-                            playTrack(track, [track]);
-                            return;
-                          }
-                          // Thin-state: resolve the current queue, insert after
-                          // the playing track, and play the inserted track.
-                          const resolved = getQueueTracksView(queueItems);
-                          const insertAt = Math.min(queueIndex + 1, resolved.length);
-                          const newQueue = [
-                            ...resolved.slice(0, insertAt),
-                            track,
-                            ...resolved.slice(insertAt),
-                          ];
-                          playTrack(track, newQueue, undefined, undefined, insertAt);
+                          playSuggestionNext(song);
                         }}
                         data-tooltip={t('playlists.playNextSuggestion')}
                         aria-label={t('playlists.playNextSuggestion')}

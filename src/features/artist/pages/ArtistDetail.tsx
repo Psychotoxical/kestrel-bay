@@ -29,6 +29,8 @@ import {
   runArtistEntityRating, runArtistToggleStar, runArtistImageUpload,
 } from '@/features/artist/utils/runArtistDetailActions';
 import ArtistDetailHero from '@/features/artist/components/ArtistDetailHero';
+import ArtistDetailHeroMobile from '@/features/artist/components/ArtistDetailHeroMobile';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import ArtistDetailTracksSection from '@/features/artist/components/ArtistDetailTracksSection';
 import { songToTrack } from '@/lib/media/songToTrack';
 import type { SubsonicSong } from '@/lib/api/subsonicTypes';
@@ -310,11 +312,13 @@ export default function ArtistDetail() {
     .filter(sectionHasData);
   const sectionMt = (id: ArtistSectionId) => renderableSectionIds[0] === id ? '0' : '2rem';
 
+  const HeroComponent = IS_MOBILE_SHELL ? ArtistDetailHeroMobile : ArtistDetailHero;
+
   return (
-    <div className="content-body animate-fade-in">
+    <div className={`content-body animate-fade-in${IS_MOBILE_SHELL ? ' mobile-artist-page' : ''}`}>
       {/* Remount after an image upload: the purge revoked the blob URLs the hero
           still holds, and its full-res backdrop only re-ensures on mount. */}
-      <ArtistDetailHero
+      <HeroComponent
         key={coverRevision}
         artist={artist}
         id={id}

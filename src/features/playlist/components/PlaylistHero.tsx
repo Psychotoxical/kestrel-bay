@@ -22,6 +22,8 @@ import { PlaylistSmartCoverCell } from '@/features/playlist/components/PlaylistC
 import type { OfflineActionPolicy } from '@/features/offline';
 import { coverServerScopeForServerId } from '@/cover/serverScope';
 import { ShareMethodMenuButton } from '@/features/share';
+import { MobileBackButton } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { tooltipAttrs } from '@/ui/tooltipAttrs';
 import PlaylistCommentLinks from '@/features/playlist/components/PlaylistCommentLinks';
 import { ResumeButton } from '@/features/resume';
@@ -88,6 +90,9 @@ export default function PlaylistHero({
   const controls = playlistDetailControls(playlist);
   const totalBytes = songs.reduce((acc, s) => acc + (s.size ?? 0), 0);
 
+  // Touch has no tooltips, so the chips there carry their label as text.
+  const chipLabel = (text: string) => (IS_MOBILE_SHELL ? <span>{text}</span> : null);
+
   // One entry per action-bar id; `null` when the button does not apply here.
   // `suggestions` is a page section, not a bar button, so it never renders.
   const renderActionButton = (itemId: PlaylistLayoutItemId): React.ReactNode => {
@@ -112,6 +117,7 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.addToQueue'))}
           >
             <ListPlus size={16} />
+            {chipLabel(t('playlists.addToQueue'))}
           </button>
         );
       case 'share':
@@ -135,6 +141,7 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.refreshSmart'))}
           >
             <RefreshCw size={16} className={refreshingSmart ? 'is-spinning' : undefined} />
+            {chipLabel(t('playlists.refreshSmart'))}
           </button>
         ) : null;
       case 'editRules':
@@ -148,6 +155,7 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.editRules'))}
           >
             <Sparkles size={16} />
+            {chipLabel(t('playlists.editRules'))}
           </button>
         ) : null;
       case 'addSongs':
@@ -158,6 +166,7 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.addSongsTooltip'))}
           >
             <Search size={16} />
+            {chipLabel(t('playlists.addSongs'))}
           </button>
         ) : null;
       case 'importCsv':
@@ -169,6 +178,7 @@ export default function PlaylistHero({
             {...tooltipAttrs(t('playlists.importCSVTooltip'))}
           >
             {csvImporting ? <Loader2 size={16} className="spin-slow" /> : <FileUp size={16} />}
+            {chipLabel(t('playlists.importCSV'))}
           </button>
         ) : null;
       case 'downloadZip':
@@ -188,6 +198,7 @@ export default function PlaylistHero({
             {...tooltipAttrs(`${t('playlists.downloadZip')}${totalBytes > 0 ? ` · ${formatSize(totalBytes)}` : ''}`)}
           >
             <Download size={16} />
+            {chipLabel(t('playlists.downloadZip'))}
           </button>
         );
       case 'offlineCache':
@@ -224,12 +235,100 @@ export default function PlaylistHero({
                 : t('playlists.cacheOffline'))}
           >
             {offlineStatus === 'cached' ? <Trash2 size={16} /> : <HardDriveDownload size={16} />}
+            {chipLabel(offlineStatus === 'cached' ? t('playlists.removeOffline') : t('playlists.cacheOffline'))}
           </button>
         );
       case 'suggestions':
         return null;
     }
   };
+
+  const coverNode = customCoverId ? (
+    <AlbumCoverArtImage
+      albumId={customCoverId}
+      coverArt={customCoverId}
+      serverScope={coverServerScopeForServerId(activeServerId)}
+      displayCssPx={PLAYLIST_MAIN_COVER_CSS_PX}
+      surface="dense"
+      libraryResolve={false}
+      alt=""
+      className="playlist-cover-grid"
+      style={{ objectFit: 'cover', display: 'block' }}
+    />
+  ) : (
+    <div className="playlist-cover-grid">
+      {coverQuadIds.map((coverId, i) =>
+        coverId
+          ? <PlaylistSmartCoverCell key={i} coverId={coverId} serverId={activeServerId} />
+          : <div key={i} className="playlist-cover-cell playlist-cover-cell--empty" />
+      )}
+    </div>
+  );
+
+  if (IS_MOBILE_SHELL) {
+    // Touch layout (as the album page): big cover, play / shuffle, the user's
+    // configured action buttons as one swipeable row. The top row is a sibling of
+    // the header block so it stays sticky for the whole page.
+    return (
+      <>
+        <div className="mobile-album__top">
+          <MobileBackButton variant="round" />
+          {actionPolicy.canEditPlaylist && (
+            <div className="mobile-album__top-actions">
+              <button
+                type="button"
+                className="mobile-round-btn"
+                onClick={() => setEditingMeta(true)}
+                aria-label={t('playlists.editMeta')}
+              >
+                <Pencil size={19} aria-hidden="true" />
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="mobile-playlist">
+          <div className="mobile-album__hero">
+            {enablePlaylistCoverPhoto && <div className="mobile-album__cover mobile-playlist__cover">{coverNode}</div>}
+            <h1 className="mobile-album__title">
+              {isSmartPlaylist(playlist) && <Sparkles size={18} aria-hidden="true" />} {playlistDisplayName(playlist)}
+            </h1>
+            {playlist.comment && <PlaylistCommentLinks comment={playlist.comment} />}
+            <span className="mobile-album__meta">
+              {[
+                t('playlists.songs', { count: songs.length }),
+                songs.length > 0 ? totalDurationLabel(songs) : null,
+                playlist.public === undefined ? null : playlist.public ? t('playlists.publicLabel') : t('playlists.privateLabel'),
+              ].filter(Boolean).join(' · ')}
+              {saving && <Loader2 size={12} className="spin-slow" style={{ display: 'inline', marginLeft: 6 }} />}
+            </span>
+          </div>
+          <div className="mobile-album__buttons">
+            <button
+              type="button"
+              className="mobile-album__btn mobile-album__btn--primary"
+              disabled={songs.length === 0}
+              onClick={handlePlayAll}
+            >
+              <Play size={18} fill="currentColor" aria-hidden="true" />
+              {t('common.play')}
+            </button>
+            <button type="button" className="mobile-album__btn" disabled={songs.length === 0} onClick={handleShuffleAll}>
+              <Shuffle size={19} aria-hidden="true" />
+              {t('albumDetail.shuffle')}
+            </button>
+          </div>
+          <div className="mobile-chip-row mobile-playlist__actions">
+            <ResumeButton kind="playlist" id={id} serverId={playlist.serverId ?? activeServerId} className="btn btn-ghost" />
+            {layoutItems.map(item => {
+              if (!item.visible || item.id === 'shuffle') return null;
+              const node = renderActionButton(item.id);
+              return node ? <Fragment key={item.id}>{node}</Fragment> : null;
+            })}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <div className="album-detail-header">
@@ -252,27 +351,7 @@ export default function PlaylistHero({
               className="playlist-hero-cover"
               onClick={() => { if (actionPolicy.canEditPlaylist) setEditingMeta(true); }}
             >
-              {customCoverId ? (
-                <AlbumCoverArtImage
-                  albumId={customCoverId}
-                  coverArt={customCoverId}
-                  serverScope={coverServerScopeForServerId(activeServerId)}
-                  displayCssPx={PLAYLIST_MAIN_COVER_CSS_PX}
-                  surface="dense"
-                  libraryResolve={false}
-                  alt=""
-                  className="playlist-cover-grid"
-                  style={{ objectFit: 'cover', display: 'block' }}
-                />
-              ) : (
-                <div className="playlist-cover-grid">
-                  {coverQuadIds.map((coverId, i) =>
-                    coverId
-                      ? <PlaylistSmartCoverCell key={i} coverId={coverId} serverId={activeServerId} />
-                      : <div key={i} className="playlist-cover-cell playlist-cover-cell--empty" />
-                  )}
-                </div>
-              )}
+              {coverNode}
               <div className="playlist-hero-cover-overlay">
                 <Camera size={28} />
               </div>
