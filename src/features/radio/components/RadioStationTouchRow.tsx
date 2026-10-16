@@ -4,6 +4,10 @@ import type { InternetRadioStation } from '@/lib/api/subsonicTypes';
 import RadioStationCover from '@/features/radio/components/RadioStationCover';
 
 interface Props {
+  /** Position in the shown list (touch reordering reads it from `data-radio-idx`). */
+  index: number;
+  /** Drop line while another row is dragged over this one. */
+  dropIndicator: 'before' | 'after' | null;
   station: InternetRadioStation;
   /** This station is the current radio stream. */
   isActive: boolean;
@@ -22,13 +26,18 @@ interface Props {
  * station sheet with homepage, edit and delete.
  */
 export default function RadioStationTouchRow({
-  station, isActive, isPlaying, isFavorite, subtitle, onToggle, onFavoriteToggle, onMore,
+  index, dropIndicator, station, isActive, isPlaying, isFavorite, subtitle, onToggle, onFavoriteToggle, onMore,
 }: Props) {
   const { t } = useTranslation();
   const onAir = isActive && isPlaying;
   return (
     <div
-      className={`mobile-radio-row${isActive ? ' is-active' : ''}`}
+      className={[
+        'mobile-radio-row',
+        isActive ? 'is-active' : '',
+        dropIndicator ? `drop-${dropIndicator}` : '',
+      ].filter(Boolean).join(' ')}
+      data-radio-idx={index}
       onContextMenu={e => { e.preventDefault(); onMore(); }}
     >
       <button

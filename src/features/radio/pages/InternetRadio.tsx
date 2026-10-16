@@ -16,6 +16,8 @@ import { useConfirmModalStore } from '@/store/confirmModalStore';
 import { MobileMoreMenu } from '@/features/mobileShell';
 import RadioStationTouchRow from '@/features/radio/components/RadioStationTouchRow';
 import RadioStationSheet from '@/features/radio/components/RadioStationSheet';
+import { useTouchListReorder } from '@/lib/dnd/useTouchListReorder';
+import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { setRadioVolume } from '@/features/playback/store/radioPlayer';
 import { fadeOut } from '@/features/playback/utils/playback/fadeOut';
@@ -394,6 +396,23 @@ export default function InternetRadio() {
     }
   };
 
+  // Touch: hold a row and drag it to change the manual order (same gesture as the queue).
+  const touchListRef = useRef<HTMLDivElement>(null);
+  const touchDropTarget = useTouchListReorder({
+    listRef: touchListRef,
+    enabled: IS_MOBILE_SHELL && sortBy === 'manual' && !loading && displayedStations.length > 0,
+    rowSelector: '[data-radio-idx]',
+    indexAttr: 'data-radio-idx',
+    ignoreSelector: '.mobile-radio-row__icon',
+    liftedClass: 'is-lifted',
+    getScroller: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID),
+    onDrop: (from, target) => {
+      const src = displayedStations[from];
+      const tgt = displayedStations[target.idx];
+      if (src && tgt) handleReorder(radioStationKey(src), radioStationKey(tgt), target.before ? 'before' : 'after');
+    },
+  });
+
   if (loading) {
     return (
       <div className="content-body" style={{ display: 'flex', justifyContent: 'center', padding: '4rem' }}>
@@ -417,6 +436,7 @@ export default function InternetRadio() {
             ...(stations.length > 0 ? sortOptions.map(option => ({
               id: `sort:${option.value}`,
               label: option.label,
+              checked: sortBy === option.value,
               icon: sortBy === option.value ? <Check size={17} /> : <span className="mobile-more-menu__icon-gap" />,
               onSelect: () => setSortBy(option.value as RadioSortBy),
             })) : []),
@@ -465,10 +485,12 @@ export default function InternetRadio() {
           {displayedStations.length === 0 ? (
             <div className="empty-state">{t('radio.noFavorites')}</div>
           ) : (
-            <div className="mobile-radio-list">
-              {displayedStations.map(s => (
+            <div className="mobile-radio-list" ref={touchListRef}>
+              {displayedStations.map((s, index) => (
                 <RadioStationTouchRow
                   key={radioStationKey(s)}
+                  index={index}
+                  dropIndicator={touchDropTarget?.idx === index ? (touchDropTarget.before ? 'before' : 'after') : null}
                   station={s}
                   isActive={sameRadioStation(currentRadio, s)}
                   isPlaying={isPlaying}

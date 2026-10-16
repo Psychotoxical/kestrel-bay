@@ -31,6 +31,12 @@ html[data-mobile-app] .page-title {
   font-family: var(--font-display);
 }
 
+/* iOS zooms the page into any focused field below 16 px; the shared `.input` is 14 px.
+ * On <html> so it also reaches dialogs portaled to <body> (radio directory, login, …). */
+html[data-mobile-app] .input {
+  font-size: 16px;
+}
+
 .app-shell[data-mobile-app] {
   grid-template-columns: 1fr;
   grid-template-rows: minmax(0, 1fr);
@@ -2565,6 +2571,26 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
   margin-bottom: 4px;
 }
 
+/* Icon-only refresh (it keeps its aria-label): with the text, "Vorgeschlagene Songs"
+ * wrapped even on the widest iPhone, and every language did on narrow ones. */
+.app-shell[data-mobile-app] .playlist-suggestions-header .compact-btn-label {
+  display: none;
+}
+
+.app-shell[data-mobile-app] .playlist-suggestions-header .btn {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.app-shell[data-mobile-app] .playlist-suggestions-header .btn svg {
+  width: 17px;
+  height: 17px;
+}
+
 /* ─── Artist bio (ArtistBioTouch): excerpt card, whole text in a sheet ─── */
 .mobile-artist-bio .section-title {
   margin: 0 0 12px;
@@ -3096,6 +3122,31 @@ button.mobile-artist-bio__card:active {
   display: flex;
   align-items: center;
   padding-right: 4px;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+/* Held row (manual order, `useTouchListReorder`) lifts off and follows the finger. */
+.mobile-radio-row.is-lifted {
+  position: relative;
+  z-index: 5;
+  transform: translateY(var(--lift-dy, 0px)) scale(1.03);
+  border-radius: 12px;
+  background: var(--bg-elevated, var(--bg-card));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* The rounded list clips its rows; let the lifted one leave it. */
+.mobile-radio-list:has(.is-lifted) {
+  overflow: visible;
+}
+
+.mobile-radio-row.drop-before {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.mobile-radio-row.drop-after {
+  box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 .mobile-radio-row + .mobile-radio-row {

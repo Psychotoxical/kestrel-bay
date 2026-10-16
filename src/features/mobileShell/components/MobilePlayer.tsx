@@ -255,7 +255,7 @@ export default function MobilePlayer() {
       onTouchCancel={onTouchEnd}
     >
       <div className="mobile-player__top">
-        <button type="button" className="mobile-player__close" onClick={close} aria-label={t('player.back')}>
+        <button type="button" className="mobile-player__close" onClick={close} aria-label={t('common.back')}>
           <ChevronDown size={30} strokeWidth={2} aria-hidden="true" />
         </button>
         <PsysonicLogo className="mobile-player__logo" gradientIdSuffix="mobile-player" />

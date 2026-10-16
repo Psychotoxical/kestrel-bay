@@ -33,6 +33,12 @@ describe('MobilePlayer', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
   });
 
+  it('names the close button for VoiceOver with a real translation, not a raw key', () => {
+    renderPlayer();
+    expect(screen.getByRole('button', { name: 'Back' })).toHaveClass('mobile-player__close');
+    expect(screen.queryByRole('button', { name: /^player\./ })).toBeNull();
+  });
+
   it('a short swipe down keeps it open', () => {
     const { container } = renderPlayer();
     const player = container.querySelector('.mobile-player') as HTMLElement;

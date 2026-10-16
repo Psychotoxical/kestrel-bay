@@ -129,6 +129,20 @@ describe('InternetRadio (touch shell)', () => {
     expect(view.queryByRole('button', { name: 'Play station: Alpha Radio' })).toBeNull();
   });
 
+  it('hold-and-drag reordering is on only for the manual order', async () => {
+    const view = renderWithProviders(<InternetRadio />);
+    await view.findByRole('button', { name: 'Play station: Alpha Radio' });
+    const list = document.querySelector('.mobile-radio-list')!;
+    expect(list).toHaveAttribute('data-no-touch-menu');
+    expect(list.querySelector('[data-radio-idx="1"]')).toHaveTextContent('Beta Radio');
+
+    fireEvent.click(view.getAllByRole('button', { name: 'More options' })[0]!);
+    expect(view.getByRole('menuitemradio', { name: 'Manual' })).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(view.getByRole('menuitemradio', { name: 'A → Z' }));
+    // Sorted lists keep the plain long press (station sheet), no dragging.
+    expect(document.querySelector('.mobile-radio-list')).not.toHaveAttribute('data-no-touch-menu');
+  });
+
   it('"…" leads to the station editor', async () => {
     const view = renderWithProviders(<InternetRadio />);
     await view.findByRole('button', { name: 'Play station: Alpha Radio' });

@@ -10,6 +10,8 @@ export interface MobileMoreMenuAction {
   onSelect: () => void;
   disabled?: boolean;
   danger?: boolean;
+  /** Set for one-of-many choices (e.g. sort order): announced as a checked or unchecked option. */
+  checked?: boolean;
 }
 
 /** Placeholder for the share entries: one per share method the user has enabled. */
@@ -85,7 +87,8 @@ export default function MobileMoreMenu({ items }: { items: MobileMoreMenuItem[] 
             <button
               key={action.id}
               type="button"
-              role="menuitem"
+              role={action.checked === undefined ? 'menuitem' : 'menuitemradio'}
+              aria-checked={action.checked}
               className={`queue-touch-menu__item${action.danger ? ' queue-touch-menu__item--danger' : ''}`}
               disabled={action.disabled}
               onClick={() => {
