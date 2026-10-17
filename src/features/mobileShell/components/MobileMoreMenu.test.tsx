@@ -50,6 +50,25 @@ describe('MobileMoreMenu', () => {
     expect(screen.queryByRole('menu')).toBeNull();
   });
 
+  it('a custom trigger replaces the "…" button and toggles the list', () => {
+    const { container } = renderWithProviders(
+      <MobileMoreMenu
+        items={[action('a')]}
+        placement="above"
+        trigger={({ open, toggle }) => (
+          <button type="button" aria-expanded={open} onClick={toggle}>Pick</button>
+        )}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'More options' })).toBeNull();
+    expect(container.querySelector('.mobile-more-menu--above')).not.toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Pick' }));
+    expect(screen.getByRole('menuitem', { name: 'Action a' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Pick' })).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Pick' }));
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('renders nothing without actions', () => {
     const { container } = renderWithProviders(<MobileMoreMenu items={[]} />);
     expect(container.querySelector('.mobile-more-menu')).toBeNull();

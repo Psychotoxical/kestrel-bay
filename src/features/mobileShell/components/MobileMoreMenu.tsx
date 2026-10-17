@@ -28,13 +28,23 @@ function isShare(item: MobileMoreMenuItem): item is MobileMoreMenuShare {
   return 'share' in item;
 }
 
+interface MobileMoreMenuProps {
+  items: MobileMoreMenuItem[];
+  /** Own trigger instead of the round "…" button (e.g. a segment that opens a choice list). */
+  trigger?: (menu: { open: boolean; toggle: () => void }) => ReactNode;
+  /** `above`: the list opens upward, for triggers near the bottom of the screen. */
+  placement?: 'below' | 'above';
+  /** Extra class on the root, e.g. to let it fill a grid cell. */
+  className?: string;
+}
+
 /**
  * Round "…" button with a drop-down action list (the queue sheet's menu look).
  * Keeps a page's secondary actions out of sight until they are wanted. Share
  * entries come from the share model, so availability, Navidrome sharing and the
  * copied-link toasts behave exactly as in the desktop share button.
  */
-export default function MobileMoreMenu({ items }: { items: MobileMoreMenuItem[] }) {
+export default function MobileMoreMenu({ items, trigger, placement = 'below', className }: MobileMoreMenuProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -69,18 +79,27 @@ export default function MobileMoreMenu({ items }: { items: MobileMoreMenuItem[] 
 
   if (actions.length === 0) return null;
 
+  const toggle = () => setOpen(v => !v);
+  const rootClass = [
+    'mobile-more-menu',
+    placement === 'above' ? 'mobile-more-menu--above' : '',
+    className ?? '',
+  ].filter(Boolean).join(' ');
+
   return (
-    <div className="mobile-more-menu" ref={rootRef}>
-      <button
-        type="button"
-        className={`mobile-round-btn${open ? ' is-active' : ''}`}
-        aria-label={t('player.moreOptions')}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen(v => !v)}
-      >
-        <MoreHorizontal size={22} aria-hidden="true" />
-      </button>
+    <div className={rootClass} ref={rootRef}>
+      {trigger ? trigger({ open, toggle }) : (
+        <button
+          type="button"
+          className={`mobile-round-btn${open ? ' is-active' : ''}`}
+          aria-label={t('player.moreOptions')}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={toggle}
+        >
+          <MoreHorizontal size={22} aria-hidden="true" />
+        </button>
+      )}
       {open && (
         <div className="queue-touch-menu mobile-more-menu__list" role="menu">
           {actions.map(action => (

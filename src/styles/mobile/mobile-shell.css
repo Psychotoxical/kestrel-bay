@@ -1914,6 +1914,21 @@ html[data-mobile-app] .app-shell {
   top: 52px;
 }
 
+/* The list opens upward: for a trigger near the bottom of the screen. */
+.mobile-more-menu--above .mobile-more-menu__list {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
+/* A `.mobile-segmented` segment as the trigger: it fills its grid cell, label and chevron centred. */
+.mobile-more-menu--segment > .mobile-segmented__item--menu {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
 .queue-touch-label {
   display: block;
   padding: 4px 20px 2px;
@@ -2247,6 +2262,9 @@ html[data-mobile-app] ::-webkit-scrollbar {
 
 .mobile-sheet--audio .mobile-sheet__body {
   gap: 20px;
+  /* Only as tall as its content, so nothing to scroll; the LUFS target list
+     opens upward and may reach past the sheet's top edge. */
+  overflow: visible;
 }
 
 .mobile-audio-options__section {
