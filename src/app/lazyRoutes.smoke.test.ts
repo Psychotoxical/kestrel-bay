@@ -16,6 +16,7 @@ import { describe, expect, it } from 'vitest';
 // and the app fall out of sync, so a newly added route can't silently skip coverage.
 const ROUTE_LOADERS: Array<[string, () => Promise<{ default: unknown }>]> = [
   ['@/features/home/pages/Home', () => import('@/features/home/pages/Home')],
+  ['@/features/home/pages/TouchMainstage', () => import('@/features/home/pages/TouchMainstage')],
   ['@/features/album/pages/Albums', () => import('@/features/album/pages/Albums')],
   ['@/features/album/pages/AlbumDetail', () => import('@/features/album/pages/AlbumDetail')],
   ['@/features/album/pages/NewReleases', () => import('@/features/album/pages/NewReleases')],

@@ -6,9 +6,12 @@ import { resetAuthStore } from '@/test/helpers/storeReset';
 import { useAuthStore } from '@/store/authStore';
 import { useDevOfflineBrowseStore } from '@/store/devOfflineBrowseStore';
 
+const offline = vi.hoisted(() => ({ active: false }));
+
 vi.mock('@/features/offline', async importOriginal => ({
   ...(await importOriginal<typeof import('@/features/offline')>()),
   useOfflineBrowseContext: () => ({ active: false }),
+  useOfflineBrowseActive: () => offline.active,
 }));
 
 vi.mock('@/lib/api/subsonicScrobble', () => ({ getNowPlayingForServers: vi.fn(async () => []) }));
@@ -36,6 +39,7 @@ describe('MobileTopBar server chip', () => {
   beforeEach(() => {
     resetAuthStore();
     useDevOfflineBrowseStore.setState({ forceOffline: false });
+    offline.active = false;
     useAuthStore.setState({
       servers: [HOME],
       activeServerId: 'home',
@@ -79,6 +83,18 @@ describe('MobileTopBar server chip', () => {
     });
     renderHeader();
     expect(screen.getByLabelText('Library scope')).toBeInTheDocument();
+  });
+
+  it('offline the mix and Most Played cards give way: both need the server', () => {
+    const { unmount } = renderHeader();
+    expect(screen.getByRole('button', { name: 'Build a Mix' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Most Played' })).toBeInTheDocument();
+    unmount();
+
+    offline.active = true;
+    renderHeader();
+    expect(screen.queryByRole('button', { name: 'Build a Mix' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Most Played' })).not.toBeInTheDocument();
   });
 
   it('"downloaded music only": the chip says Offline and leads to the switch', () => {

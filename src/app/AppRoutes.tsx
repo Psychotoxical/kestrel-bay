@@ -16,6 +16,8 @@ import { recordBenchmarkReactCommit } from '@/lib/perf/benchmark';
 // Route-level lazy loading: keeps the non-page graph (shell, player, stores) in
 // the entry chunk; each page is fetched when its route is first visited.
 const Home = lazy(() => import('@/features/home/pages/Home'));
+const TouchMainstage = lazy(() => import('@/features/home/pages/TouchMainstage'));
+const MainstagePage = IS_MOBILE_SHELL ? TouchMainstage : Home;
 const Albums = lazy(() => lazyLoadAlbumsPage());
 const Artists = lazy(() => lazyLoadArtistsPage());
 const ArtistDetail = lazy(() => import('@/features/artist/pages/ArtistDetail'));
@@ -65,9 +67,9 @@ function MainstageRoute() {
   const randomNavMode = useAuthStore(s => s.randomNavMode);
   const luckyMixAvailable = useLuckyMixAvailable() && randomNavMode === 'separate';
   const mainstageVisible = items.find(i => i.id === 'mainstage')?.visible ?? true;
-  if (mainstageVisible) return <Home />;
+  if (mainstageVisible) return <MainstagePage />;
   const target = resolveStartRoute(items, randomNavMode, luckyMixAvailable);
-  return target ? <Navigate to={target} replace /> : <Home />;
+  return target ? <Navigate to={target} replace /> : <MainstagePage />;
 }
 
 /**

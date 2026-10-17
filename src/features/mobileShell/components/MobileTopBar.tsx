@@ -5,7 +5,7 @@ import { ChevronDown, CloudOff, EyeOff, Music2, Shuffle, TrendingUp, UserRound }
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import { useAuthStore } from '@/store/authStore';
 import { usePrivateModeStore } from '@/features/privateMode';
-import { useDevOfflineBrowseStore } from '@/features/offline';
+import { useDevOfflineBrowseStore, useOfflineBrowseActive } from '@/features/offline';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import MobileProfileSheet from '@/features/mobileShell/components/MobileProfileSheet';
 import MobileSourceSheet from '@/features/mobileShell/components/MobileSourceSheet';
@@ -27,6 +27,8 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
   const randomNavMode = useAuthStore(s => s.randomNavMode);
   const privateMode = usePrivateModeStore(s => s.active);
   const downloadsOnly = useDevOfflineBrowseStore(s => s.forceOffline);
+  // Mix and Most Played come from the server; offline the Mainstage shows only what is on the device.
+  const offline = useOfflineBrowseActive();
   const [profileOpen, setProfileOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const scope = useMobileSourceScope();
@@ -94,16 +96,18 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
         </button>
       </div>
       <h1 className="mobile-large-title">{t('sidebar.mainstage')}</h1>
-      <div className="mobile-quick-cards">
-        <button type="button" className="mobile-quick-card" onClick={() => navigate(mixRoute)}>
-          <span className="mobile-quick-card__icon"><Shuffle size={20} aria-hidden="true" /></span>
-          <span>{t(mixHub ? 'sidebar.randomPicker' : 'sidebar.randomMix')}</span>
-        </button>
-        <button type="button" className="mobile-quick-card" onClick={() => navigate('/most-played')}>
-          <span className="mobile-quick-card__icon"><TrendingUp size={20} aria-hidden="true" /></span>
-          <span>{t('sidebar.mostPlayed')}</span>
-        </button>
-      </div>
+      {!offline && (
+        <div className="mobile-quick-cards">
+          <button type="button" className="mobile-quick-card" onClick={() => navigate(mixRoute)}>
+            <span className="mobile-quick-card__icon"><Shuffle size={20} aria-hidden="true" /></span>
+            <span>{t(mixHub ? 'sidebar.randomPicker' : 'sidebar.randomMix')}</span>
+          </button>
+          <button type="button" className="mobile-quick-card" onClick={() => navigate('/most-played')}>
+            <span className="mobile-quick-card__icon"><TrendingUp size={20} aria-hidden="true" /></span>
+            <span>{t('sidebar.mostPlayed')}</span>
+          </button>
+        </div>
+      )}
       {sourceOpen && <MobileSourceSheet onClose={() => setSourceOpen(false)} />}
       {profileOpen && (
         <MobileProfileSheet
