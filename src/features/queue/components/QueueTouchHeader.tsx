@@ -21,6 +21,9 @@ interface Props {
   setInfiniteQueueEnabled: (v: boolean) => void;
   queueDisplayMode: QueueDisplayMode;
   setQueueDisplayMode: (v: QueueDisplayMode) => void;
+  /** Show the transition modes, crossfade length and infinite queue as a row (the Orbit room).
+   *  Otherwise transitions live in the player's options sheet and infinite queue in the menu. */
+  showPlaybackModes?: boolean;
   onClose?: () => void;
   t: TFunction;
 }
@@ -33,13 +36,14 @@ const MODES: ReadonlyArray<{ mode: QueueDisplayMode; labelKey: string }> = [
 
 /**
  * Touch header of the queue sheet: title with an actions menu (shuffle,
- * playlist save/load, share link, clear) and the close button, one swipeable
- * row of playback chips, and the queue / playlist / timeline switch.
+ * infinite queue, playlist save/load, share link, clear) and the close button,
+ * and the queue / playlist / timeline switch. The Orbit room adds the row of
+ * transition modes; elsewhere those sit behind the player's options arrow.
  */
 export function QueueTouchHeader({
   activePlaylist, saveState, shuffleMode, toggleShuffleMode, handleSave, handleLoad, handleClear,
   queueShare, publicShareQueueActive, infiniteQueueEnabled, setInfiniteQueueEnabled,
-  queueDisplayMode, setQueueDisplayMode, onClose, t,
+  queueDisplayMode, setQueueDisplayMode, showPlaybackModes = false, onClose, t,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -99,6 +103,18 @@ export function QueueTouchHeader({
                 <span>{t('queue.shuffle')}</span>
                 {shuffleMode ? <Check size={19} aria-hidden="true" /> : <Shuffle size={19} aria-hidden="true" />}
               </button>
+              {!showPlaybackModes && (
+                <button
+                  type="button"
+                  role="menuitemcheckbox"
+                  aria-checked={infiniteQueueEnabled}
+                  className="queue-touch-menu__item"
+                  onClick={pick(() => setInfiniteQueueEnabled(!infiniteQueueEnabled))}
+                >
+                  <span>{t('queue.infiniteQueue')}</span>
+                  {infiniteQueueEnabled ? <Check size={19} aria-hidden="true" /> : <InfinityIcon size={19} aria-hidden="true" />}
+                </button>
+              )}
               {!publicShareQueueActive && (
                 <button type="button" role="menuitem" className="queue-touch-menu__item" onClick={pick(handleSave)} disabled={saveState === 'saving'}>
                   <span>{activePlaylist ? `${t('queue.updatePlaylist')}: ${activePlaylist.name}` : t('queue.savePlaylist')}</span>
@@ -122,19 +138,23 @@ export function QueueTouchHeader({
         </div>
       </div>
 
-      <TransitionModeChips layout="segmented">
-        <button
-          type="button"
-          className={`mobile-transition-bar__toggle${infiniteQueueEnabled ? ' is-active' : ''}`}
-          aria-pressed={infiniteQueueEnabled}
-          aria-label={t('queue.infiniteQueue')}
-          title={t('queue.infiniteQueue')}
-          onClick={() => setInfiniteQueueEnabled(!infiniteQueueEnabled)}
-        >
-          <InfinityIcon size={20} strokeWidth={1.9} aria-hidden="true" />
-        </button>
-      </TransitionModeChips>
-      <CrossfadeLengthSlider />
+      {showPlaybackModes && (
+        <>
+          <TransitionModeChips layout="segmented">
+            <button
+              type="button"
+              className={`mobile-transition-bar__toggle${infiniteQueueEnabled ? ' is-active' : ''}`}
+              aria-pressed={infiniteQueueEnabled}
+              aria-label={t('queue.infiniteQueue')}
+              title={t('queue.infiniteQueue')}
+              onClick={() => setInfiniteQueueEnabled(!infiniteQueueEnabled)}
+            >
+              <InfinityIcon size={20} strokeWidth={1.9} aria-hidden="true" />
+            </button>
+          </TransitionModeChips>
+          <CrossfadeLengthSlider />
+        </>
+      )}
 
       <div className="mobile-segmented" role="tablist" aria-label={t('queue.title')}>
         {MODES.map(({ mode, labelKey }) => (

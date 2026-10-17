@@ -52,6 +52,8 @@ import { playlistDetailControls } from '@/features/playlist/utils/playlistSmartU
 import { showToast } from '@/lib/dom/toast';
 import { useResolvedTracklistBpm } from '@/lib/hooks/useResolvedTracklistBpm';
 import { usePlaylistDetailScrollRestore } from '@/features/playlist/hooks/usePlaylistDetailScrollRestore';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import PlaylistSongSearchSheet from '@/features/playlist/components/PlaylistSongSearchSheet';
 
 // ── Column configuration ──────────────────────────────────────────────────────
 const PL_COLUMNS: readonly ColDef[] = [
@@ -415,8 +417,23 @@ export default function PlaylistDetail() {
         downloadPlaylist={downloadPlaylist}
       />
 
-      {/* ── Song search panel ── */}
-      {searchOpen && !tracksReadOnly && (
+      {/* ── Song search panel (touch shell: a sheet) ── */}
+      {searchOpen && !tracksReadOnly && IS_MOBILE_SHELL && (
+        <PlaylistSongSearchSheet
+          query={searchQuery}
+          setQuery={setSearchQuery}
+          searching={searching}
+          searchResults={searchResults}
+          setSearchResults={setSearchResults}
+          addSong={addSong}
+          onClose={() => {
+            setSearchOpen(false);
+            setSearchQuery('');
+            setSearchResults([]);
+          }}
+        />
+      )}
+      {searchOpen && !tracksReadOnly && !IS_MOBILE_SHELL && (
         <PlaylistSongSearchPanel
           query={searchQuery}
           setQuery={setSearchQuery}

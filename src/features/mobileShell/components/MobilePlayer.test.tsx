@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { act, screen } from '@testing-library/react';
+import { act, fireEvent, screen, within } from '@testing-library/react';
 import { useLocation } from 'react-router';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
 import { resetAllStores } from '@/test/helpers/storeReset';
@@ -84,10 +84,20 @@ describe('MobilePlayer', () => {
     expect(container.querySelector('.mobile-player__seek-slot > .mobile-player__waveform')).not.toBeNull();
   });
 
-  it('offers the crossfade length only while crossfade is on', () => {
+  it('the arrow under the transport opens the options sheet; the transitions are no longer on the player', () => {
     const { container } = renderPlayer();
-    expect(container.querySelector('.mobile-crossfade-length')).toBeNull();
+    expect(container.querySelector('.mobile-player .mobile-transition-bar, .mobile-player .mobile-chips')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Audio' }));
+    const sheet = screen.getByRole('dialog', { name: 'Audio' });
+    expect(within(sheet).getByRole('heading', { name: 'Track transitions' })).toBeInTheDocument();
+    expect(within(sheet).getByRole('radiogroup', { name: 'Normalization' })).toBeInTheDocument();
+  });
+
+  it('offers the crossfade length only while crossfade is on', () => {
+    renderPlayer();
+    fireEvent.click(screen.getByRole('button', { name: 'Audio' }));
+    expect(document.querySelector('.mobile-sheet--audio .mobile-crossfade-length')).toBeNull();
     act(() => { setTransitionMode('crossfade'); });
-    expect(container.querySelector('.mobile-crossfade-length')).not.toBeNull();
+    expect(document.querySelector('.mobile-sheet--audio .mobile-crossfade-length')).not.toBeNull();
   });
 });

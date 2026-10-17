@@ -2227,6 +2227,34 @@ html[data-mobile-app] ::-webkit-scrollbar {
   color: var(--text-primary);
 }
 
+/* Player: the small arrow under the transport opens the options sheet (MobileAudioOptionsSheet). */
+.mobile-player__options-btn {
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 16px;
+  background: none;
+  color: var(--text-secondary);
+}
+
+.mobile-player__options-btn:active {
+  background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+}
+
+.mobile-sheet--audio .mobile-sheet__body {
+  gap: 20px;
+}
+
+.mobile-audio-options__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* The mini player owns vertical swipes (swipe up opens the player). */
 .mobile-miniplayer {
   touch-action: none;
@@ -4028,6 +4056,64 @@ button.mobile-live-row:active {
 .mobile-live-row__time {
   flex: none;
   font-variant-numeric: tabular-nums;
+}
+
+/* ─── Playlist "Add songs" (PlaylistSongSearchSheet) ─── */
+.mobile-add-songs__search {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-muted);
+}
+
+/* 16 px: iOS zooms into smaller fields on focus. */
+.mobile-add-songs__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.mobile-add-songs__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.mobile-add-songs__clear {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-right: -6px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--text-muted);
+}
+
+.mobile-add-songs__status {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0;
+  font-size: 15px;
+  color: var(--text-muted);
+}
+
+.mobile-add-songs__plus {
+  flex: none;
+  color: var(--accent);
 }
 
 /* Analytics / cover-cache strategy tables: one stacked block per server instead of

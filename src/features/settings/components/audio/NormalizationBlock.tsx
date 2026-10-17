@@ -2,6 +2,7 @@ import React from 'react';
 import { RotateCcw } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { useAuthStore } from '@/store/authStore';
+import { chooseNormalizationEngine } from '@/store/normalizationEngineChoice';
 import { DEFAULT_LOUDNESS_PRE_ANALYSIS_ATTENUATION_DB } from '@/store/authStoreDefaults';
 import { LoudnessLufsButtonGroup } from '@/features/settings/components/LoudnessLufsButtonGroup';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
@@ -39,31 +40,21 @@ export function NormalizationBlock({ preAnalysisEffectiveDb, t }: Props) {
         <button
           type="button"
           className={`btn ${auth.normalizationEngine === 'off' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => {
-            auth.setReplayGainEnabled(false);
-            auth.setNormalizationEngine('off');
-          }}
+          onClick={() => chooseNormalizationEngine('off')}
         >
           {t('settings.normalizationOff')}
         </button>
         <button
           type="button"
           className={`btn ${auth.normalizationEngine === 'replaygain' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => {
-            auth.setReplayGainEnabled(true);
-            auth.setNormalizationEngine('replaygain');
-          }}
+          onClick={() => chooseNormalizationEngine('replaygain')}
         >
           {t('settings.normalizationReplayGain')}
         </button>
         <button
           type="button"
           className={`btn ${auth.normalizationEngine === 'loudness' ? 'btn-primary' : 'btn-ghost'}`}
-          onClick={() => {
-            auth.setReplayGainEnabled(false);
-            if (auth.normalizationEngine !== 'loudness') auth.setLoudnessTargetLufs(-12);
-            auth.setNormalizationEngine('loudness');
-          }}
+          onClick={() => chooseNormalizationEngine('loudness')}
         >
           {t('settings.normalizationLufs')}
         </button>

@@ -41,6 +41,12 @@ describe('MobileOrbitRoom', () => {
     expect(document.querySelector('.mobile-orbit-room__shuffle')).toBeNull();
   });
 
+  it('the host keeps the transition modes in the session queue', () => {
+    session('host');
+    renderWithProviders(<MobileOrbitRoom />);
+    expect(document.querySelector('.queue-touch-header .mobile-transition-bar')).not.toBeNull();
+  });
+
   it('only the host gets the invite button', () => {
     session('guest');
     renderWithProviders(<MobileOrbitRoom />);

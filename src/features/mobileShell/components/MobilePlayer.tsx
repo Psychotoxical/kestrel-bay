@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type CS
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
-  ChevronDown, Heart, ListMusic, MicVocal, Moon, MoreHorizontal, Music, Pause, Play, Radio,
+  ChevronDown, ChevronUp, Heart, ListMusic, MicVocal, Moon, MoreHorizontal, Music, Pause, Play, Radio,
   Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Sunrise,
 } from 'lucide-react';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
@@ -28,8 +28,7 @@ import MobileSheet from '@/features/mobileShell/components/MobileSheet';
 import { allowLandscape } from '@/features/mobileShell/utils/iosOrientation';
 import { isOrbitGuestFollowingHost, useOrbitStore } from '@/features/orbit';
 import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet';
-import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
-import CrossfadeLengthSlider from '@/features/mobileShell/components/CrossfadeLengthSlider';
+import MobileAudioOptionsSheet from '@/features/mobileShell/components/MobileAudioOptionsSheet';
 
 /** Height of the seek area, plain bar or waveform alike (px). */
 const SEEK_SLOT_PX = 32;
@@ -176,7 +175,7 @@ export default function MobilePlayer() {
   const scheduleRemaining = usePlaybackScheduleRemaining();
   const transportRef = useRef<HTMLDivElement>(null);
   const playSlotRef = useRef<HTMLSpanElement>(null);
-  const [sheet, setSheet] = useState<'queue' | 'lyrics' | null>(null);
+  const [sheet, setSheet] = useState<'queue' | 'lyrics' | 'audio' | null>(null);
   // Swipe down anywhere (outside the seek bar and chip row) closes the player.
   const swipeRef = useRef<{ x: number; y: number; active: boolean; dy: number } | null>(null);
   const [swipeY, setSwipeY] = useState(0);
@@ -392,12 +391,18 @@ export default function MobilePlayer() {
               </button>
             </div>
 
-            {!currentRadio && (
-              <div className="mobile-player__modes">
-                <TransitionModeChips />
-                <CrossfadeLengthSlider />
-              </div>
-            )}
+            {/* Transitions and normalization slide up from this arrow (an options sheet over the player). */}
+            <div className="mobile-player__modes">
+              <button
+                type="button"
+                className="mobile-player__options-btn"
+                aria-label={t('settings.tabAudio')}
+                aria-haspopup="dialog"
+                onClick={() => setSheet('audio')}
+              >
+                <ChevronUp size={28} strokeWidth={2.4} aria-hidden="true" />
+              </button>
+            </div>
 
             <div className="mobile-player__footer">
               <button type="button" className="mobile-footer-btn" onClick={() => setSheet('lyrics')} disabled={!!currentRadio}>
@@ -414,6 +419,7 @@ export default function MobilePlayer() {
       )}
 
       {sheet === 'queue' && <MobileQueueSheet onClose={() => setSheet(null)} />}
+      {sheet === 'audio' && <MobileAudioOptionsSheet radio={!!currentRadio} onClose={() => setSheet(null)} />}
       {sheet === 'lyrics' && (
         <MobileSheet title={t('player.lyrics')} onClose={() => setSheet(null)} className="mobile-sheet--tall">
           <LyricsPane currentTrack={currentTrack} />

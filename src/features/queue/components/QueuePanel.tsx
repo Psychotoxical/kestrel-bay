@@ -44,9 +44,13 @@ interface QueuePanelProps {
   onClose?: () => void;
   /** Leave out the Orbit session head (name, participants): the touch Orbit tab shows its own. */
   hideOrbitHead?: boolean;
+  /** Touch header also shows the transition modes row (the Orbit room; elsewhere they sit in the player). */
+  touchPlaybackModes?: boolean;
 }
 
-export default function QueuePanel({ touch = false, onClose, hideOrbitHead = false }: QueuePanelProps = {}) {
+export default function QueuePanel({
+  touch = false, onClose, hideOrbitHead = false, touchPlaybackModes = false,
+}: QueuePanelProps = {}) {
   const orbitRole = useOrbitStore(s => s.role);
   if (orbitRole === 'guest') {
     return (
@@ -55,10 +59,17 @@ export default function QueuePanel({ touch = false, onClose, hideOrbitHead = fal
       </aside>
     );
   }
-  return <QueuePanelHostOrSolo touch={touch} onClose={onClose} hideOrbitHead={hideOrbitHead} />;
+  return (
+    <QueuePanelHostOrSolo
+      touch={touch}
+      onClose={onClose}
+      hideOrbitHead={hideOrbitHead}
+      touchPlaybackModes={touchPlaybackModes}
+    />
+  );
 }
 
-function QueuePanelHostOrSolo({ touch, onClose, hideOrbitHead }: QueuePanelProps) {
+function QueuePanelHostOrSolo({ touch, onClose, hideOrbitHead, touchPlaybackModes }: QueuePanelProps) {
   const { t } = useTranslation();
   const navigatePlaybackLibrary = usePlaybackLibraryNavigate();
   const orbitRole = useOrbitStore(s => s.role);
@@ -329,6 +340,7 @@ function QueuePanelHostOrSolo({ touch, onClose, hideOrbitHead }: QueuePanelProps
             setInfiniteQueueEnabled={setInfiniteQueueEnabled}
             queueDisplayMode={queueDisplayMode}
             setQueueDisplayMode={setQueueDisplayMode}
+            showPlaybackModes={touchPlaybackModes}
             onClose={onClose}
             t={t}
           />

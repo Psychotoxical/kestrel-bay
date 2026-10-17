@@ -122,7 +122,7 @@ export default function MobileOrbitRoom() {
         )}
       </header>
 
-      <QueuePanel touch hideOrbitHead />
+      <QueuePanel touch hideOrbitHead touchPlaybackModes />
 
       {sheet === 'participants' && (
         <MobileSheet title={t('orbit.participantsTooltip')} onClose={closeSheet} className="mobile-sheet--orbit">

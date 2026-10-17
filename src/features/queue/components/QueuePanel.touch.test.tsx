@@ -145,21 +145,31 @@ describe('QueuePanel touch layout', () => {
     expect(screen.getByRole('heading', { name: 'Load Playlist' })).toBeInTheDocument();
   });
 
-  it('the infinite-queue toggle toggles infinite queue and shows its state', () => {
+  it('menu: infinite queue is a checkbox item there (no transition row in the plain queue)', () => {
     useAuthStore.setState({ infiniteQueueEnabled: false });
-    renderWithProviders(<QueuePanel touch />);
-    const toggle = screen.getByRole('button', { name: /Infinite/ });
-    expect(toggle.getAttribute('aria-pressed')).toBe('false');
-    fireEvent.click(toggle);
+    const { container } = renderWithProviders(<QueuePanel touch />);
+    expect(container.querySelector('.queue-touch-header .mobile-transition-bar')).toBeNull();
+    expect(container.querySelector('.queue-touch-header .mobile-crossfade-length')).toBeNull();
+    openMenu();
+    const item = screen.getByRole('menuitemcheckbox', { name: 'Infinite Queue' });
+    expect(item).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(item);
     expect(useAuthStore.getState().infiniteQueueEnabled).toBe(true);
-    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByRole('menu')).toBeNull();
   });
 
-  it('puts the transition modes and infinite queue in one row without swiping', () => {
-    const { container } = renderWithProviders(<QueuePanel touch />);
+  it('Orbit room: the transition modes and infinite queue stay in one row, without swiping', () => {
+    useAuthStore.setState({ infiniteQueueEnabled: false });
+    const { container } = renderWithProviders(<QueuePanel touch touchPlaybackModes />);
     const bar = container.querySelector('.queue-touch-header .mobile-transition-bar');
     expect(bar).not.toBeNull();
     expect(container.querySelector('.queue-touch-header .mobile-chips--scroll')).toBeNull();
-    expect(bar?.querySelector('[aria-label*="Infinite"]')).not.toBeNull();
+    const toggle = screen.getByRole('button', { name: /Infinite/ });
+    expect(bar?.contains(toggle)).toBe(true);
+    fireEvent.click(toggle);
+    expect(useAuthStore.getState().infiniteQueueEnabled).toBe(true);
+    expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    openMenu();
+    expect(screen.queryByRole('menuitemcheckbox', { name: 'Infinite Queue' })).toBeNull();
   });
 });
