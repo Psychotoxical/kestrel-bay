@@ -211,20 +211,27 @@ const sections = new Map();
 const tabKeys = new Map();
 /** Tab-level keys rendered only inside `<DesktopOnly>` (left out of the touch-shell search). */
 const tabDesktopOnlyKeys = new Map();
+/** Tab-level keys rendered only inside `<TouchOnly>` (left out of the desktop search). */
+const tabTouchOnlyKeys = new Map();
 /** Wrapper whose content the touch shell does not render. */
 const DESKTOP_ONLY_TAG = 'DesktopOnly';
+/** Wrapper whose content only the touch shell renders. */
+const TOUCH_ONLY_TAG = 'TouchOnly';
+
+function addTabKey(map, tab, key) {
+  if (!map.has(tab)) map.set(tab, new Set());
+  map.get(tab).add(key);
+}
 
 function addKey(ctx, key) {
   if (ctx.section) {
     ctx.section.keys.add(key);
     if (ctx.desktopOnly) ctx.section.desktopOnlyKeys.add(key);
+    if (ctx.touchOnly) ctx.section.touchOnlyKeys.add(key);
   } else {
-    if (!tabKeys.has(ctx.tab)) tabKeys.set(ctx.tab, new Set());
-    tabKeys.get(ctx.tab).add(key);
-    if (ctx.desktopOnly) {
-      if (!tabDesktopOnlyKeys.has(ctx.tab)) tabDesktopOnlyKeys.set(ctx.tab, new Set());
-      tabDesktopOnlyKeys.get(ctx.tab).add(key);
-    }
+    addTabKey(tabKeys, ctx.tab, key);
+    if (ctx.desktopOnly) addTabKey(tabDesktopOnlyKeys, ctx.tab, key);
+    if (ctx.touchOnly) addTabKey(tabTouchOnlyKeys, ctx.tab, key);
   }
 }
 
@@ -261,11 +268,17 @@ function openSection(ctx, opening) {
   const id = `${ctx.tab}|${title.titleKey ?? title.title}`;
   let section = sections.get(id);
   if (!section) {
-    section = { tab: ctx.tab, ...title, advanced, desktopOnly: !!ctx.desktopOnly, keys: new Set(), desktopOnlyKeys: new Set() };
+    section = {
+      tab: ctx.tab, ...title, advanced,
+      desktopOnly: !!ctx.desktopOnly, touchOnly: !!ctx.touchOnly,
+      keys: new Set(), desktopOnlyKeys: new Set(), touchOnlyKeys: new Set(),
+    };
     sections.set(id, section);
-  } else if (!ctx.desktopOnly) {
+  } else {
     // Also reachable outside `<DesktopOnly>`: the touch shell shows it.
-    section.desktopOnly = false;
+    if (!ctx.desktopOnly) section.desktopOnly = false;
+    // Also reachable outside `<TouchOnly>`: the desktop shows it.
+    if (!ctx.touchOnly) section.touchOnly = false;
   }
   return section;
 }
@@ -277,7 +290,7 @@ function titleOfBoolean(init) {
 
 function followDeclaration(ctx, decl) {
   if (!decl || !isFollowable(decl.file)) return;
-  const visitKey = `${ctx.tab}|${ctx.section ? `${ctx.section.titleKey ?? ctx.section.title}` : ''}|${ctx.desktopOnly ? 'desktop' : ''}|${decl.file}|${decl.node.pos}`;
+  const visitKey = `${ctx.tab}|${ctx.section ? `${ctx.section.titleKey ?? ctx.section.title}` : ''}|${ctx.desktopOnly ? 'desktop' : ''}|${ctx.touchOnly ? 'touch' : ''}|${decl.file}|${decl.node.pos}`;
   if (ctx.seen.has(visitKey)) return;
   ctx.seen.add(visitKey);
   walk(decl.node, { ...ctx, file: decl.file });
@@ -286,9 +299,10 @@ function followDeclaration(ctx, decl) {
 function walkJsx(node, opening, ctx) {
   const tag = tagNameOf(opening);
   if (tag === DESKTOP_ONLY_TAG) ctx = { ...ctx, desktopOnly: true };
+  if (tag === TOUCH_ONLY_TAG) ctx = { ...ctx, touchOnly: true };
   const section = openSection(ctx, opening);
   const inner = section ? { ...ctx, section } : ctx;
-  if (tag && /^[A-Z]/.test(tag) && !SECTION_TAGS.has(tag) && tag !== DESKTOP_ONLY_TAG) {
+  if (tag && /^[A-Z]/.test(tag) && !SECTION_TAGS.has(tag) && tag !== DESKTOP_ONLY_TAG && tag !== TOUCH_ONLY_TAG) {
     followDeclaration(ctx, resolveIdentifier(ctx.file, tag));
   }
   for (const prop of opening.attributes.properties) {
@@ -377,13 +391,16 @@ const sectionList = [...sections.values()]
   .map(s => {
     const keys = [...s.keys].filter(k => k !== s.titleKey).sort();
     const desktopOnlyKeys = s.desktopOnly ? [] : keys.filter(k => s.desktopOnlyKeys.has(k));
+    const touchOnlyKeys = s.touchOnly ? [] : keys.filter(k => s.touchOnlyKeys.has(k));
     return {
       tab: s.tab,
       ...(s.titleKey ? { titleKey: s.titleKey } : { title: s.title }),
       ...(s.advanced ? { advanced: true } : {}),
       ...(s.desktopOnly ? { desktopOnly: true } : {}),
+      ...(s.touchOnly ? { touchOnly: true } : {}),
       keys,
       ...(desktopOnlyKeys.length > 0 ? { desktopOnlyKeys } : {}),
+      ...(touchOnlyKeys.length > 0 ? { touchOnlyKeys } : {}),
     };
   })
   .sort((a, b) => `${a.tab}|${a.titleKey ?? a.title}`.localeCompare(`${b.tab}|${b.titleKey ?? b.title}`));
@@ -406,6 +423,12 @@ const tabDesktopOnlyKeyObject = Object.fromEntries(
     .filter(([, keys]) => keys.length > 0),
 );
 
+const tabTouchOnlyKeyObject = Object.fromEntries(
+  Object.entries(tabKeyObject)
+    .map(([tab, keys]) => [tab, keys.filter(k => tabTouchOnlyKeys.get(tab)?.has(k))])
+    .filter(([, keys]) => keys.length > 0),
+);
+
 const outDir = join(srcDir, 'generated');
 mkdirSync(outDir, { recursive: true });
 
@@ -419,10 +442,14 @@ export interface GeneratedSettingsSection {
   advanced?: boolean;
   /** Wrapped in \`<DesktopOnly>\`: not rendered in the touch shell. */
   desktopOnly?: boolean;
+  /** Wrapped in \`<TouchOnly>\`: rendered only in the touch shell. */
+  touchOnly?: boolean;
   /** Translation keys rendered inside the section. */
   keys: readonly string[];
   /** Subset of \`keys\` inside \`<DesktopOnly>\` rows of a section the touch shell shows. */
   desktopOnlyKeys?: readonly string[];
+  /** Subset of \`keys\` inside \`<TouchOnly>\` rows of a section the desktop shows. */
+  touchOnlyKeys?: readonly string[];
 }
 
 export const SETTINGS_SEARCH_SECTIONS: readonly GeneratedSettingsSection[] = ${JSON.stringify(sectionList, null, 2)};
@@ -432,6 +459,9 @@ export const SETTINGS_SEARCH_TAB_KEYS: Readonly<Record<string, readonly string[]
 
 /** Subset of \`SETTINGS_SEARCH_TAB_KEYS\` inside \`<DesktopOnly>\`. */
 export const SETTINGS_SEARCH_TAB_DESKTOP_ONLY_KEYS: Readonly<Record<string, readonly string[]>> = ${JSON.stringify(tabDesktopOnlyKeyObject, null, 2)};
+
+/** Subset of \`SETTINGS_SEARCH_TAB_KEYS\` inside \`<TouchOnly>\`. */
+export const SETTINGS_SEARCH_TAB_TOUCH_ONLY_KEYS: Readonly<Record<string, readonly string[]>> = ${JSON.stringify(tabTouchOnlyKeyObject, null, 2)};
 `;
 
 writeFileSync(join(outDir, 'settingsSearchIndex.ts'), out, 'utf8');

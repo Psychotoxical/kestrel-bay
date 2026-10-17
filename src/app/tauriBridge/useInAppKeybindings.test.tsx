@@ -12,7 +12,7 @@ type App = { useKeybindingsStore: typeof useKeybindingsStore; useInAppKeybinding
 async function loadMacApp(): Promise<App> {
   localStorage.clear();
   vi.resetModules();
-  vi.doMock('@/lib/util/platform', () => ({ IS_MACOS: true, IS_LINUX: false, IS_WINDOWS: false }));
+  vi.doMock('@/lib/util/platform', () => ({ IS_MACOS: true, IS_LINUX: false, IS_WINDOWS: false, IS_MOBILE_SHELL: false }));
   const hooks = await import('./useInAppKeybindings');
   const bindings = await import('@/store/keybindingsStore');
   return { useKeybindingsStore: bindings.useKeybindingsStore, useInAppKeybindings: hooks.useInAppKeybindings };

@@ -1,4 +1,5 @@
 import { isOfflineSidebarNavAllowed } from '@/features/offline/utils/offlineNavPolicy';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 /** Any offline browse surface the disconnect fork may use. */
 export function hasOfflineBrowseCapability(
@@ -28,6 +29,10 @@ const OFFLINE_ALWAYS_STAY_PATHS = new Set([
   '/settings',
 ]);
 
+// Touch shell: the Mainstage and the Library tab show the downloads offline too,
+// so losing the server, or switching to "downloaded music only", keeps them open.
+const TOUCH_OFFLINE_STAY_PATHS = new Set(['/', '/library']);
+
 export function isPathOfflineBrowsable(
   pathname: string,
   favoritesOfflineBrowse: boolean,
@@ -36,6 +41,7 @@ export function isPathOfflineBrowsable(
   playlistsOfflineBrowse: boolean,
 ): boolean {
   if (OFFLINE_ALWAYS_STAY_PATHS.has(pathname)) return true;
+  if (IS_MOBILE_SHELL && TOUCH_OFFLINE_STAY_PATHS.has(pathname)) return true;
   const navId = offlineNavIdForPathname(pathname);
   if (!navId) return false;
   return isOfflineSidebarNavAllowed(

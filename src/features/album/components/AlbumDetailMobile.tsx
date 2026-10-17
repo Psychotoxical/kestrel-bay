@@ -10,7 +10,8 @@ import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { buildArtistDetailPath } from '@/lib/navigation/detailServerScope';
 import { sameQueueTrack, usePlayerStore } from '@/features/playback';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
-import { MobileBackButton } from '@/features/mobileShell';
+import { MobileBackButton, MobileDownloadButton, type MobileDownloadStatus } from '@/features/mobileShell';
+import { meteredPinKey } from '@/features/offline';
 import AlbumCard from '@/features/album/components/AlbumCard';
 
 interface Props {
@@ -24,10 +25,16 @@ interface Props {
   isPlaying: boolean;
   relatedAlbums: SubsonicAlbum[];
   relatedTitle: string;
+  /** Whether a download can start here (online); a finished one stays removable offline. */
+  canPinOffline: boolean;
+  offlineStatus: MobileDownloadStatus;
+  offlineProgress: { done: number; total: number } | null;
   onToggleStar: () => void;
   onPlayAll: () => void;
   onShuffleAll: () => void;
   onPlaySong: (song: SubsonicSong) => void;
+  onCacheOffline: () => void;
+  onRemoveOffline: () => void;
 }
 
 function PlayingBars() {
@@ -41,7 +48,8 @@ function PlayingBars() {
 /** Album page in the touch shell: big cover, play / shuffle, plain track list. */
 export default function AlbumDetailMobile({
   info, serverId, artistRefs, songs, coverUrl, isStarred, currentTrack, isPlaying,
-  relatedAlbums, relatedTitle, onToggleStar, onPlayAll, onShuffleAll, onPlaySong,
+  relatedAlbums, relatedTitle, canPinOffline, offlineStatus, offlineProgress,
+  onToggleStar, onPlayAll, onShuffleAll, onPlaySong, onCacheOffline, onRemoveOffline,
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -91,6 +99,16 @@ export default function AlbumDetailMobile({
           >
             <Heart size={21} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
           </button>
+          {(canPinOffline || offlineStatus === 'cached') && (
+            <MobileDownloadButton
+              status={offlineStatus}
+              progress={offlineProgress}
+              name={info.name}
+              downloadKey={meteredPinKey(info.id, serverId)}
+              onDownload={onCacheOffline}
+              onRemove={onRemoveOffline}
+            />
+          )}
           <button
             type="button"
             className="mobile-round-btn"

@@ -18,6 +18,7 @@ import {
 import { isNavigatorOfflineHint } from '@/lib/network/navigatorOnlineHint';
 import { usePerfProbeFlags } from '@/lib/perf/perfFlags';
 import {
+  FORCE_OFFLINE_AVAILABLE,
   isDevOfflineBrowseForced,
   useDevOfflineBrowseStore,
 } from '@/store/devOfflineBrowseStore';
@@ -115,11 +116,12 @@ export function useConnectionStatus() {
     void check();
   }, [activeServerId, check, perfFlags.disableBackgroundPolling]);
 
-  // DEV offline toggle: react to transitions only — the polling effect already
-  // probes on mount; an unconditional check() here doubled probes and ignored
+  // Offline switch (DEV toggle; touch shell "downloaded music only"): react to
+  // transitions only — the polling effect already probes on mount; an
+  // unconditional check() here doubled probes and ignored
   // disableBackgroundPolling (PlayerBar tests, perf-flagged runs).
   useEffect(() => {
-    if (!import.meta.env.DEV) return;
+    if (!FORCE_OFFLINE_AVAILABLE) return;
 
     if (prevDevForceOfflineRef.current === null) {
       prevDevForceOfflineRef.current = devForceOffline;

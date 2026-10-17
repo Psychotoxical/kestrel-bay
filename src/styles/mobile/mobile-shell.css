@@ -125,6 +125,85 @@ html[data-mobile-app] .mobile-search-overlay {
   cursor: default;
 }
 
+/* Download toggle (album / playlist page): drive icon, ring while loading, tick when done. */
+.mobile-download-btn__ring {
+  width: 24px;
+  height: 24px;
+  transform: rotate(-90deg);
+}
+
+.mobile-download-btn__track,
+.mobile-download-btn__fill {
+  fill: none;
+  stroke-width: 2.6;
+}
+
+.mobile-download-btn__track {
+  stroke: color-mix(in srgb, var(--text-primary) 22%, transparent);
+}
+
+.mobile-download-btn__fill {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.3s ease;
+}
+
+.mobile-download-btn[data-status='queued'] .mobile-download-btn__ring {
+  animation: mobile-download-wait 1.1s linear infinite;
+}
+
+@keyframes mobile-download-wait {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(270deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-download-btn[data-status='queued'] .mobile-download-btn__ring {
+    animation: none;
+  }
+}
+
+/* Waiting for Wi-Fi: the ring stands still in a muted colour. */
+.mobile-download-btn[data-status='held'] .mobile-download-btn__fill {
+  stroke: var(--text-muted);
+}
+
+/* Question with a few answers (`MobileActionSheet`), e.g. mobile data or Wi-Fi. */
+.mobile-action-sheet__message {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.mobile-action-sheet__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.mobile-action-sheet__btn {
+  min-height: 50px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 14px;
+  background: var(--bg-card);
+  color: var(--accent);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.mobile-action-sheet__btn.is-primary {
+  background: var(--accent);
+  color: var(--text-on-accent, var(--bg-app));
+}
+
+.mobile-action-sheet__btn.is-danger {
+  color: var(--danger);
+}
+
 .mobile-pill-btn {
   height: 36px;
   padding: 0 16px;
@@ -507,6 +586,17 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
 
 .mobile-server-chip__unavailable {
   color: var(--text-muted);
+}
+
+/* "Downloaded music only" is on: the chip says so in the accent colour. */
+.mobile-server-chip--offline {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.mobile-server-chip--offline .mobile-server-chip__icon {
+  color: currentColor;
 }
 
 .mobile-quick-cards {
@@ -2988,6 +3078,34 @@ button.mobile-artist-bio__card:active {
 .mobile-share-row__chevron {
   flex: none;
   color: var(--text-muted);
+}
+
+/* Downloaded page (touch): rows as on the shared-links page. */
+.mobile-downloads__usage {
+  margin: -6px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.mobile-downloads__empty {
+  margin: 24px 8px 0;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.mobile-downloads__list {
+  display: flex;
+  flex-direction: column;
+  border-radius: 14px;
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+.mobile-downloads__list .playlist-cover-grid {
+  width: 100%;
+  height: 100%;
 }
 
 .mobile-detail-sheet__hero {

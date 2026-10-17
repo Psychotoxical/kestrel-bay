@@ -91,9 +91,10 @@ mach2 = "0.7"
 
 [target.'cfg(target_os = "ios")'.dependencies]
 objc2-avf-audio = { version = "0.3", default-features = false, features = ["std", "AVAudioSession", "AVAudioSessionTypes"] }
-# Session interruption / route-change observers and the player-only landscape lock.
+# Session interruption / route-change observers, the player-only landscape lock,
+# the metered-network monitor and the media folder's backup flag.
 objc2 = "0.6"
-objc2-foundation = { version = "0.3", default-features = false, features = ["std", "block2", "NSDictionary", "NSNotification", "NSOperation", "NSString", "NSValue"] }
+objc2-foundation = { version = "0.3", default-features = false, features = ["std", "block2", "NSDictionary", "NSError", "NSNotification", "NSOperation", "NSString", "NSURL", "NSValue"] }
 block2 = "0.6"
 
 [target.'cfg(target_os = "linux")'.dependencies]

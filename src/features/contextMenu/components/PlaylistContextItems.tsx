@@ -19,6 +19,8 @@ import type { ContextMenuItemsProps } from '@/features/contextMenu/components/co
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { ContextShareMenuItem } from '@/features/share';
 import { withQueueSource } from '@/features/playback';
+import TouchPlaylistDownloadItem from '@/features/contextMenu/components/TouchPlaylistDownloadItem';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 export default function PlaylistContextItems(props: ContextMenuItemsProps) {
   const {
@@ -152,6 +154,14 @@ export default function PlaylistContextItems(props: ContextMenuItemsProps) {
                 onSubmenuTriggerMouseLeave={onPlaylistSubmenuTriggerMouseLeave}
                 onDone={closeContextMenu}
               />
+              {/* Touch shell: saving offline, as on the playlist page. */}
+              {IS_MOBILE_SHELL && (
+                <TouchPlaylistDownloadItem
+                  playlist={playlist}
+                  handleAction={handleAction}
+                  canPinOffline={offlinePolicy.canPinOffline}
+                />
+              )}
               {offlinePolicy.canEditPlaylist && (
                 <>
               <div className="context-menu-divider" />

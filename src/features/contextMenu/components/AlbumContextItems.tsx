@@ -14,6 +14,8 @@ import { useBurnMenuAvailable } from '@/features/contextMenu/hooks/useBurnMenuAv
 import { buildAlbumDetailPath, buildArtistDetailPath } from '@/lib/navigation/detailServerScope';
 import { ownedEntityKey, ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { ContextShareMenuItem } from '@/features/share';
+import TouchAlbumDownloadItem from '@/features/contextMenu/components/TouchAlbumDownloadItem';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 export default function AlbumContextItems(props: ContextMenuItemsProps) {
   const {
@@ -143,7 +145,13 @@ export default function AlbumContextItems(props: ContextMenuItemsProps) {
                 onSubmenuTriggerMouseLeave={onPlaylistSubmenuTriggerMouseLeave}
                 onDone={closeContextMenu}
               />
-              {offlinePolicy.canDownload && (
+              {IS_MOBILE_SHELL ? (
+                <TouchAlbumDownloadItem
+                  album={album}
+                  handleAction={handleAction}
+                  canPinOffline={offlinePolicy.canPinOffline}
+                />
+              ) : offlinePolicy.canDownload && (
                 <div className="context-menu-item" onClick={() => handleAction(() => downloadAlbum(album.name, album.id, album.serverId))}>
                   <Download size={14} /> {t('contextMenu.download')}
                 </div>

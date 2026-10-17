@@ -29,6 +29,7 @@ export * from './utils/favoritesOfflineBrowse';
 export * from './utils/favoritesOfflineConstants';
 export * from './utils/favoritesOfflineSync';
 export * from './utils/legacyOfflineFileMigration';
+export * from './utils/meteredDownloadGate';
 export * from './utils/libraryTierReconcile';
 export * from './utils/offlineActionPolicy';
 export * from './utils/offlineAlbumBrowseCatalog';

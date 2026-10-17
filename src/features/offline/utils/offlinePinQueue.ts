@@ -1,5 +1,11 @@
 import type { SubsonicSong } from '@/lib/api/subsonicTypes';
 import type { PinSource } from '@/store/localPlaybackStore';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import {
+  isPinHeldForWifi,
+  registerMeteredRedispatch,
+  waitingForWifiPinCount,
+} from '@/features/offline/utils/meteredDownloadGate';
 import {
   cancelledDownloads,
   getOfflineDownloadCancellationVersion,
@@ -296,7 +302,10 @@ function dispatchOfflinePinQueue(): void {
   const activeExecutor = executor;
   if (!activeExecutor) return;
   const store = useOfflineJobStore.getState();
-  let availableSlots = Math.max(0, MAX_ACTIVE_PIN_EXECUTORS - activePinGenerations.size);
+  // Touch shell: a running download that waits for Wi-Fi leaves its slot to
+  // downloads allowed on mobile data (the track limiter still caps transfers).
+  const waitingForWifi = IS_MOBILE_SHELL ? waitingForWifiPinCount() : 0;
+  let availableSlots = Math.max(0, MAX_ACTIVE_PIN_EXECUTORS - (activePinGenerations.size - waitingForWifi));
   for (const next of store.pinQueue.filter(entry => entry.status === 'queued')) {
     if (availableSlots === 0) break;
     const nextKey = pinKey(next.albumId, next.serverId);
@@ -313,8 +322,12 @@ function dispatchOfflinePinQueue(): void {
       store.removePinFromQueue(next.albumId, next.serverId);
       continue;
     }
+    // Touch shell: held for Wi-Fi, it stays queued; the gate dispatches again on Wi-Fi.
+    if (IS_MOBILE_SHELL && isPinHeldForWifi(queuedTask.task)) continue;
     activePinGenerations.set(nextKey, queuedTask.generation);
     availableSlots -= 1;
     void executeOfflinePin(next, queuedTask, activeExecutor);
   }
 }
+
+if (IS_MOBILE_SHELL) registerMeteredRedispatch(scheduleOfflinePinQueue);

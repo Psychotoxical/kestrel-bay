@@ -25,13 +25,17 @@ interface UseAlbumOfflineStateResult {
  * `albumId` is allowed to be empty (e.g. while the page is still
  * fetching) — in that case every selector short-circuits to a benign
  * default.
+ *
+ * `pinKind` names the pin owner. Only the touch shell passes `'playlist'`
+ * (playlist page); the desktop still asks every page as an album.
  */
 export function useAlbumOfflineState(
   albumId: string,
   serverId: string,
   songIds?: string[],
+  pinKind: 'album' | 'playlist' = 'album',
 ): UseAlbumOfflineStateResult {
-  const albumPinSource = { kind: 'album' as const, sourceId: albumId };
+  const albumPinSource = { kind: pinKind, sourceId: albumId };
   const pinComplete = useLocalPlaybackStore(() => (
     !!albumId && isOfflinePinComplete(albumId, serverId, songIds, albumPinSource)
   ));
@@ -40,7 +44,7 @@ export function useAlbumOfflineState(
     && !!albumId
     && s.pinQueue.some(p => p.albumId === albumId
       && p.serverId === serverId
-      && p.pinKind === 'album'
+      && p.pinKind === pinKind
       && p.status === 'queued'),
   );
   const isOfflineDownloading = useOfflineJobStore(s =>
@@ -49,11 +53,11 @@ export function useAlbumOfflineState(
     && (
       s.pinQueue.some(p => p.albumId === albumId
         && p.serverId === serverId
-        && p.pinKind === 'album'
+        && p.pinKind === pinKind
         && p.status === 'downloading')
       || s.jobs.some(j => j.albumId === albumId
         && j.serverId === serverId
-        && j.pinKind === 'album'
+        && j.pinKind === pinKind
         && j.status === 'downloading')
     ),
   );
@@ -61,14 +65,14 @@ export function useAlbumOfflineState(
     if (!albumId || pinComplete) return 0;
     return s.jobs.filter(j => j.albumId === albumId
       && j.serverId === serverId
-      && j.pinKind === 'album'
+      && j.pinKind === pinKind
       && j.status === 'done').length;
   });
   const offlineProgressTotal = useOfflineJobStore(s => {
     if (!albumId || pinComplete) return 0;
     return s.jobs.filter(j => j.albumId === albumId
       && j.serverId === serverId
-      && j.pinKind === 'album').length;
+      && j.pinKind === pinKind).length;
   });
   const resolvedOfflineStatus = pinComplete
     ? 'cached'

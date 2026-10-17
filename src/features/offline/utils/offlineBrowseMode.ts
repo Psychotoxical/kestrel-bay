@@ -1,4 +1,5 @@
 import {
+  FORCE_OFFLINE_AVAILABLE,
   isDevOfflineBrowseForced,
   useDevOfflineBrowseStore,
 } from '@/store/devOfflineBrowseStore';
@@ -22,7 +23,7 @@ export function useOfflineBrowseActive(): boolean {
   // Shared status — all hook instances stay in sync after manual retry.
   useConnectionStatus();
 
-  if (import.meta.env.DEV && devForceOffline) return true;
+  if (FORCE_OFFLINE_AVAILABLE && devForceOffline) return true;
   if (isNavigatorOfflineHint()) return true;
   return !isActiveServerReachable();
 }

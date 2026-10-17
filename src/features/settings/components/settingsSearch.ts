@@ -2,6 +2,7 @@ import type { TFunction } from 'i18next';
 import { GLOBAL_SHORTCUT_ACTIONS, IN_APP_SHORTCUT_ACTIONS } from '@/config/shortcutActions';
 import {
   SETTINGS_SEARCH_SECTIONS, SETTINGS_SEARCH_TAB_DESKTOP_ONLY_KEYS, SETTINGS_SEARCH_TAB_KEYS,
+  SETTINGS_SEARCH_TAB_TOUCH_ONLY_KEYS,
 } from '@/generated/settingsSearchIndex';
 import { SETTINGS_INDEX, TAB_LABEL_KEY, TOUCH_HIDDEN_TABS, type Tab } from '@/features/settings/components/settingsTabs';
 import {
@@ -115,11 +116,12 @@ function buildDocs(t: TFunction, tEn: TFunction | undefined, touchShell: boolean
     const tab = section.tab as Tab;
     if (section.titleKey) indexedTitleKeys.add(section.titleKey);
     if (touchShell && (section.desktopOnly || TOUCH_HIDDEN_TABS.has(tab))) continue;
+    if (!touchShell && section.touchOnly) continue;
     const title = section.titleKey ? translate(t, section.titleKey) ?? section.titleKey : section.title ?? '';
     const titleEn = section.titleKey && tEn ? translate(tEn, section.titleKey) : null;
     const skip = section.titleKey && SHORTCUT_SECTION_KEYS.has(section.titleKey) ? shortcutLabels : undefined;
-    const desktopOnlyKeys = new Set(section.desktopOnlyKeys ?? []);
-    const keys = touchShell ? section.keys.filter(key => !desktopOnlyKeys.has(key)) : section.keys;
+    const otherShellKeys = new Set((touchShell ? section.desktopOnlyKeys : section.touchOnlyKeys) ?? []);
+    const keys = section.keys.filter(key => !otherShellKeys.has(key));
     const fields = [...headingFields(title, titleEn), ...contentFields(keys, t, tEn, skip)];
     const manual = section.titleKey ? KEYWORDS_BY_TITLE_KEY.get(section.titleKey) : undefined;
     const manualKeywords = touchShell ? manual?.touchKeywords ?? manual?.keywords : manual?.keywords;
@@ -145,8 +147,10 @@ function buildDocs(t: TFunction, tEn: TFunction | undefined, touchShell: boolean
   for (const [tabId, allKeys] of Object.entries(SETTINGS_SEARCH_TAB_KEYS)) {
     const tab = tabId as Tab;
     if (touchShell && TOUCH_HIDDEN_TABS.has(tab)) continue;
-    const desktopOnlyKeys = new Set(SETTINGS_SEARCH_TAB_DESKTOP_ONLY_KEYS[tabId] ?? []);
-    const keys = touchShell ? allKeys.filter(key => !desktopOnlyKeys.has(key)) : allKeys;
+    const otherShellKeys = new Set(
+      (touchShell ? SETTINGS_SEARCH_TAB_DESKTOP_ONLY_KEYS : SETTINGS_SEARCH_TAB_TOUCH_ONLY_KEYS)[tabId] ?? [],
+    );
+    const keys = allKeys.filter(key => !otherShellKeys.has(key));
     const labelKey = TAB_LABEL_KEY[tab];
     const title = translate(t, labelKey) ?? labelKey;
     const titleEn = tEn ? translate(tEn, labelKey) : null;

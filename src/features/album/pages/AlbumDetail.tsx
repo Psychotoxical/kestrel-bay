@@ -566,10 +566,15 @@ const handleShuffleAll = () => {
         isPlaying={isPlaying}
         relatedAlbums={relatedAlbums}
         relatedTitle={t('albumDetail.moreByArtist', { artist: moreByArtistName })}
+        canPinOffline={albumActionPolicy.canPinOffline}
+        offlineStatus={resolvedOfflineStatus}
+        offlineProgress={offlineProgress}
         onToggleStar={toggleStar}
         onPlayAll={handlePlayAll}
         onShuffleAll={handleShuffleAll}
         onPlaySong={handlePlaySong}
+        onCacheOffline={handleCacheOffline}
+        onRemoveOffline={handleRemoveOffline}
       />
     );
   }

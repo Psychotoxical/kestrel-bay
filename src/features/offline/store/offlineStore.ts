@@ -44,6 +44,8 @@ import {
 } from '@/features/offline/utils/offlinePinQueue';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import i18n from '@/lib/i18n';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { waitForDownloadNetwork } from '@/features/offline/utils/meteredDownloadGate';
 import {
   beginOfflineServerOperation,
   beginOfflineTrackTransfer,
@@ -342,6 +344,40 @@ async function runOfflinePinDownloadWithServerLease(
 
   const lp = useLocalPlaybackStore.getState();
   const pendingSongs = pendingOfflinePinSongs(songs, serverId);
+  // Touch shell: tracks another pin already brought onto the device join this
+  // pin as well, as they do below when every track was there already. Without
+  // that a playlist sharing tracks with a downloaded album never completes, and
+  // removing the album takes those tracks from the playlist too.
+  if (IS_MOBILE_SHELL && pendingSongs.length > 0 && pendingSongs.length < songs.length) {
+    const pendingIds = new Set(pendingSongs.map(s => s.id));
+    for (const song of songs) {
+      if (pendingIds.has(song.id)) continue;
+      const finishTrackTransfer = await beginOfflineTrackTransfer(
+        serverIndexKeyForOffline(serverId),
+        song.id,
+        serverLease,
+      );
+      try {
+        if (isCancelled()) {
+          await finishCancelledDownload();
+          return 'cancelled';
+        }
+        const prev = findLocalPlaybackEntry(song.id, serverId);
+        if (!prev || !localEntrySatisfiesOriginalRequirement(prev, serverId)) {
+          pendingSongs.push(song);
+          continue;
+        }
+        lp.upsertEntry({
+          ...prev,
+          serverIndexKey: serverIndexKeyForOffline(serverId),
+          tier: 'library',
+          pinSource,
+        });
+      } finally {
+        finishTrackTransfer();
+      }
+    }
+  }
   if (pendingSongs.length === 0) {
     for (const song of songs) {
       const finishTrackTransfer = await beginOfflineTrackTransfer(
@@ -405,6 +441,16 @@ async function runOfflinePinDownloadWithServerLease(
     while (!cancelled && !isCancelled()) {
       const song = pendingSongs[nextSongIndex++];
       if (!song) return;
+
+      // Touch shell: on mobile data a download the user did not allow there
+      // waits here for Wi-Fi, between tracks and without a transfer slot.
+      if (IS_MOBILE_SHELL) {
+        await waitForDownloadNetwork(task, () => cancelled || isCancelled());
+        if (cancelled || isCancelled()) {
+          cancelled = true;
+          return;
+        }
+      }
 
       const releaseTrackPermit = await acquireOfflineTrackPermit();
       if (cancelled || isCancelled()) {

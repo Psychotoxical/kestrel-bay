@@ -8,7 +8,7 @@ import {
 import type { SubsonicPlaylist, SubsonicSong } from '@/lib/api/subsonicTypes';
 import type { ZipDownload } from '@/features/offline';
 import type { AlbumOfflineStatus } from '@/features/album';
-import { dequeueOfflinePin } from '@/features/offline';
+import { dequeueOfflinePin, meteredPinKey } from '@/features/offline';
 import { useThemeStore } from '@/store/themeStore';
 import { usePlaylistLayoutStore, type PlaylistLayoutItemId } from '@/features/playlist/store/playlistLayoutStore';
 import { formatSize, totalDurationLabel } from '@/lib/format/playlistDetailHelpers';
@@ -22,7 +22,9 @@ import { PlaylistSmartCoverCell } from '@/features/playlist/components/PlaylistC
 import type { OfflineActionPolicy } from '@/features/offline';
 import { coverServerScopeForServerId } from '@/cover/serverScope';
 import { ShareMethodMenuButton } from '@/features/share';
-import { MobileBackButton, MobileMoreMenu, type MobileMoreMenuItem } from '@/features/mobileShell';
+import {
+  MobileBackButton, MobileDownloadButton, MobileMoreMenu, type MobileMoreMenuItem,
+} from '@/features/mobileShell';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { tooltipAttrs } from '@/ui/tooltipAttrs';
 import PlaylistCommentLinks from '@/features/playlist/components/PlaylistCommentLinks';
@@ -237,8 +239,9 @@ export default function PlaylistHero({
   };
 
   // Touch "…" menu: the same actions as the bar, as menu rows and under the same
-  // conditions as `renderActionButton`. Shuffle is a big button on touch, and
-  // `suggestions` is a page section.
+  // conditions as `renderActionButton`. Shuffle is a big button on touch,
+  // `suggestions` is a page section, saving offline is the download button in
+  // the top row, and there is no ZIP on a phone (no folder to save it to).
   const touchMenuItem = (itemId: PlaylistLayoutItemId): MobileMoreMenuItem | null => {
     const icon = (Icon: typeof Search) => <Icon size={19} aria-hidden="true" />;
     switch (itemId) {
@@ -278,36 +281,6 @@ export default function PlaylistHero({
           id: itemId, label: t('playlists.importCSV'), icon: icon(FileUp),
           disabled: csvImporting, onSelect: handleImportCsv,
         } : null;
-      case 'downloadZip': {
-        if (!actionPolicy.canDownload || songs.length === 0) return null;
-        const zipBusy = !!activeZip && !activeZip.done && !activeZip.error;
-        const pct = activeZip?.total ? Math.round((activeZip.bytes / activeZip.total) * 100) : null;
-        return {
-          id: itemId,
-          label: zipBusy ? `${t('playlists.downloadZip')} · ${pct ?? '…'}%` : t('playlists.downloadZip'),
-          icon: icon(Download), disabled: zipBusy, onSelect: handleDownload,
-        };
-      }
-      case 'offlineCache': {
-        if (!actionPolicy.canPinOffline || songs.length === 0 || !id) return null;
-        if (!controls.canPinNewOfflineCache && offlineStatus === 'none') return null;
-        if (offlineStatus === 'downloading') {
-          return {
-            id: itemId,
-            label: t('albumDetail.offlineDownloading', { n: offlineProgress?.done ?? 0, total: offlineProgress?.total ?? 0 }),
-            icon: icon(HardDriveDownload), disabled: true, onSelect: () => {},
-          };
-        }
-        return {
-          id: itemId,
-          label: offlineStatus === 'queued'
-            ? t('albumDetail.removeFromOfflineQueue')
-            : offlineStatus === 'cached' ? t('playlists.removeOffline') : t('playlists.cacheOffline'),
-          icon: icon(offlineStatus === 'cached' ? Trash2 : HardDriveDownload),
-          danger: offlineStatus === 'cached',
-          onSelect: runOfflineAction,
-        };
-      }
       default:
         return null;
     }
@@ -343,6 +316,11 @@ export default function PlaylistHero({
       .filter(item => item.visible)
       .map(item => touchMenuItem(item.id))
       .filter((item): item is MobileMoreMenuItem => item !== null);
+    // As the bar's offline button; a finished download also stays removable offline.
+    const showDownload = songs.length > 0 && (
+      offlineStatus === 'cached'
+      || (actionPolicy.canPinOffline && (controls.canPinNewOfflineCache || offlineStatus !== 'none'))
+    );
     return (
       <>
         <div className="mobile-album__top">
@@ -357,6 +335,16 @@ export default function PlaylistHero({
               >
                 <Pencil size={19} aria-hidden="true" />
               </button>
+            )}
+            {showDownload && id && (
+              <MobileDownloadButton
+                status={offlineStatus}
+                progress={offlineProgress}
+                name={playlistDisplayName(playlist)}
+                downloadKey={meteredPinKey(id, activeServerId)}
+                onDownload={runOfflineAction}
+                onRemove={() => deleteAlbum(id, activeServerId, { kind: 'playlist', sourceId: id })}
+              />
             )}
             <MobileMoreMenu items={menuItems} />
           </div>

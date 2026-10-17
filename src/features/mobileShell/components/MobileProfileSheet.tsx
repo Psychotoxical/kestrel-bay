@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import {
-  BarChart3, ChevronRight, EyeOff, HardDriveDownload, HelpCircle, Server, Settings, Sparkles,
+  BarChart3, ChevronRight, CloudOff, EyeOff, HardDriveDownload, HelpCircle, Server, Settings, Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import { usePrivateModeStore } from '@/features/privateMode';
+import { useDevOfflineBrowseStore } from '@/features/offline';
 import { useReactiveOfflineBrowseContext } from '@/features/sidebar';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import { version as appVersion } from '@/../package.json';
@@ -40,6 +41,8 @@ export default function MobileProfileSheet({ serverName, connStatus, isLan, onCl
   const navigate = useNavigate();
   const privateMode = usePrivateModeStore(s => s.active);
   const togglePrivateMode = usePrivateModeStore(s => s.toggle);
+  const downloadsOnly = useDevOfflineBrowseStore(s => s.forceOffline);
+  const toggleDownloadsOnly = useDevOfflineBrowseStore(s => s.toggleForceOffline);
   const hasOfflineContent = useReactiveOfflineBrowseContext().capabilities.manualPins;
 
   const go = (to: string, state?: unknown) => {
@@ -47,7 +50,7 @@ export default function MobileProfileSheet({ serverName, connStatus, isLan, onCl
     navigate(to, state === undefined ? undefined : { state });
   };
 
-  const statusText = connStatus === 'connected'
+  const statusText = downloadsOnly ? t('connection.offlineChip') : connStatus === 'connected'
     ? `${t('connection.connected')} · ${isLan ? 'LAN' : t('connection.extern')}`
     : connStatus === 'checking' ? t('connection.checking') : t('connection.disconnected');
 
@@ -68,8 +71,22 @@ export default function MobileProfileSheet({ serverName, connStatus, isLan, onCl
       <div className="mobile-list-group">
         <SheetRow icon={BarChart3} label={t('sidebar.statistics')} onClick={() => go('/statistics')} />
         {hasOfflineContent && (
-          <SheetRow icon={HardDriveDownload} label={t('sidebar.offlineLibrary')} onClick={() => go('/offline')} />
+          <SheetRow icon={HardDriveDownload} label={t('connection.downloaded')} onClick={() => go('/offline')} />
         )}
+        <div className="mobile-list-row">
+          <CloudOff className="mobile-list-row__icon" size={22} strokeWidth={1.9} aria-hidden="true" />
+          <span className="mobile-list-row__label" id="mobile-downloads-only-label">{t('connection.downloadsOnly')}</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={downloadsOnly}
+            aria-labelledby="mobile-downloads-only-label"
+            className="mobile-switch"
+            onClick={toggleDownloadsOnly}
+          >
+            <span className="mobile-switch__thumb" />
+          </button>
+        </div>
         <div className="mobile-list-row">
           <EyeOff className="mobile-list-row__icon" size={22} strokeWidth={1.9} aria-hidden="true" />
           <span className="mobile-list-row__label" id="mobile-private-mode-label">{t('privateMode.label')}</span>

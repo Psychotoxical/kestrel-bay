@@ -151,4 +151,15 @@ describe('settings search in the touch shell', () => {
     expect(desktop('volume up').some(h => h.tab === 'input')).toBe(true);
     expect(touch('volume up').some(h => h.tab === 'input')).toBe(false);
   });
+
+  it('the index marks <TouchOnly> sections', () => {
+    const downloads = SETTINGS_SEARCH_SECTIONS.find(s => s.titleKey === 'connection.downloadsStorageTitle');
+    expect(downloads?.touchOnly).toBe(true);
+    expect(downloads?.keys).toContain('connection.removeAllDownloads');
+  });
+
+  it('finds touch-only sections only in the touch shell', () => {
+    expect(touch('remove all downloads').some(h => h.key === 'connection.downloadsStorageTitle')).toBe(true);
+    expect(desktop('remove all downloads').some(h => h.key === 'connection.downloadsStorageTitle')).toBe(false);
+  });
 });

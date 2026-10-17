@@ -18,7 +18,7 @@ import FullscreenPlayer, { FullscreenPlayerImmersive, FullscreenPlayerPrism, use
 import ContextMenu from '@/features/contextMenu/components/ContextMenu';
 import SongInfoModal from '@/features/playback/components/SongInfoModal';
 import PlaybackAlternativeModal from '@/features/playback/components/PlaybackAlternativeModal';
-import { DownloadFolderModal, OfflineBanner } from '@/features/offline/ui';
+import { DownloadFolderModal, OfflineBanner, TouchOfflineBanner } from '@/features/offline/ui';
 import GlobalConfirmModal from '@/ui/GlobalConfirmModal';
 import ThemeMigrationNotice from '@/ui/ThemeMigrationNotice';
 import { OrbitAccountPicker, OrbitHelpModal } from '@/features/orbit';
@@ -59,6 +59,7 @@ import { useOfflineLibraryFilterSuspend } from '@/features/offline';
 import { AppShellQueueResizerSeam } from '@/app/AppShellQueueResizerSeam';
 import { IS_LINUX, IS_MACOS, IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
+  MobileActionSheet,
   MobileMiniPlayer,
   MobileOrbitAccountSheet,
   MobileOrbitHelpSheet,
@@ -322,7 +323,7 @@ export function AppShell() {
                 (MobileOrbitRoom). The exit notices (ended, removed, …) still show. */}
             <OrbitExitModal />
             {connStatus === 'disconnected' && (
-              <OfflineBanner onRetry={connRetry} isChecking={connRetrying} showSettingsLink={!hasOfflineBrowse} serverName={serverName} />
+              <TouchOfflineBanner onRetry={connRetry} isChecking={connRetrying} showSettingsLink={!hasOfflineBrowse} serverName={serverName} />
             )}
             <div className="content-body app-shell-route-host">
               <OverlayScrollArea
@@ -345,6 +346,7 @@ export function AppShell() {
         </main>
         <MobileRadioBridge />
         <MobileIosBridge />
+        <MobileActionSheet />
         <MobileTouchContextMenu />
         <MobileSwipeNavigation />
         {!isMobilePlayer && <MobileMiniPlayer />}

@@ -4,6 +4,7 @@ import { useLocation } from 'react-router';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
 import { resetAuthStore } from '@/test/helpers/storeReset';
 import { useAuthStore } from '@/store/authStore';
+import { useDevOfflineBrowseStore } from '@/store/devOfflineBrowseStore';
 
 vi.mock('@/features/offline', async importOriginal => ({
   ...(await importOriginal<typeof import('@/features/offline')>()),
@@ -34,6 +35,7 @@ const chip = () => screen.getByRole('button', { name: /Home|servers/ });
 describe('MobileTopBar server chip', () => {
   beforeEach(() => {
     resetAuthStore();
+    useDevOfflineBrowseStore.setState({ forceOffline: false });
     useAuthStore.setState({
       servers: [HOME],
       activeServerId: 'home',
@@ -77,5 +79,18 @@ describe('MobileTopBar server chip', () => {
     });
     renderHeader();
     expect(screen.getByLabelText('Library scope')).toBeInTheDocument();
+  });
+
+  it('"downloaded music only": the chip says Offline and leads to the switch', () => {
+    useDevOfflineBrowseStore.setState({ forceOffline: true });
+    renderHeader();
+    const offlineChip = screen.getByRole('button', { name: 'Offline' });
+    fireEvent.click(offlineChip);
+    const sw = screen.getByRole('switch', { name: 'Downloaded music only' });
+    expect(sw).toHaveAttribute('aria-checked', 'true');
+
+    fireEvent.click(sw);
+    expect(useDevOfflineBrowseStore.getState().forceOffline).toBe(false);
+    expect(screen.queryByRole('button', { name: 'Offline' })).not.toBeInTheDocument();
   });
 });

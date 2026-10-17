@@ -6,6 +6,9 @@ import { resetAllStores } from '@/test/helpers/storeReset';
 import { makeSubsonicSong } from '@/test/helpers/factories';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { songToTrack } from '@/lib/media/songToTrack';
+import { useConfirmModalStore } from '@/store/confirmModalStore';
+import { useMeteredNetworkStore } from '@/lib/network/meteredNetwork';
+import { useMobileActionSheetStore } from '@/features/mobileShell/store/mobileActionSheetStore';
 import AlbumDetailMobile from './AlbumDetailMobile';
 
 const album = {
@@ -39,10 +42,15 @@ function setup(overrides: Partial<React.ComponentProps<typeof AlbumDetailMobile>
     isPlaying: false,
     relatedAlbums: [],
     relatedTitle: 'More by Stormwind',
+    canPinOffline: true,
+    offlineStatus: 'none' as const,
+    offlineProgress: null,
     onToggleStar: vi.fn(),
     onPlayAll: vi.fn(),
     onShuffleAll: vi.fn(),
     onPlaySong: vi.fn(),
+    onCacheOffline: vi.fn(),
+    onRemoveOffline: vi.fn(),
     ...overrides,
   };
   renderWithProviders(<AlbumDetailMobile {...props} />, { route: '/album/al1' });
@@ -105,6 +113,55 @@ describe('AlbumDetailMobile', () => {
     expect(heart).toHaveAttribute('aria-pressed', 'true');
     fireEvent.click(heart);
     expect(props.onToggleStar).toHaveBeenCalledTimes(1);
+  });
+
+  it('the download button starts the download', () => {
+    const props = setup();
+    fireEvent.click(screen.getByRole('button', { name: 'Download' }));
+    expect(props.onCacheOffline).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the progress while downloading and ignores taps', () => {
+    const props = setup({ offlineStatus: 'downloading', offlineProgress: { done: 3, total: 10 } });
+    const button = screen.getByRole('button', { name: 'Downloading… 3 of 10' });
+    fireEvent.click(button);
+    expect(props.onCacheOffline).not.toHaveBeenCalled();
+  });
+
+  it('asks before it removes a download', async () => {
+    const props = setup({ offlineStatus: 'cached' });
+    fireEvent.click(screen.getByRole('button', { name: 'Downloaded' }));
+    expect(useConfirmModalStore.getState()).toMatchObject({
+      isOpen: true,
+      title: 'Remove download?',
+      message: '“Taken by Storm” will no longer be available offline.',
+    });
+    expect(props.onRemoveOffline).not.toHaveBeenCalled();
+    useConfirmModalStore.getState().confirm();
+    await vi.waitFor(() => expect(props.onRemoveOffline).toHaveBeenCalledTimes(1));
+  });
+
+  it('keeps the download removable offline, but offers no new one there', () => {
+    setup({ canPinOffline: false, offlineStatus: 'cached' });
+    expect(screen.getByRole('button', { name: 'Downloaded' })).toBeInTheDocument();
+  });
+
+  it('hides the download button offline when nothing is downloaded', () => {
+    setup({ canPinOffline: false });
+    expect(screen.queryByRole('button', { name: 'Download' })).not.toBeInTheDocument();
+  });
+
+  it('on mobile data a queued download waits for Wi-Fi and can be cancelled', async () => {
+    useMeteredNetworkStore.setState({ metered: true });
+    try {
+      const props = setup({ offlineStatus: 'queued' });
+      fireEvent.click(screen.getByRole('button', { name: 'Waiting for Wi-Fi' }));
+      await vi.waitFor(() => expect(useMobileActionSheetStore.getState().isOpen).toBe(true));
+      useMobileActionSheetStore.getState().choose('stop');
+      await vi.waitFor(() => expect(props.onRemoveOffline).toHaveBeenCalledTimes(1));
+    } finally {
+      useMeteredNetworkStore.setState({ metered: false });
+    }
   });
 
   it('groups multi-disc albums under disc headings', () => {

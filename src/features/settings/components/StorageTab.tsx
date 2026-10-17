@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { Download, FolderOpen, Trash2, X } from 'lucide-react';
+import { Download, FolderOpen, HardDriveDownload, Trash2, X } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { countHotCacheTracks } from '@/features/playback/store/hotCacheStore';
 import { useLocalPlaybackStore } from '@/store/localPlaybackStore';
@@ -9,6 +9,8 @@ import { getMediaTierSize } from '@/lib/api/syncfs';
 import { formatBytes, snapHotCacheMb } from '@/lib/format/formatBytes';
 import SettingsSubSection from '@/features/settings/components/SettingsSubSection';
 import DesktopOnly from '@/features/settings/components/DesktopOnly';
+import TouchOnly from '@/features/settings/components/TouchOnly';
+import TouchDownloadsStorage from '@/features/settings/components/TouchDownloadsStorage';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
 import { SettingsSubCard, SettingsField, SettingsValue } from '@/features/settings/components/SettingsSubCard';
@@ -73,6 +75,15 @@ export function StorageTab() {
 
   return (
     <>
+      <TouchOnly>
+        <SettingsSubSection
+          title={t('connection.downloadsStorageTitle')}
+          icon={<HardDriveDownload size={16} />}
+        >
+          <TouchDownloadsStorage />
+        </SettingsSubSection>
+      </TouchOnly>
+
       <DesktopOnly>
         <SettingsSubSection
           title={t('settings.mediaDirTitle')}

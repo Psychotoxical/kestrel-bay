@@ -14,6 +14,8 @@ import { usePerfProbeFlags } from '@/lib/perf/perfFlags';
 import { GRID_COVER_WARM_LIMIT } from '@/cover/layoutSizes';
 import { VirtualCardGrid } from '@/ui/VirtualCardGrid';
 import { OfflineLibraryDiskStat } from '@/features/offline/components/OfflineLibraryDiskStat';
+import OfflineLibraryMobile from '@/features/offline/components/OfflineLibraryMobile';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
   buildOfflineCacheQueueTracks,
   buildOfflineFavoritesQueueTracks,
@@ -654,6 +656,18 @@ export default function OfflineLibrary() {
       </div>
     ));
   };
+
+  if (IS_MOBILE_SHELL) {
+    return (
+      <OfflineLibraryMobile
+        cards={cards}
+        loading={loading}
+        totalBytes={totalOfflineDiskBytes}
+        favoritesTrackCount={favoritesTrackCount}
+        onDelete={handleDeleteCard}
+      />
+    );
+  }
 
   const TABS: { id: FilterType; labelKey: string }[] = [
     { id: 'all', labelKey: 'connection.offlineFilterAll' },

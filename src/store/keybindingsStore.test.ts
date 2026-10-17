@@ -14,7 +14,7 @@ const KEY = 'psysonic_keybindings';
 async function loadMacStore(): Promise<Store> {
   localStorage.clear();
   vi.resetModules();
-  vi.doMock('@/lib/util/platform', () => ({ IS_MACOS: true, IS_LINUX: false, IS_WINDOWS: false }));
+  vi.doMock('@/lib/util/platform', () => ({ IS_MACOS: true, IS_LINUX: false, IS_WINDOWS: false, IS_MOBILE_SHELL: false }));
   return import('@/store/keybindingsStore');
 }
 

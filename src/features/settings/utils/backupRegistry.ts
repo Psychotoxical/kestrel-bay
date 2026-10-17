@@ -212,6 +212,8 @@ export const BACKUP_EXCLUSIONS: Readonly<Record<string, string>> = {
   'psysonic-local-playback': 'local media paths on this machine',
   'psysonic-local-playback-collision-recovery-v1:': 'recovery copy of local media records on this machine',
   'psysonic-hot-cache': 'cache contents on this disk',
+  // Touch shell: restored on a phone without downloads, it would leave nothing to play.
+  'psysonic-offline-only': 'offline switch of this device, follows its downloads',
   'psysonic-library-index': 'mirrors the library databases',
   // A compilation being assembled for the next disc, not a setting. Its entries
   // address tracks by `${serverId}:${trackId}` and are not rewritten by the

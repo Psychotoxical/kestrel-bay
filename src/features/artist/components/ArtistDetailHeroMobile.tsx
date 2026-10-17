@@ -3,13 +3,18 @@ import { useLocation, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Check, HardDriveDownload, Heart, ListPlus, Play, Radio, Shuffle, Users } from 'lucide-react';
 import { ArtistHeroCover } from '@/cover/artistHero';
-import { useOfflineStore, offlineActionPolicy } from '@/features/offline';
+import {
+  useOfflineStore, offlineActionPolicy, meteredGroupKey, useDownloadKeyHeldForWifi,
+} from '@/features/offline';
 import { usePlayerStore } from '@/features/playback';
 import { useArtistOfflineState } from '@/features/artist/hooks/useArtistOfflineState';
 import { useArtistHeaderBackdrop } from '@/features/artist/hooks/useArtistHeaderBackdrop';
 import { lastFmArtistUrl } from '@/features/artist/utils/lastFmArtistUrl';
 import type { ArtistDetailHeroProps } from '@/features/artist/components/ArtistDetailHero';
-import { MobileBackButton, MobileMoreMenu, type MobileMoreMenuItem } from '@/features/mobileShell';
+import {
+  MobileBackButton, MobileMoreMenu, resolveHeldDownload, startTouchDownload, type MobileMoreMenuItem,
+} from '@/features/mobileShell';
+import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { useAuthStore } from '@/store/authStore';
 import StarRating from '@/ui/StarRating';
 import EntitySourcePicker from '@/ui/EntitySourcePicker';
@@ -39,6 +44,11 @@ export default function ArtistDetailHeroMobile({
   const downloadArtist = useOfflineStore(s => s.downloadArtist);
   const artistAlbumIds = useMemo(() => albums.map(a => a.id), [albums]);
   const { status: offlineStatus } = useArtistOfflineState(id ?? '', serverId, artistAlbumIds);
+  // The discography's albums download as one artist progress group.
+  const downloadKey = meteredGroupKey(ownedEntityKey({ id: id ?? '', serverId }));
+  const heldForWifi = useDownloadKeyHeldForWifi(
+    downloadKey, offlineStatus === 'downloading' || offlineStatus === 'queued',
+  );
   const ratingSupport = useAuthStore(s => s.entityRatingSupportByServer[serverId] ?? 'unknown');
   const backdrop = useArtistHeaderBackdrop(artist, albums, coverRef);
   const fitNameRef = useFitTextToWidth(true, 34, 20);
@@ -62,12 +72,20 @@ export default function ArtistDetailHeroMobile({
       id: 'share',
       share: { kind: 'artist' as const, resourceIds: [artist.id], serverIds: [artist.serverId ?? serverId].filter(Boolean) },
     }] : []),
-    ...(policy.canCacheDiscography && hasAlbums ? [{
+    ...(policy.canCacheDiscography && hasAlbums ? [heldForWifi ? {
+      id: 'offline',
+      label: t('connection.downloadWaitingForWifi'),
+      icon: menuIcon(HardDriveDownload),
+      onSelect: () => { void resolveHeldDownload(downloadKey); },
+    } : {
       id: 'offline',
       label: offlineStatus === 'cached' ? t('artistDetail.offlineCached') : t('artistDetail.cacheOffline'),
       icon: menuIcon(offlineStatus === 'cached' ? Check : HardDriveDownload),
       disabled: offlineStatus === 'downloading' || offlineStatus === 'queued' || offlineStatus === 'cached',
-      onSelect: () => { if (id && offlineStatus !== 'cached') downloadArtist(id, artist.name, serverId); },
+      onSelect: () => {
+        if (!id || offlineStatus === 'cached') return;
+        void startTouchDownload(downloadKey, () => downloadArtist(id, artist.name, serverId));
+      },
     }] : []),
     ...(lastFmUrl ? [{
       id: 'lastfm', label: 'Last.fm', icon: <LastfmIcon size={17} />, onSelect: () => openLink(lastFmUrl, 'lastfm'),

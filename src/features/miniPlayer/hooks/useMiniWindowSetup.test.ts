@@ -20,6 +20,7 @@ vi.mock('@/lib/util/platform', () => ({
   IS_LINUX: false,
   IS_MACOS: false,
   IS_WINDOWS: true,
+  IS_MOBILE_SHELL: false,
 }));
 
 import { useMiniWindowSetup } from './useMiniWindowSetup';

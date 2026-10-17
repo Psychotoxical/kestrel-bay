@@ -15,11 +15,14 @@ function HubRow({ icon: Icon, label, onClick }: { icon: LucideIcon; label: strin
   );
 }
 
-/** Library tab root: every browse page from the user's sidebar, in sidebar order. */
+/**
+ * Library tab root: Downloaded first (always, as music apps keep it), then
+ * every browse page from the user's sidebar, in sidebar order.
+ */
 export default function MobileLibraryHub() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { items, hasOfflineContent } = useMobileNavItems(NOT_IN_LIBRARY);
+  const { items } = useMobileNavItems(NOT_IN_LIBRARY);
 
   return (
     <div className="mobile-page">
@@ -29,6 +32,7 @@ export default function MobileLibraryHub() {
         <span>{t('search.title')}</span>
       </button>
       <nav className="mobile-hub-list" aria-label={t('sidebar.library')}>
+        <HubRow icon={HardDriveDownload} label={t('connection.downloaded')} onClick={() => navigate('/offline')} />
         {items.map(item => (
           <HubRow
             key={item.to}
@@ -37,9 +41,6 @@ export default function MobileLibraryHub() {
             onClick={() => navigate(item.to)}
           />
         ))}
-        {hasOfflineContent && (
-          <HubRow icon={HardDriveDownload} label={t('sidebar.offlineLibrary')} onClick={() => navigate('/offline')} />
-        )}
       </nav>
     </div>
   );

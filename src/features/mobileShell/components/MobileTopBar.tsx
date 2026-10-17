@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Trans, useTranslation } from 'react-i18next';
-import { ChevronDown, EyeOff, Music2, Shuffle, TrendingUp, UserRound } from 'lucide-react';
+import { ChevronDown, CloudOff, EyeOff, Music2, Shuffle, TrendingUp, UserRound } from 'lucide-react';
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import { useAuthStore } from '@/store/authStore';
 import { usePrivateModeStore } from '@/features/privateMode';
+import { useDevOfflineBrowseStore } from '@/features/offline';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import MobileProfileSheet from '@/features/mobileShell/components/MobileProfileSheet';
 import MobileSourceSheet from '@/features/mobileShell/components/MobileSourceSheet';
@@ -25,13 +26,16 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
   const navigate = useNavigate();
   const randomNavMode = useAuthStore(s => s.randomNavMode);
   const privateMode = usePrivateModeStore(s => s.active);
+  const downloadsOnly = useDevOfflineBrowseStore(s => s.forceOffline);
   const [profileOpen, setProfileOpen] = useState(false);
   const [sourceOpen, setSourceOpen] = useState(false);
   const scope = useMobileSourceScope();
   // Nothing to choose (one server, at most one library): the chip leads to the server settings, as on desktop.
   const canChoose = scope.multiServer || scope.showLibraries;
   const openSource = () => {
-    if (canChoose) setSourceOpen(true);
+    // "Downloaded music only" is switched off where it was switched on: in the profile sheet.
+    if (downloadsOnly) setProfileOpen(true);
+    else if (canChoose) setSourceOpen(true);
     else navigate('/settings', { state: { tab: 'servers' } });
   };
   const chipLabel = !scope.multiScope ? serverName : scope.unavailableSelection ? (
@@ -49,7 +53,17 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
       <MobilePullToRefresh />
       <div className="mobile-mainstage-header__brand">
         <PsysonicLogo className="mobile-mainstage-header__logo" gradientIdSuffix="mobile-mainstage" />
-        {serverName && (
+        {serverName && (downloadsOnly ? (
+          <button
+            type="button"
+            className="mobile-server-chip mobile-server-chip--offline"
+            aria-haspopup="dialog"
+            onClick={openSource}
+          >
+            <CloudOff size={14} className="mobile-server-chip__icon" aria-hidden="true" />
+            <span className="mobile-server-chip__name">{t('connection.offlineChip')}</span>
+          </button>
+        ) : (
           <button
             type="button"
             className="mobile-server-chip"
@@ -61,7 +75,7 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
             {scope.hasLibrarySelection && <Music2 size={12} className="mobile-server-chip__icon" aria-label={t('sidebar.libraryScope')} />}
             {canChoose && <ChevronDown size={13} className="mobile-server-chip__icon" aria-hidden="true" />}
           </button>
-        )}
+        ))}
         <span className="mobile-mainstage-header__spacer" />
         {privateMode && (
           <span className="mobile-round-btn mobile-round-btn--flag" role="img" aria-label={t('privateMode.label')}>
