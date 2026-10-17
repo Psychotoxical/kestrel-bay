@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { libraryResolveEntitySources, type LibraryEntitySourceDto } from '@/lib/api/library';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
@@ -84,6 +84,17 @@ describe('EntitySourcePicker', () => {
 
     expect(onSelect).toHaveBeenCalledWith(alternateSource);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('desktop: scrolling the page leaves the menu open (closing on scroll is a touch-shell rule)', async () => {
+    resolveSources.mockResolvedValue([currentSource, alternateSource]);
+    const user = userEvent.setup();
+    renderWithProviders(<><EntitySourcePicker {...props()} /><div data-testid="page" /></>);
+
+    await user.click(await screen.findByRole('button', { name: 'Available from 2 sources' }));
+    fireEvent.scroll(screen.getByTestId('page'));
+
+    expect(screen.getByRole('menu')).toBeInTheDocument();
   });
 
   it('supports menu keyboard navigation and restores trigger focus on Escape', async () => {

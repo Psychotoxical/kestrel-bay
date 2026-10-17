@@ -9,6 +9,7 @@ import {
   type LibrarySourceEntityType,
 } from '@/lib/api/library';
 import { serverListDisplayLabel } from '@/lib/server/serverDisplayName';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface SourceServer {
   id: string;
@@ -127,11 +128,29 @@ export default function EntitySourcePicker({
         && !buttonRef.current?.contains(event.target as Node)
       ) close();
     };
+    // Touch shell: the menu sits at fixed coordinates, so it closes as soon as the
+    // page is touched or scrolled outside it, as iOS menus do. No focus return here:
+    // focusing the trigger would scroll the page back to it.
+    const outsideMenu = (target: EventTarget | null) => !menuRef.current?.contains(target as Node);
+    const onTouchOutside = (event: PointerEvent) => {
+      if (outsideMenu(event.target) && !buttonRef.current?.contains(event.target as Node)) setOpenKey(null);
+    };
+    const onScroll = (event: Event) => {
+      if (outsideMenu(event.target)) setOpenKey(null);
+    };
     window.addEventListener('keydown', onKeyDown);
     document.addEventListener('mousedown', onMouseDown);
+    if (IS_MOBILE_SHELL) {
+      document.addEventListener('pointerdown', onTouchOutside);
+      window.addEventListener('scroll', onScroll, true);
+    }
     return () => {
       window.removeEventListener('keydown', onKeyDown);
       document.removeEventListener('mousedown', onMouseDown);
+      if (IS_MOBILE_SHELL) {
+        document.removeEventListener('pointerdown', onTouchOutside);
+        window.removeEventListener('scroll', onScroll, true);
+      }
     };
   }, [open]);
 
