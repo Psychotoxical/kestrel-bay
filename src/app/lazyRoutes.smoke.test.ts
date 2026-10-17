@@ -42,6 +42,7 @@ const ROUTE_LOADERS: Array<[string, () => Promise<{ default: unknown }>]> = [
   ['@/features/burner/pages/Burner', () => import('@/features/burner/pages/Burner')],
   ['@/features/offline/pages/OfflineLibrary', () => import('@/features/offline/pages/OfflineLibrary')],
   ['@/features/search/pages/SearchBrowsePage', () => import('@/features/search/pages/SearchBrowsePage')],
+  ['@/features/search/pages/TracksTouchPage', () => import('@/features/search/pages/TracksTouchPage')],
   ['@/features/folderBrowser/pages/FolderBrowser', () => import('@/features/folderBrowser/pages/FolderBrowser')],
   ['@/features/radio/pages/InternetRadio', () => import('@/features/radio/pages/InternetRadio')],
   ['@/features/genre/pages/Genres', () => import('@/features/genre/pages/Genres')],

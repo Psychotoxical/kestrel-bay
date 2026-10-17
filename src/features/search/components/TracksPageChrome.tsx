@@ -3,7 +3,9 @@ import { getRandomSongs } from '@/lib/api/subsonicLibrary';
 import type { SubsonicSong } from '@/lib/api/subsonicTypes';
 import { songToTrack } from '@/lib/media/songToTrack';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Play, ListPlus, RefreshCw, Sparkles } from 'lucide-react';
+import { Play, ListPlus, RefreshCw, Search, Sparkles } from 'lucide-react';
+import { requestOpenSearch } from '@/lib/dom/openSearch';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
@@ -114,6 +116,101 @@ export default function TracksPageChrome({
   );
 
   const heroArtistRefs = hero ? resolveTrackArtistRefs(hero) : [];
+
+  if (IS_MOBILE_SHELL) {
+    // Touch: a discovery page, no browse-all list. The hero reads like the
+    // Mainstage's "album of the moment"; tapping it opens the album.
+    const heroServerId = hero?.serverId ?? activeServerId;
+    return (
+      <>
+        <h1 className="mobile-large-title">{t('tracks.title')}</h1>
+        <button type="button" className="mobile-search-field" onClick={() => requestOpenSearch()}>
+          <Search size={18} aria-hidden="true" />
+          <span>{t('search.title')}</span>
+        </button>
+
+        {!hideDiscoveryChrome && hero && (
+          <div
+            className="hero tracks-hero-touch"
+            role="banner"
+            aria-label={t('tracks.heroEyebrow')}
+            onClick={() => hero.albumId && navigateToAlbum(hero.albumId, { serverId: heroServerId })}
+          >
+            {hero.albumId && hero.coverArt && (
+              <AlbumCoverArtImage
+                albumId={hero.albumId}
+                coverArt={hero.coverArt}
+                displayCssPx={600}
+                surface="sparse"
+                className="hero-bg-image"
+                alt=""
+              />
+            )}
+            <div className="hero-overlay" aria-hidden="true" />
+            <div className="hero-content">
+              <div className="hero-text">
+                <span className="hero-eyebrow">{t('tracks.heroEyebrow')}</span>
+                <h2 className="hero-title">{hero.title}</h2>
+                <p className="hero-artist">{hero.artist}</p>
+                {hero.album && (
+                  <div className="hero-meta"><span className="badge">{hero.album}</span></div>
+                )}
+                <div className="hero-actions-mobile" onClick={e => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className="album-icon-btn album-icon-btn--play"
+                    onClick={() => playSongNow(hero)}
+                    aria-label={t('tracks.playSong')}
+                  >
+                    <Play size={22} fill="currentColor" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="album-icon-btn album-icon-btn--queue"
+                    onClick={() => enqueue([songToTrack(hero)])}
+                    aria-label={t('tracks.enqueueSong')}
+                  >
+                    <ListPlus size={19} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="album-icon-btn album-icon-btn--queue"
+                    onClick={() => { void rerollHero(); }}
+                    disabled={heroLoading}
+                    aria-label={t('tracks.heroReroll')}
+                  >
+                    <RefreshCw size={18} className={heroLoading ? 'is-spinning' : ''} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!hideDiscoveryChrome && ratedSupported && (ratedLoading || rated.length > 0) && (
+          <SongRail
+            title={t('tracks.railHighlyRated')}
+            songs={rated}
+            loading={ratedLoading}
+            onReroll={reloadRated}
+            windowArtworkByViewport={TRACKS_SONG_RAIL_WINDOWING}
+            initialArtworkBudget={TRACKS_SONG_RAIL_INITIAL_ARTWORK_BUDGET}
+          />
+        )}
+
+        {!hideDiscoveryChrome && (
+          <SongRail
+            title={t('tracks.railRandom')}
+            songs={railSongs}
+            loading={randomLoading}
+            onReroll={rerollRandom}
+            windowArtworkByViewport={TRACKS_SONG_RAIL_WINDOWING}
+            initialArtworkBudget={TRACKS_SONG_RAIL_INITIAL_ARTWORK_BUDGET}
+          />
+        )}
+      </>
+    );
+  }
 
   return (
     <>

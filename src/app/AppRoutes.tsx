@@ -42,6 +42,7 @@ const Burner = lazy(() => import('@/features/burner/pages/Burner'));
 const OfflineLibrary = lazy(() => import('@/features/offline/pages/OfflineLibrary'));
 const LabelAlbums = lazy(() => import('@/features/album/pages/LabelAlbums'));
 const SearchBrowsePage = lazy(() => import('@/features/search/pages/SearchBrowsePage'));
+const TracksTouchPage = lazy(() => import('@/features/search/pages/TracksTouchPage'));
 const FolderBrowser = lazy(() => import('@/features/folderBrowser/pages/FolderBrowser'));
 const InternetRadio = lazy(() => import('@/features/radio/pages/InternetRadio'));
 const Genres = lazy(() => import('@/features/genre/pages/Genres'));
@@ -99,7 +100,8 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<MainstageRoute />} />
       <Route path="/albums" element={<Albums />} />
-      <Route path="/tracks" element={<SearchBrowsePage />} />
+      {/* Touch: a discovery page instead of the browse-all list. */}
+      <Route path="/tracks" element={IS_MOBILE_SHELL ? <TracksTouchPage /> : <SearchBrowsePage />} />
       <Route path="/random" element={<RandomLanding />} />
       <Route path="/random/albums" element={<RandomAlbums />} />
       <Route path="/album/:id" element={<AlbumDetail />} />
