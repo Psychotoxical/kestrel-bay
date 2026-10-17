@@ -11,15 +11,16 @@ interface Props {
   isActive: boolean;
   showEq: boolean;
   onPlay: (index: number) => void;
-  /** Opens the song menu (with "Remove from favorites") at the "…" button. */
+  /** Opens the song menu at the "…" button. */
   onMore: (song: SubsonicSong, at: { x: number; y: number }) => void;
 }
 
 /**
- * Favourite song in the touch shell, as the album and artist track lists read:
- * number, album cover, title over artist, duration, "…" menu. Tapping plays.
+ * A song in a touch-shell list (favourites, random mix), as the album and
+ * artist track lists read: number, album cover, title over artist, duration,
+ * "…" menu. Tapping plays.
  */
-function FavoriteSongTouchRow({ song, index, isActive, showEq, onPlay, onMore }: Props) {
+function MobileSongRow({ song, index, isActive, showEq, onPlay, onMore }: Props) {
   const { t } = useTranslation();
   return (
     // Virtualised: each row sits in its own wrapper, where `:last-child` would drop every border.
@@ -60,4 +61,4 @@ function FavoriteSongTouchRow({ song, index, isActive, showEq, onPlay, onMore }:
   );
 }
 
-export default React.memo(FavoriteSongTouchRow);
+export default React.memo(MobileSongRow);

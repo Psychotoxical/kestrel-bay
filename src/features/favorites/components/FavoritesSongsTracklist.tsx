@@ -1,7 +1,7 @@
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import FavoriteSongRow, { type FavoriteSongRowCallbacks } from '@/features/favorites/components/FavoriteSongRow';
-import FavoriteSongTouchRow from '@/features/favorites/components/FavoriteSongTouchRow';
+import { MobileSongRow } from '@/features/mobileShell';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { TracklistColumnPicker } from '@/ui/TracklistColumnPicker';
@@ -248,7 +248,7 @@ export default function FavoritesSongsTracklist({
                 ref={rowVirtualizer.measureElement}
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${vi.start - scrollMargin}px)` }}
               >
-                <FavoriteSongTouchRow
+                <MobileSongRow
                   song={song}
                   index={vi.index}
                   isActive={active}

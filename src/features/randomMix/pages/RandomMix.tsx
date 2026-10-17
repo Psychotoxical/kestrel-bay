@@ -26,6 +26,10 @@ import RandomMixHeader from '@/features/randomMix/components/RandomMixHeader';
 import RandomMixFiltersPanel from '@/features/randomMix/components/RandomMixFiltersPanel';
 import RandomMixGenrePanel from '@/features/randomMix/components/RandomMixGenrePanel';
 import RandomMixTrackRow from '@/features/randomMix/components/RandomMixTrackRow';
+import { Play, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { MobileSheet, MobileSongRow } from '@/features/mobileShell';
+import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 export default function RandomMix() {
   const { t } = useTranslation();
@@ -232,6 +236,146 @@ export default function RandomMix() {
     if (nextGenres.length > 0) void loadGenreMix(nextGenres);
     else selectAllSongs();
   };
+
+  if (IS_MOBILE_SHELL) {
+    // Touch layout, as the album and favourites pages: play and remix as the two
+    // big buttons, the genres as one swipe row (filters in a sheet), touch song rows.
+    const listSongs = hasSelectedGenres ? filteredGenreMixSongs : filteredSongs;
+    const listLoading = hasSelectedGenres ? genreMixLoading && genreMixSongs.length === 0 : loading && songs.length === 0;
+    const genreLoading = hasSelectedGenres && !genreMixComplete;
+    const remixBusy = hasSelectedGenres ? genreMixLoading : loading;
+    const playDisabled = loading
+      || (hasSelectedGenres ? !genreMixComplete || filteredGenreMixSongs.length === 0 : filteredSongs.length === 0);
+    const playAt = (index: number) => {
+      const song = listSongs[index];
+      if (!song) return;
+      if (orbitActive) { orbitRowClick(song.id, song.serverId); return; }
+      playTrack(songToTrack(song), listSongs.map(songToTrack));
+    };
+    const openSongMenu = (song: SubsonicSong, at: { x: number; y: number }) => {
+      prepareTransientUiOpen();
+      openContextMenu(at.x, at.y, songToTrack(song), 'song');
+    };
+    return (
+      <div className="content-body animate-fade-in mobile-random-mix">
+        <h1 className="mobile-large-title">{t('randomMix.title')}</h1>
+        <div className="mobile-album__buttons">
+          <button
+            type="button"
+            className="mobile-album__btn mobile-album__btn--primary"
+            disabled={playDisabled}
+            onClick={handlePlayAll}
+          >
+            {genreLoading ? (
+              <>
+                <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} aria-hidden="true" />
+                {Math.min(filteredGenreMixSongs.length, randomMixSize)} / {randomMixSize}
+              </>
+            ) : (
+              <>
+                <Play size={18} fill="currentColor" aria-hidden="true" />
+                {t('common.play')}
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            className="mobile-album__btn"
+            disabled={remixBusy}
+            onClick={hasSelectedGenres ? () => loadGenreMix(selectedGenres) : () => fetchSongs()}
+          >
+            <RefreshCw size={18} className={remixBusy ? 'spin' : ''} aria-hidden="true" />
+            {t('randomMix.remix')}
+          </button>
+        </div>
+        <div className="mobile-chip-row" role="group" aria-label={t('randomMix.genreMixTitle')}>
+          <button type="button" className="btn btn-surface" onClick={() => setFiltersExpanded(true)}>
+            <SlidersHorizontal size={15} aria-hidden="true" />
+            {t('common.filters')}
+          </button>
+          {!genresLoading && displayedGenres.length > 0 && (
+            <button
+              type="button"
+              className={`btn btn-surface${selectedGenres.length === 0 ? ' btn-sort-active' : ''}`}
+              aria-pressed={selectedGenres.length === 0}
+              onClick={selectAllSongs}
+            >
+              {t('randomMix.genreMixAll')}
+            </button>
+          )}
+          {displayedGenres.map(genre => (
+            <button
+              key={genre}
+              type="button"
+              className={`btn btn-surface${selectedGenres.includes(genre) ? ' btn-sort-active' : ''}`}
+              aria-pressed={selectedGenres.includes(genre)}
+              onClick={() => toggleGenre(genre)}
+            >
+              {genre}
+            </button>
+          ))}
+          {allAvailableGenres.length > 20 && (
+            <button
+              type="button"
+              className="btn btn-surface"
+              aria-label={t('randomMix.shuffleGenres')}
+              disabled={genreMixLoading}
+              onClick={shuffleDisplayedGenres}
+            >
+              <RefreshCw size={15} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+
+        {listLoading ? (
+          <div className="loading-center"><div className="spinner" /></div>
+        ) : listSongs.length === 0 ? (
+          <p className="mobile-favorite-tracks__empty">{t('randomMix.noSongsMatchFilters')}</p>
+        ) : (
+          <div className="mobile-random-mix__tracks" data-preview-loc="randomMix">
+            {listSongs.map((song, index) => {
+              const active = currentTrack?.id === song.id;
+              return (
+                <MobileSongRow
+                  key={song.id}
+                  song={song}
+                  index={index}
+                  isActive={active}
+                  showEq={active && isPlaying}
+                  onPlay={playAt}
+                  onMore={openSongMenu}
+                />
+              );
+            })}
+          </div>
+        )}
+
+        {filtersExpanded && (
+          <MobileSheet title={t('randomMix.filterPanelTitle')} onClose={() => setFiltersExpanded(false)}>
+            <RandomMixFiltersPanel
+              bare
+              isMobile={false}
+              filtersExpanded
+              setFiltersExpanded={setFiltersExpanded}
+              randomMixSize={randomMixSize}
+              setRandomMixSize={setRandomMixSize}
+              selectedGenres={selectedGenres}
+              loadGenreMix={loadGenreMix}
+              fetchSongs={fetchSongs}
+              excludeAudiobooks={excludeAudiobooks}
+              setExcludeAudiobooks={setExcludeAudiobooks}
+              blacklistOpen={blacklistOpen}
+              setBlacklistOpen={setBlacklistOpen}
+              customGenreBlacklist={customGenreBlacklist}
+              setCustomGenreBlacklist={setCustomGenreBlacklist}
+              newGenre={newGenre}
+              setNewGenre={setNewGenre}
+            />
+          </MobileSheet>
+        )}
+      </div>
+    );
+  }
 
 
   return (

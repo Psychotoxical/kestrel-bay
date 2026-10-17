@@ -2,20 +2,20 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
 import { makeSubsonicSong } from '@/test/helpers/factories';
-import FavoriteSongTouchRow from './FavoriteSongTouchRow';
+import MobileSongRow from './MobileSongRow';
 
 const song = makeSubsonicSong({ id: 's1', title: 'Souls of Death', artist: 'Fail', albumId: 'al1', duration: 245 });
 
 /** The row's main button (the other one is "…"). */
 const row = () => screen.getAllByRole('button')[0];
 
-function setup(overrides: Partial<React.ComponentProps<typeof FavoriteSongTouchRow>> = {}) {
+function setup(overrides: Partial<React.ComponentProps<typeof MobileSongRow>> = {}) {
   const props = { song, index: 2, isActive: false, showEq: false, onPlay: vi.fn(), onMore: vi.fn(), ...overrides };
-  renderWithProviders(<FavoriteSongTouchRow {...props} />);
+  renderWithProviders(<MobileSongRow {...props} />);
   return props;
 }
 
-describe('FavoriteSongTouchRow', () => {
+describe('MobileSongRow', () => {
   it('reads number, title over artist and duration', () => {
     setup();
     expect(row()).toHaveTextContent('3');

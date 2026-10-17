@@ -2812,6 +2812,13 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
   color: var(--text-secondary);
 }
 
+/* Random mix (touch): title, play / remix, genre row, songs. */
+.app-shell[data-mobile-app] .app-shell-route-host .content-body.mobile-random-mix {
+  display: flex;
+  flex-direction: column;
+  gap: 14px !important;
+}
+
 .mobile-favorite-tracks__empty {
   margin: 24px 0;
   text-align: center;
