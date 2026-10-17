@@ -382,6 +382,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * With an HTTP or HTTPS proxy set in the system network settings, the library sync, covers and streaming sent their requests through that proxy — on macOS also for servers listed under **Bypass proxy settings for these Hosts & Domains** — and failed with "no bound session" or "error sending request". Psysonic no longer uses the system proxy settings, as up to 1.53.
 * Root cause: a dependency update in 1.54.0 made the app read the system proxy settings, but on macOS without the list of hosts to bypass.
 
+### Orbit labels in Polish and Romanian are corrected
+
+**By [@Jah-yee](https://github.com/Jah-yee), PR [#1758](https://github.com/Psysonic/psysonic/pull/1758)**
+
+* Three Orbit labels in Polish and Romanian had spelling mistakes, and the Polish song menu entry for adding a song to the session read as "add an Orbit session".
+
+### Screen readers name the back button in the narrow Now Playing view
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1763](https://github.com/Psysonic/psysonic/pull/1763)**
+
+* In a narrow window, the back button of the Now Playing view was announced as "player.back". It is now read as "Back" in the app language.
+
+### Screen readers name two buttons in the Orbit session bar
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1764](https://github.com/Psysonic/psysonic/pull/1764)**
+
+* The host's session settings button had no name for screen readers, and the participants button was read only as its count. They are now announced as "Session settings" and "Participants: 1/10".
+
+### The Orbit join dialog explains failures in the app language
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1765](https://github.com/Psysonic/psysonic/pull/1765)**
+
+* When joining a session from **Orbit → Join a session** failed, the dialog showed an internal English message with the session id, for example "Session abc123 is full (10/10)". It now shows the reason in the app language, as pasting an invite link already did.
+
+### The playlist page shows whether the playlist is offline
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1766](https://github.com/Psysonic/psysonic/pull/1766)**
+
+* The offline button on a playlist page always offered **Cache playlist offline**, also while the playlist was waiting, downloading or already saved, so a saved playlist could not be removed from its page. The button now shows the queue, the download progress and **Remove from offline cache** as on album pages.
+
+### Offline playlists keep tracks they share with an offline album
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1767](https://github.com/Psysonic/psysonic/pull/1767)**
+
+* When a playlist was cached offline while some of its tracks were already saved through an album, those tracks did not count for the playlist: the playlist was not complete, and removing the album from the offline cache deleted them although the playlist still listed them. Tracks already saved now belong to the playlist as well, and only the missing ones are downloaded.
+
 ## [1.55.0]
 
 ## Added

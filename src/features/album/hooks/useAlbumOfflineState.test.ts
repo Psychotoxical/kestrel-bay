@@ -133,7 +133,8 @@ describe('useAlbumOfflineState', () => {
     const { result } = renderHook(() => useAlbumOfflineState('alb-1', 'srv', ['t1']));
     expect(result.current.resolvedOfflineStatus).toBe('none');
   });
-  describe('playlist pins (touch shell)', () => {
+
+  describe('playlist pins', () => {
     const playlistEntry = (kind: 'album' | 'playlist') => ({
       serverIndexKey: 'srv',
       trackId: 't1',
@@ -176,7 +177,7 @@ describe('useAlbumOfflineState', () => {
       expect(downloading.result.current.offlineProgress).toEqual({ done: 0, total: 1 });
     });
 
-    it('keeps the album default blind to playlist pins, as the desktop has it', () => {
+    it('keeps the album default blind to playlist pins', () => {
       useLocalPlaybackStore.getState().upsertEntry(playlistEntry('playlist'));
 
       const { result } = renderHook(() => useAlbumOfflineState('pl-1', 'srv', ['t1']));

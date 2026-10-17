@@ -16,13 +16,10 @@ import { showToast } from '@/lib/dom/toast';
 /**
  * State and actions of the manual join form, shared by the desktop modal
  * (`OrbitJoinModal`) and the touch shell's sheet. Reuses the same parse +
- * preflight pipeline the clipboard handler uses.
- *
- * `translateErrors`: a failed `joinOrbitSession` shows the translated reason
- * (touch sheet). Off, it shows the error's own message, as the desktop modal
- * always has (Psysonic #1755).
+ * preflight pipeline the clipboard handler uses. A failed join shows the
+ * translated reason.
  */
-export function useOrbitJoinForm(onClose: () => void, { translateErrors = false }: { translateErrors?: boolean } = {}) {
+export function useOrbitJoinForm(onClose: () => void) {
   const { t } = useTranslation();
   const [link, setLinkState] = useState('');
   const [busy, setBusy] = useState(false);
@@ -83,9 +80,7 @@ export function useOrbitJoinForm(onClose: () => void, { translateErrors = false 
       showToast(t('orbit.toastJoined'), 2200, 'info');
       onClose();
     } catch (e) {
-      setError(translateErrors
-        ? t(orbitJoinErrorKey(e))
-        : (e instanceof Error ? e.message : t('orbit.toastJoinFail')));
+      setError(t(orbitJoinErrorKey(e)));
     } finally {
       setBusy(false);
     }

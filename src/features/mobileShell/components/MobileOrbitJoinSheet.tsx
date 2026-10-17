@@ -11,7 +11,7 @@ import MobileSheet from '@/features/mobileShell/components/MobileSheet';
  */
 export default function MobileOrbitJoinSheet({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
-  const form = useOrbitJoinForm(onClose, { translateErrors: true });
+  const form = useOrbitJoinForm(onClose);
 
   return (
     <MobileSheet title={t('orbit.launchJoin')} onClose={onClose} className="mobile-sheet--orbit-form">

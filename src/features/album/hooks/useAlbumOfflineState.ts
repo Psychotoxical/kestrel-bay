@@ -26,8 +26,7 @@ interface UseAlbumOfflineStateResult {
  * fetching) — in that case every selector short-circuits to a benign
  * default.
  *
- * `pinKind` names the pin owner. Only the touch shell passes `'playlist'`
- * (playlist page); the desktop still asks every page as an album.
+ * `pinKind` names the pin owner: the playlist page passes `'playlist'`.
  */
 export function useAlbumOfflineState(
   albumId: string,

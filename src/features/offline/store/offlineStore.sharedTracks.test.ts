@@ -22,6 +22,8 @@ const song = (id: string): SubsonicSong => ({
   id, title: id, artist: 'Artist', album: 'Album', albumId: 'album-1', duration: 180, suffix: 'flac',
 });
 
+const ALBUM_TRACK_PATH = '/media/library/a.test/track-1.flac';
+
 beforeEach(() => {
   resetAuthStore();
   clearOfflinePinTasks();
@@ -43,26 +45,30 @@ beforeEach(() => {
   onInvoke('clear_offline_cancel', () => undefined);
   onInvoke('cancel_offline_downloads', () => undefined);
   onInvoke('delete_media_file', () => ({ status: 'ok', data: null }));
+  // Track 1 is already on disk through the album's pin.
+  useLocalPlaybackStore.getState().upsertEntry({
+    serverIndexKey: 'a.test',
+    trackId: 'track-1',
+    localPath: ALBUM_TRACK_PATH,
+    sizeBytes: 123,
+    layoutFingerprint: 'layout',
+    tier: 'library',
+    pinSource: { kind: 'album', sourceId: 'album-1' },
+    suffix: 'flac',
+    originalBytesVerified: true,
+  });
 });
 
-describe('a playlist sharing tracks with a downloaded album (touch shell)', () => {
-  it('takes the album\'s tracks into the playlist pin and loads only the rest', async () => {
-    useLocalPlaybackStore.getState().upsertEntry({
-      serverIndexKey: 'a.test',
-      trackId: 'track-1',
-      localPath: '/media/library/a.test/track-1.flac',
-      sizeBytes: 123,
-      layoutFingerprint: 'layout',
-      tier: 'library',
-      pinSource: { kind: 'album', sourceId: 'album-1' },
-      suffix: 'flac',
-      originalBytesVerified: true,
-    });
+async function cachePlaylistWithOneAlbumTrack() {
+  await useOfflineStore.getState().downloadPlaylist(
+    'pl-1', 'Mix', undefined, [song('track-1'), song('track-2')], 'srv-a',
+  );
+  await waitFor(() => expect(useOfflineJobStore.getState().pinQueue).toEqual([]));
+}
 
-    await useOfflineStore.getState().downloadPlaylist(
-      'pl-1', 'Mix', undefined, [song('track-1'), song('track-2')], 'srv-a',
-    );
-    await waitFor(() => expect(useOfflineJobStore.getState().pinQueue).toEqual([]));
+describe('a playlist sharing tracks with a downloaded album', () => {
+  it('takes the album\'s tracks into the playlist pin and loads only the rest', async () => {
+    await cachePlaylistWithOneAlbumTrack();
 
     const shared = useLocalPlaybackStore.getState().getEntry('track-1', 'a.test');
     expect(localPlaybackPinSources(shared!)).toEqual(expect.arrayContaining([
@@ -73,5 +79,20 @@ describe('a playlist sharing tracks with a downloaded album (touch shell)', () =
     expect(downloads.map(([, args]) => (args as { trackId: string }).trackId)).toEqual(['track-2']);
     expect(isOfflinePinComplete('pl-1', 'srv-a', ['track-1', 'track-2'], { kind: 'playlist', sourceId: 'pl-1' }))
       .toBe(true);
+  });
+
+  it('keeps the shared track for the playlist when the album is removed', async () => {
+    await cachePlaylistWithOneAlbumTrack();
+    invokeMock.mockClear();
+
+    await useOfflineStore.getState().deleteAlbum('album-1', 'srv-a', { kind: 'album', sourceId: 'album-1' });
+
+    const shared = useLocalPlaybackStore.getState().getEntry('track-1', 'a.test');
+    expect(shared?.localPath).toBe(ALBUM_TRACK_PATH);
+    expect(localPlaybackPinSources(shared!)).toEqual([
+      expect.objectContaining({ kind: 'playlist', sourceId: 'pl-1' }),
+    ]);
+    const deletes = invokeMock.mock.calls.filter(([command]) => command === 'delete_media_file');
+    expect(deletes).toEqual([]);
   });
 });

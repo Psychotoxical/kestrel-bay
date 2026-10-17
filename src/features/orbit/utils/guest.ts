@@ -31,7 +31,7 @@ export class OrbitJoinError extends Error {
   }
 }
 
-const JOIN_ERROR_KEYS: Record<OrbitJoinError['reason'], string> = {
+export const ORBIT_JOIN_ERROR_KEYS: Record<OrbitJoinError['reason'], string> = {
   'not-found': 'orbit.joinErrNotFound',
   ended: 'orbit.joinErrEnded',
   full: 'orbit.joinErrFull',
@@ -42,7 +42,7 @@ const JOIN_ERROR_KEYS: Record<OrbitJoinError['reason'], string> = {
 
 /** i18n key for a failed join: the text for its reason, or the generic failure. */
 export function orbitJoinErrorKey(err: unknown): string {
-  return err instanceof OrbitJoinError ? JOIN_ERROR_KEYS[err.reason] : 'orbit.toastJoinFail';
+  return err instanceof OrbitJoinError ? ORBIT_JOIN_ERROR_KEYS[err.reason] : 'orbit.toastJoinFail';
 }
 
 /**
