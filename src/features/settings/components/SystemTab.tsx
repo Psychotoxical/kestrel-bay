@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { commands } from '@/generated/bindings';
 import { linuxWaylandTextRenderSettingsAvailable } from '@/lib/api/platformShell';
-import { save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { offerExportFile, pickExportPath } from '@/lib/util/exportFile';
 import { open as openUrl } from '@tauri-apps/plugin-shell';
 import { AppWindow, ChevronDown, Download, ExternalLink, Globe, HardDrive, Info, Scale, Sliders, Users } from 'lucide-react';
 import { version as appVersion } from '@/../package.json';
@@ -58,15 +58,16 @@ export function SystemTab() {
 
   const exportRuntimeLogs = async () => {
     const suggestedName = `psysonic-logs-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
-    const selected = await saveDialog({
+    const selected = await pickExportPath({
       defaultPath: suggestedName,
       filters: [{ name: 'Log files', extensions: ['log', 'txt'] }],
       title: t('settings.loggingExport'),
     });
-    if (!selected || Array.isArray(selected)) return;
+    if (!selected) return;
     try {
       const res = await commands.exportRuntimeLogs(selected);
       if (res.status === 'error') throw new Error(res.error);
+      await offerExportFile(selected);
       showToast(t('settings.loggingExportSuccess', { count: res.data }), 3500, 'info');
     } catch (e) {
       console.error(e);

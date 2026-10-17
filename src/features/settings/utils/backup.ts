@@ -1,4 +1,5 @@
-import { save, open as openDialog } from '@tauri-apps/plugin-dialog';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { pickExportPath } from '@/lib/util/exportFile';
 import { writeFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
 import {
@@ -467,18 +468,18 @@ function isDatabaseOnlyArchiveError(error: unknown): boolean {
 export async function pickBackupExportPath(mode: BackupExportMode): Promise<string | null> {
   const today = new Date().toISOString().slice(0, 10);
   if (mode === 'full') {
-    return save({
+    return pickExportPath({
       filters: [{ name: 'Psysonic Full Backup', extensions: ['psyfull', 'zip'] }],
       defaultPath: `psysonic-full-${today}.psyfull`,
     });
   }
   if (mode === 'library') {
-    return save({
+    return pickExportPath({
       filters: [{ name: 'Psysonic Library Databases Archive', extensions: ['psylib', 'zip'] }],
       defaultPath: `psysonic-library-databases-${today}.psylib`,
     });
   }
-  return save({
+  return pickExportPath({
     filters: [{ name: 'Psysonic Backup', extensions: ['psybkp'] }],
     defaultPath: `psysonic-backup-${today}.psybkp`,
   });

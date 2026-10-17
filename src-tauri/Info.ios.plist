@@ -23,5 +23,12 @@
 	<array>
 		<string>audio</string>
 	</array>
+	<!-- The app's Documents folder appears in the Files app as "Psysonic": exported logs and
+	     backups are written there first (src/lib/util/exportFile.ts). Downloads live in
+	     Application Support and stay out of it. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

@@ -2,7 +2,7 @@ import { AlertTriangle, BarChart3, FileDown, RefreshCcw, TriangleAlert, X } from
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { offerExportFile, pickExportPath } from '@/lib/util/exportFile';
 import { writeFile } from '@tauri-apps/plugin-fs';
 import SettingsSubSection from '@/features/settings/components/SettingsSubSection';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
@@ -200,12 +200,12 @@ export default function AnalyticsStrategySection() {
     if (tracks.length === 0) return;
     const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
     const suggestedName = `psysonic-failed-tracks-${stamp}.json`;
-    const selected = await saveDialog({
+    const selected = await pickExportPath({
       defaultPath: suggestedName,
       filters: [{ name: 'JSON', extensions: ['json'] }],
       title: t('settings.analyticsFailedTracksExport'),
     });
-    if (!selected || Array.isArray(selected)) return;
+    if (!selected) return;
     try {
       const payload = {
         serverId: failedModalTarget.serverId,
@@ -215,6 +215,7 @@ export default function AnalyticsStrategySection() {
       };
       const bytes = new TextEncoder().encode(JSON.stringify(payload, null, 2));
       await writeFile(selected, bytes);
+      await offerExportFile(selected);
       showToast(t('settings.analyticsFailedTracksExportSuccess', { count: tracks.length }), 3500, 'success');
     } catch {
       showToast(t('settings.analyticsFailedTracksExportError'), 4500, 'error');

@@ -11,6 +11,7 @@ import {
   pickBackupImportPath,
 } from '@/features/settings/utils/backup';
 import { showToast } from '@/lib/dom/toast';
+import { offerExportFile } from '@/lib/util/exportFile';
 import { confirmChoice } from '@/features/settings/utils/confirmChoice';
 
 type BackupMode = 'full' | 'library' | 'config';
@@ -38,6 +39,7 @@ export function BackupSection() {
     try {
       await waitForPaint();
       await exportBackupToPath(exportMode, path);
+      await offerExportFile(path);
       const successKey = exportMode === 'full'
         ? 'settings.backupFullExportSuccess'
         : exportMode === 'library'
