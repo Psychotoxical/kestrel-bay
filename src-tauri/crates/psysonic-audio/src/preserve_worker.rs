@@ -37,6 +37,11 @@ const PREPARED_DRAIN_PER_POLL: usize = 8;
 // prepared seek is matched by its exact id and a position within one full f32
 // ulp of the larger value, never less than this floor.
 const SEEK_POS_TOLERANCE_NANOS: u64 = 2_000_000;
+// iOS only, until the busy wait is fixed for every platform (Psysonic #1760):
+// iOS kills a background app that keeps a core busy, so there the passthrough
+// loop waits while the ring holds enough PCM and resets the pitch state only
+// when it was used. The desktop keeps its loop unchanged.
+const PASSTHROUGH_WAITS: bool = cfg!(target_os = "ios");
 
 mod seek;
 mod streaming;
@@ -399,6 +404,16 @@ impl PreserveState {
         self.last_speed = f32::NAN;
     }
 
+    /// Nothing to clear for `reset(channels)`: no pitch work since the last reset
+    /// (`process_block` sets `last_pitch` before it touches a shifter).
+    fn is_reset(&self, channels: u16) -> bool {
+        self.channels.len() == channels.max(1) as usize
+            && self.last_pitch.is_nan()
+            && self.pending.is_empty()
+            && self.channel_idx == 0
+            && self.channels.iter().all(|ch| ch.frame.is_empty())
+    }
+
     fn reset_if_params_changed(&mut self, pitch: f32, speed: f32) {
         if self.last_pitch.is_nan() {
             self.last_pitch = pitch;
@@ -445,6 +460,11 @@ impl PreserveState {
 
 fn ring_fill(prod: &HeapProd<f32>, capacity: usize) -> f32 {
     1.0 - prod.vacant_len() as f32 / capacity as f32
+}
+
+/// The ring holds at least what `forward_passthrough` refills it to.
+fn ring_at_passthrough_target(prod: &HeapProd<f32>, capacity: usize) -> bool {
+    prod.occupied_len() >= (capacity as f32 * RB_TARGET_FILL) as usize
 }
 
 fn push_pending(prod: &mut HeapProd<f32>, pending: &mut VecDeque<f32>, stop: &AtomicBool) {
@@ -560,7 +580,9 @@ fn worker_main<S: Source<Item = f32> + Send>(
             && is_effect_active(&env.atomics);
 
         if !use_preserve {
-            preserve.reset(env.channels);
+            if !PASSTHROUGH_WAITS || !preserve.is_reset(env.channels) {
+                preserve.reset(env.channels);
+            }
             push_pending(&mut prod, &mut preserve.pending, &env.stop);
             let fill = ring_fill(&prod, env.capacity);
             if fill >= RB_FILL_HIGH {
@@ -587,6 +609,8 @@ fn worker_main<S: Source<Item = f32> + Send>(
                     break;
                 }
                 env.done.store(true, Ordering::Release);
+                std::thread::sleep(WORKER_IDLE_SLEEP);
+            } else if PASSTHROUGH_WAITS && ring_at_passthrough_target(&prod, env.capacity) {
                 std::thread::sleep(WORKER_IDLE_SLEEP);
             }
             continue;
