@@ -189,7 +189,7 @@ jobs:
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
           APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
           APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
-          BUNDLE_ID: com.kestrelbay.lab
+          BUNDLE_ID: dev.psysonic.player
         run: |
           cat > fetch.mjs <<'JS'
           import crypto from 'node:crypto';
