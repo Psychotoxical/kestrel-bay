@@ -11,11 +11,13 @@ import { deriveLibraryBrowseIndexScopes } from '@/lib/library/libraryBrowseScope
 import { genreColor } from '@/lib/library/genreColor';
 import { useAuthStore } from '@/store/authStore';
 import { useLibrarySyncRevision } from '@/store/offlineLocalLibrarySyncRevision';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 const SCROLL_KEY = 'moods-scroll';
 
-const FONT_MIN_REM = 0.78;
-const FONT_MAX_REM = 1.7;
+// Touch shell: a compact cloud. Size still sets the common ones apart, but stays small.
+const FONT_MIN_REM = IS_MOBILE_SHELL ? 0.875 : 0.78;
+const FONT_MAX_REM = IS_MOBILE_SHELL ? 1.2 : 1.7;
 
 function mergeMoodCatalogs(
   catalogs: readonly MoodAlbumCountRow[][],

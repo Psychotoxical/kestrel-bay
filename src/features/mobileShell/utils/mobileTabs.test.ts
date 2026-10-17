@@ -40,11 +40,11 @@ describe('isMobileTabRoot', () => {
 describe('hasOwnMobileHeader', () => {
   it('is true for pages that draw their own top row', () => {
     expect(hasOwnMobileHeader('/albums')).toBe(true);
+    expect(hasOwnMobileHeader('/artists')).toBe(true);
     expect(hasOwnMobileHeader('/album/1')).toBe(true);
     expect(hasOwnMobileHeader('/artist/1')).toBe(true);
     expect(hasOwnMobileHeader('/playlists/7')).toBe(true);
     expect(hasOwnMobileHeader('/playlists')).toBe(false);
-    expect(hasOwnMobileHeader('/artists')).toBe(false);
     expect(hasOwnMobileHeader('/settings')).toBe(false);
   });
 });

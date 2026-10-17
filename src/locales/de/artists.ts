@@ -5,6 +5,7 @@ export const artists = {
   other: 'Andere',
   gridView: 'Gitteransicht',
   listView: 'Listenansicht',
+  imagesMenu: 'Künstlerbilder',
   imagesOn: 'Künstlerbilder aktiv — kann Netzwerk- und Systemlast erhöhen',
   imagesOff: 'Künstlerbilder deaktiviert — zeigt nur Initialen',
   loadMore: 'Mehr laden',

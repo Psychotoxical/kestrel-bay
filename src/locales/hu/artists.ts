@@ -5,6 +5,7 @@ export const artists = {
   other: 'Egyéb',
   gridView: 'Rácsnézet',
   listView: 'Listanézet',
+  imagesMenu: 'Előadóképek',
   imagesOn: 'Előadói képek bekapcsolva — növelheti a hálózati és rendszerterhelést',
   imagesOff: 'Előadói képek kikapcsolva — csak a kezdőbetűk látszanak',
   loadMore: 'Több betöltése',

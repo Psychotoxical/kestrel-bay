@@ -5,6 +5,7 @@ export const artists = {
   other: 'Inni',
   gridView: 'Widok siatki',
   listView: 'Widok listy',
+  imagesMenu: 'Zdjęcia wykonawców',
   imagesOn: 'Zdjęcia wykonawców włączone — mogą zwiększyć obciążenie sieci i systemu',
   imagesOff: 'Zdjęcia wykonawców wyłączone — pokazywane są tylko inicjały',
   loadMore: 'Wczytaj więcej',

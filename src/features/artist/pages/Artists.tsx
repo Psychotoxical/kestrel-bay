@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback, useRef, useLayoutEffect, useSyncExternalStore } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { LayoutGrid, List, Images } from 'lucide-react';
+import { Check, CheckSquare2, LayoutGrid, List, Images, Search } from 'lucide-react';
+import { MobileBackButton, MobileMoreMenu } from '@/features/mobileShell';
+import { requestOpenSearch } from '@/lib/dom/openSearch';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import SelectionToggleButton from '@/ui/SelectionToggleButton';
 import StarFilterButton from '@/ui/StarFilterButton';
 import OverlayScrollArea from '@/ui/OverlayScrollArea';
@@ -428,6 +431,70 @@ export default function Artists() {
           </button>
         </div>
       )}
+      {IS_MOBILE_SHELL ? (
+        // Touch layout, as the Albums page: view options in "…", filters and the
+        // letters as one swipeable row each.
+        <div className="mobile-browse-header">
+          <div className="mobile-browse-header__top">
+            <MobileBackButton />
+            <MobileMoreMenu items={[
+              {
+                id: 'grid', label: t('artists.gridView'), checked: viewMode === 'grid',
+                icon: viewMode === 'grid' ? <Check size={17} /> : <LayoutGrid size={17} />,
+                onSelect: () => setViewMode('grid'),
+              },
+              {
+                id: 'list', label: t('artists.listView'), checked: viewMode === 'list',
+                icon: viewMode === 'list' ? <Check size={17} /> : <List size={17} />,
+                onSelect: () => setViewMode('list'),
+              },
+              {
+                id: 'images', label: t('artists.imagesMenu'), checked: showArtistImages,
+                icon: showArtistImages ? <Check size={17} /> : <Images size={17} />,
+                onSelect: () => setShowArtistImages(!showArtistImages),
+              },
+              {
+                id: 'select', label: selectionMode ? t('artists.cancelSelect') : t('artists.select'),
+                icon: <CheckSquare2 size={17} />,
+                onSelect: toggleSelectionMode,
+              },
+            ]} />
+          </div>
+          <h1 className="mobile-large-title">
+            {selectionMode && selectedIds.size > 0
+              ? t('artists.selectionCount', { count: selectedIds.size })
+              : t('artists.title')}
+          </h1>
+          <button type="button" className="mobile-search-field" onClick={() => requestOpenSearch()}>
+            <Search size={18} aria-hidden="true" />
+            <span>{t('search.title')}</span>
+          </button>
+          <div className="mobile-chip-row">
+            <StarFilterButton active={starredOnly} onChange={setStarredOnly} />
+            <button
+              type="button"
+              className={`btn btn-surface${creditMode === 'track' ? ' btn-sort-active' : ''}`}
+              aria-pressed={creditMode === 'track'}
+              onClick={() => setCreditMode(nextArtistCreditMode(creditMode))}
+            >
+              {t('artists.browse.creditMode.track')}
+            </button>
+          </div>
+          <div className="mobile-chip-row mobile-chip-row--letters">
+            {ALPHABET.map(l => (
+              <button
+                key={l}
+                type="button"
+                onClick={() => setLetterFilter(l)}
+                className={`btn btn-surface${letterFilter === l ? ' btn-sort-active' : ''}`}
+                aria-pressed={letterFilter === l}
+              >
+                {l === ALL_SENTINEL ? t('artists.all') : l === OTHER_BUCKET ? t('artists.other') : l}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : (
       <div className="mainstage-inpage-toolbar">
         <div className="page-sticky-header">
           <div className="mainstage-inpage-toolbar-row">
@@ -530,6 +597,7 @@ export default function Artists() {
           </div>
         </div>
       </div>
+      )}
 
       <OverlayScrollArea
         className="mainstage-inpage-scroll"

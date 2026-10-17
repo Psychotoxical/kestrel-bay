@@ -5,6 +5,7 @@ export const artists = {
   other: '其他',
   gridView: '网格视图',
   listView: '列表视图',
+  imagesMenu: '艺人图片',
   imagesOn: '艺术家图片已开启 — 可能增加网络和系统负载',
   imagesOff: '艺术家图片已关闭 — 仅显示首字母',
   loadMore: '加载更多',

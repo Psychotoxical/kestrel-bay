@@ -5,6 +5,7 @@ export const artists = {
   other: 'Другое',
   gridView: 'Сетка',
   listView: 'Список',
+  imagesMenu: 'Изображения исполнителей',
   imagesOn: 'Фото исполнителей — больше трафика и нагрузка на систему',
   imagesOff: 'Только инициалы — экономнее по трафику',
   loadMore: 'Ещё',

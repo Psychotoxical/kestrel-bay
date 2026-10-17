@@ -34,7 +34,8 @@ export function isMobileTabRoot(pathname: string): boolean {
 
 /** Pages whose touch layout draws its own top row (back button + actions). */
 export function hasOwnMobileHeader(pathname: string): boolean {
-  return pathname === '/albums' || pathname.startsWith('/album/') || pathname.startsWith('/artist/') || pathname.startsWith('/playlists/');
+  return pathname === '/albums' || pathname === '/artists' || pathname.startsWith('/album/')
+    || pathname.startsWith('/artist/') || pathname.startsWith('/playlists/');
 }
 
 export const MOBILE_TAB_LABEL_KEYS: Record<MobileTabId, string> = {

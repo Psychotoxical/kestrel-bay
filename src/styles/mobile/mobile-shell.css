@@ -1818,6 +1818,22 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   display: inline;
 }
 
+/* Artists: the letters A–Z as one swipeable row of small round chips. */
+.mobile-chip-row--letters .btn {
+  min-width: 34px;
+  padding: 0 10px;
+  justify-content: center;
+}
+
+/* Genres and Moods: a compact tag cloud (the sizes come from the page). */
+.app-shell[data-mobile-app] .genre-cloud {
+  gap: 8px;
+}
+
+.app-shell[data-mobile-app] .genre-pill {
+  padding: 0.3em 0.65em;
+}
+
 /* The route host pads 16px; a page's own `.content-body` must not add another 16. */
 .app-shell[data-mobile-app] .app-shell-route-host .content-body {
   padding: 0 !important;

@@ -5,6 +5,7 @@ export const artists = {
   other: 'その他',
   gridView: 'グリッド表示',
   listView: 'リスト表示',
+  imagesMenu: 'アーティスト画像',
   imagesOn: 'アーティスト画像オン: ネットワークとシステム負荷が増える場合があります',
   imagesOff: 'アーティスト画像オフ: イニシャルのみ表示',
   loadMore: 'さらに読み込む',

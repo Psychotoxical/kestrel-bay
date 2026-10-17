@@ -19,10 +19,12 @@ import { useOfflineLocalBrowseReloadKey } from '@/store/localPlaybackBrowseRevis
 import { useLibrarySyncRevision } from '@/store/offlineLocalLibrarySyncRevision';
 import { useLocalPlaybackStore } from '@/store/localPlaybackStore';
 import { deriveLibraryBrowseIndexScopes } from '@/lib/library/libraryBrowseScope';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 const SCROLL_KEY = 'genres-scroll';
-const FONT_MIN_REM = 0.78;
-const FONT_MAX_REM = 1.7;
+// Touch shell: a compact cloud. Size still sets the common ones apart, but stays small.
+const FONT_MIN_REM = IS_MOBILE_SHELL ? 0.875 : 0.78;
+const FONT_MAX_REM = IS_MOBILE_SHELL ? 1.2 : 1.7;
 
 export default function Genres() {
   const { t } = useTranslation();

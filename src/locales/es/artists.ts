@@ -5,6 +5,7 @@ export const artists = {
   other: 'Otros',
   gridView: 'Vista de cuadrícula',
   listView: 'Vista de lista',
+  imagesMenu: 'Imágenes de artistas',
   imagesOn: 'Imágenes de artistas activadas — puede aumentar la carga de red y sistema',
   imagesOff: 'Imágenes de artistas desactivadas — mostrando solo iniciales',
   loadMore: 'Cargar más',
