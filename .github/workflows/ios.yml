@@ -4,10 +4,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "check = compile this branch for iOS; testflight = build the app and upload it; crashlogs = fetch TestFlight crash reports"
+        description: "check = compile this branch for iOS; testflight = build the app and upload it; crashlogs = fetch TestFlight crash reports; symbols = build like testflight without uploading and resolve `offsets`"
         type: choice
-        options: [check, testflight, crashlogs]
+        options: [check, testflight, crashlogs, symbols]
         default: check
+      offsets:
+        description: "symbols: comma-separated offsets from a crash or resource report (`Psysonic + N`)"
+        type: string
+        default: ''
 
 concurrency:
   group: psysonic-ios-${{ inputs.mode }}
@@ -75,7 +79,7 @@ jobs:
           path: ios-check.log
 
   testflight:
-    if: inputs.mode == 'testflight'
+    if: inputs.mode == 'testflight' || inputs.mode == 'symbols'
     runs-on: macos-latest
     timeout-minutes: 150
     env:
@@ -133,11 +137,47 @@ jobs:
         run: npx tauri ios build --ci --export-method app-store-connect --build-number ${{ github.run_number }}
 
       - name: Upload to TestFlight
+        if: inputs.mode == 'testflight'
         run: |
           ipa=$(find src-tauri/gen/apple/build -name '*.ipa' | head -n 1)
           if [ -z "$ipa" ]; then echo "::error::No IPA found"; exit 1; fi
           echo "Uploading $ipa"
           xcrun altool --upload-app --type ios --file "$ipa" --apiKey "$APPLE_API_KEY" --apiIssuer "$APPLE_API_ISSUER"
+
+      # Report offsets are relative to the image base; the Mach-O __TEXT starts at
+      # 0x100000000, so offset N resolves at 0x100000000 + N. Every Mach-O `Psysonic`
+      # and dSYM the build leaves behind is tried: which of them still has symbols
+      # is not known in advance.
+      - name: Resolve report offsets
+        if: inputs.mode == 'symbols'
+        env:
+          OFFSETS: ${{ inputs.offsets }}
+        run: |
+          set +e
+          addrs=""
+          for o in ${OFFSETS//,/ }; do addrs="$addrs $(printf '0x%x' $((0x100000000 + o)))"; done
+          {
+            echo "offsets: $OFFSETS"
+            echo "addresses:$addrs"
+            find src-tauri/gen/apple/build "$HOME/Library/Developer/Xcode/DerivedData" \
+              \( -name Psysonic -type f -o -name '*.dSYM' -type d \) 2>/dev/null | while read -r p; do
+              bin="$p"
+              if [ -d "$p" ]; then bin=$(find "$p/Contents/Resources/DWARF" -type f | head -n 1); fi
+              [ -f "$bin" ] || continue
+              file "$bin" | grep -q Mach-O || continue
+              echo
+              echo "### $p"
+              dwarfdump --uuid "$bin"
+              echo "defined symbols: $(nm -U "$bin" 2>/dev/null | wc -l)"
+              atos -o "$bin" -arch arm64 -l 0x100000000 $addrs
+            done
+          } 2>&1 | tee symbols.txt
+
+      - uses: actions/upload-artifact@v7
+        if: inputs.mode == 'symbols'
+        with:
+          name: symbols
+          path: symbols.txt
 
   crashlogs:
     if: inputs.mode == 'crashlogs'
