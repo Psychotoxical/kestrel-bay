@@ -110,13 +110,16 @@ export function AppearanceTab() {
               checked={theme.enablePlaylistCoverPhoto}
               onChange={theme.setEnablePlaylistCoverPhoto}
             />
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.queueTrackListCovers')}
-              desc={t('settings.queueTrackListCoversSub')}
-              checked={auth.queueTrackListCovers}
-              onChange={auth.setQueueTrackListCovers}
-            />
+            {/* Touch: the queue always shows covers, as the other song lists. */}
+            <DesktopOnly>
+              <div className="settings-section-divider" />
+              <SettingsToggle
+                label={t('settings.queueTrackListCovers')}
+                desc={t('settings.queueTrackListCoversSub')}
+                checked={auth.queueTrackListCovers}
+                onChange={auth.setQueueTrackListCovers}
+              />
+            </DesktopOnly>
             <div className="settings-section-divider" />
             <SettingsToggle
               label={t('settings.trackListCoverArtOnPages')}

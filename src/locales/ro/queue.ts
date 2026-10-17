@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Arată informația now playing',
   close: 'Închide',
   nextTracks: 'Următoarele Piese',
+  touchNowPlaying: 'Se redă acum',
   shareQueue: 'Copiază link-ul distribuirii cozii',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

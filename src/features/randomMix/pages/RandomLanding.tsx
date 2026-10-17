@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { Shuffle, Dices, Sparkles } from 'lucide-react';
+import { ChevronRight, Shuffle, Dices, Sparkles } from 'lucide-react';
 import { useLuckyMixAvailable } from '@/features/randomMix/hooks/useLuckyMixAvailable';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface MixCard {
   icon: React.ElementType;
@@ -43,6 +44,32 @@ export default function RandomLanding() {
         },
       ]
     : CARDS;
+
+  if (IS_MOBILE_SHELL) {
+    // Touch: titled like the other library pages, the mixes as rows of the library list.
+    return (
+      <div className="mobile-page">
+        <h1 className="mobile-large-title">{t('sidebar.randomPicker')}</h1>
+        <nav className="mobile-list-group" aria-label={t('sidebar.randomPicker')}>
+          {cards.map(({ icon: Icon, labelKey, descKey, to }) => (
+            <button
+              key={to}
+              type="button"
+              className="mobile-list-row mobile-list-row--wrap"
+              onClick={() => navigate(to)}
+            >
+              <Icon className="mobile-list-row__icon" size={22} strokeWidth={1.8} aria-hidden="true" />
+              <span className="mobile-list-row__text">
+                <span className="mobile-list-row__label">{t(labelKey)}</span>
+                <span className="mobile-list-row__detail">{t(descKey)}</span>
+              </span>
+              <ChevronRight className="mobile-list-row__chevron" size={18} aria-hidden="true" />
+            </button>
+          ))}
+        </nav>
+      </div>
+    );
+  }
 
   return (
     <div className="random-landing">

@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Покажи информацията за текущата песен',
   close: 'Затвори',
   nextTracks: 'Следващи песни',
+  touchNowPlaying: 'Сега звучи',
   shareQueue: 'Копирай връзка за споделяне на опашката',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

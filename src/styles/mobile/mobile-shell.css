@@ -90,6 +90,13 @@ html[data-mobile-app] .mobile-search-overlay {
   color: var(--text-primary);
 }
 
+/* One line under a page's large title: counts, sizes. */
+.mobile-page-subtitle {
+  margin: -6px 0 0;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
 .mobile-visually-hidden {
   position: absolute;
   width: 1px;
@@ -926,6 +933,31 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   cursor: pointer;
 }
 
+/* What's New (touch): a page like the others instead of a framed card. */
+.app-shell[data-mobile-app] .whats-new {
+  max-width: none;
+  padding: 0 0 24px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Help page search (touch): across the page like the other search fields. */
+.app-shell[data-mobile-app] .help-search {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 12px;
+  background: var(--bg-card);
+  box-sizing: border-box;
+}
+
+.app-shell[data-mobile-app] .help-search-input {
+  font-size: 17px;
+}
+
 .mobile-hub-list {
   display: flex;
   flex-direction: column;
@@ -961,6 +993,11 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   border-bottom: none;
 }
 
+.mobile-list-row:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .mobile-list-row--plain {
   padding: 0 4px;
   min-height: 54px;
@@ -987,6 +1024,23 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
 .mobile-list-row__detail {
   font-size: 15px;
   color: var(--text-muted);
+}
+
+/* A row whose label may run to two lines, with an optional status line under it. */
+.mobile-list-row--wrap {
+  padding-block: 10px;
+}
+
+.mobile-list-row__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mobile-list-row--wrap .mobile-list-row__label {
+  white-space: normal;
 }
 
 .mobile-list-row__chevron {
@@ -1203,6 +1257,11 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   font-size: 15px;
   line-height: 1.45;
   color: var(--text-secondary);
+}
+
+/* Offline: why starting and joining are greyed out. */
+.mobile-orbit-hub__offline {
+  color: var(--text-primary);
 }
 
 .mobile-orbit-hub__panel {
@@ -1765,6 +1824,13 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   justify-content: space-between;
 }
 
+/* Round buttons beside a tab root's title (Playlists: sort, new). */
+.mobile-browse-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .mobile-browse-header__top .btn {
   width: 44px;
   height: 44px;
@@ -1791,6 +1857,11 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   display: none;
 }
 
+/* Filters that do not apply return nothing: no row, no gap. */
+.mobile-chip-row:empty {
+  display: none;
+}
+
 .mobile-chip-row .btn {
   flex: none;
   height: 34px;
@@ -1804,6 +1875,18 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+
+/* Artist link buttons (Mainstage "Discover artists", similar artists) as touch chips. */
+.app-shell[data-mobile-app] .artist-ext-link {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 17px;
+  border: 1px solid var(--mobile-glass-border);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .mobile-chip-row .btn.btn-sort-active,
@@ -2042,6 +2125,107 @@ html[data-mobile-app] .app-shell {
 .queue-touch-menu__item:disabled {
   opacity: 0.45;
   cursor: default;
+}
+
+/* Context menu ("…" on songs and albums, long press) in the touch shell: the look of
+ * the other touch menus (`queue-touch-menu`): glass panel, 48 px rows, 16 px text,
+ * icon on the right. A submenu opens in place under its row instead of beside the
+ * menu, where a phone has no room. */
+.app-shell[data-mobile-app] .context-menu {
+  width: 286px;
+  min-width: 0;
+  max-width: calc(100vw - 20px);
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 20px);
+  overflow-y: auto;
+  padding: 0;
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--bg-elevated, var(--bg-card)) 94%, transparent);
+  border: 1px solid var(--mobile-glass-border);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  backdrop-filter: blur(24px) saturate(160%);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  font-size: 16px;
+}
+
+.app-shell[data-mobile-app] .context-menu-item,
+.app-shell[data-mobile-app] .context-menu-rating-row {
+  min-height: 48px;
+  padding: 0 16px;
+  gap: 12px;
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--mobile-row-border);
+}
+
+.app-shell[data-mobile-app] .context-menu > .context-menu-item:last-child {
+  border-bottom: none;
+}
+
+.app-shell[data-mobile-app] .context-menu-item > svg {
+  flex: none;
+  width: 19px;
+  height: 19px;
+}
+
+.app-shell[data-mobile-app] .context-menu-rating-row .context-menu-rating-icon {
+  width: 19px;
+  height: 19px;
+}
+
+.app-shell[data-mobile-app] .context-menu-rating-row .context-menu-rating-icon svg {
+  width: 19px;
+  height: 19px;
+}
+
+.app-shell[data-mobile-app] .context-menu-rating-row .star-rating .star {
+  font-size: 24px;
+  min-width: 1.4em;
+}
+
+.app-shell[data-mobile-app] .context-menu-divider {
+  height: 6px;
+  margin: 0;
+  background: color-mix(in srgb, var(--bg-app) 55%, transparent);
+}
+
+.app-shell[data-mobile-app] .context-menu-header {
+  padding: 12px 16px;
+  font-size: 14px;
+}
+
+.app-shell[data-mobile-app] .context-menu-item--submenu {
+  flex-wrap: wrap;
+}
+
+.app-shell[data-mobile-app] .context-menu-item--submenu > svg.lucide-chevron-right {
+  order: -1;
+  width: 16px;
+  height: 16px;
+  margin-left: 0 !important;
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.app-shell[data-mobile-app] .context-menu-item--submenu.active > svg.lucide-chevron-right {
+  transform: rotate(90deg);
+}
+
+.app-shell[data-mobile-app] .context-submenu {
+  position: static !important;
+  flex-basis: 100%;
+  min-width: 0;
+  max-width: none;
+  max-height: 240px;
+  margin: 0 0 10px;
+  padding: 0;
+  border-radius: 14px;
+  border: none;
+  background: color-mix(in srgb, var(--bg-app) 45%, transparent);
+  box-shadow: none;
+}
+
+.app-shell[data-mobile-app] .context-submenu .context-menu-item:last-child {
+  border-bottom: none;
 }
 
 /* "…" menu of the detail pages (`MobileMoreMenu`): the queue menu's list under a round button. */
@@ -3810,6 +3994,10 @@ button.mobile-artist-bio__card:active {
   line-height: 1.2;
   white-space: normal;
   text-align: center;
+  /* One long word ("Bibliotheksdatenbanken") cannot wrap at a space: hyphenate it, or break it. */
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  overflow-wrap: anywhere;
 }
 
 /* Settings lists in the touch shell (useListReorderDnd): hold a row, it lifts off and follows the finger. */

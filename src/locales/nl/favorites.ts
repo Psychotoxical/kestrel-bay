@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Favorieten synchroniseren… {{saved}} van {{total}}',
   offlineSemaphoreSynced: 'Alle favorieten opgeslagen voor offline',
   offlineSemaphoreError: 'Syncfout — sommige nummers konden niet worden opgeslagen',
+  offlineEmpty: 'Offline zijn alleen favorieten beschikbaar die op dit apparaat zijn opgeslagen. Zet het opslaan voor offline luisteren aan zolang je online bent.',
 };

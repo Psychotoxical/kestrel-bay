@@ -15,6 +15,9 @@ import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { useTranslation } from 'react-i18next';
 import { useSelectionStore } from '@/store/selectionStore';
 import FavoritesOfflineHeader from '@/features/favorites/components/FavoritesOfflineHeader';
+import FavoritesOfflineRow from '@/features/favorites/components/FavoritesOfflineRow';
+import { useOfflineBrowseActive } from '@/features/offline';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
   emitFavoritesBrowseDebug,
   formatFavoritesBrowseTraceReport,
@@ -60,6 +63,7 @@ type CollapsibleFavoritesSectionId = Exclude<FavoritesSectionId, 'songs'>;
 export default function Favorites() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const offlineBrowseActive = useOfflineBrowseActive();
   const favoritesBrowseDiagnosticsEnabled = usePsyLabDebugTraces().favoritesBrowse;
   const favoritesTraceEntries = useSyncExternalStore(
     subscribeFavoritesBrowseTrace,
@@ -409,13 +413,22 @@ export default function Favorites() {
           </button>
         </div>
       )}
-      <div className="playlists-header" style={{ marginBottom: '-1.5rem' }}>
-        <h1 className="page-title" style={{ marginBottom: 0 }}>{t('favorites.title')}</h1>
-        <FavoritesOfflineHeader />
-      </div>
+      {IS_MOBILE_SHELL ? (
+        // Touch: large title, then saving favorites for offline as a labelled switch row.
+        <div className="mobile-browse-header">
+          <h1 className="mobile-large-title">{t('favorites.title')}</h1>
+          <FavoritesOfflineRow />
+        </div>
+      ) : (
+        <div className="playlists-header" style={{ marginBottom: '-1.5rem' }}>
+          <h1 className="page-title" style={{ marginBottom: 0 }}>{t('favorites.title')}</h1>
+          <FavoritesOfflineHeader />
+        </div>
+      )}
 
       {!hasAnyFavorites ? (
-        <div className="empty-state">{t('favorites.empty')}</div>
+        // Offline only what is on the device shows: say so instead of "no favorites yet".
+        <div className="empty-state">{t(IS_MOBILE_SHELL && offlineBrowseActive ? 'favorites.offlineEmpty' : 'favorites.empty')}</div>
       ) : (
         <>
           {favoritesSearchActive ? (

@@ -6,6 +6,7 @@ import {
   useHelpModalStore,
   useOrbitStore,
 } from '@/features/orbit';
+import { useOfflineBrowseActive } from '@/features/offline';
 import MobileOrbitRoom from '@/features/mobileShell/components/MobileOrbitRoom';
 import MobileOrbitStartSheet from '@/features/mobileShell/components/MobileOrbitStartSheet';
 import MobileOrbitJoinSheet from '@/features/mobileShell/components/MobileOrbitJoinSheet';
@@ -20,6 +21,8 @@ export default function MobileOrbitHub() {
   const role = useOrbitStore(s => s.role);
   const [startOpen, setStartOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  // Starting or joining needs the server; offline the rows stay, greyed, with a note why.
+  const offline = useOfflineBrowseActive();
 
   return (
     <div className="mobile-page mobile-orbit-hub">
@@ -32,12 +35,13 @@ export default function MobileOrbitHub() {
       {role === null ? (
         <>
           <p className="mobile-orbit-hub__intro">{t('orbit.helpIntro')}</p>
+          {offline && <p className="mobile-orbit-hub__intro mobile-orbit-hub__offline">{t('orbit.offlineUnavailable')}</p>}
           <div className="mobile-list-group">
-            <button type="button" className="mobile-list-row" onClick={() => setStartOpen(true)}>
+            <button type="button" className="mobile-list-row" disabled={offline} onClick={() => setStartOpen(true)}>
               <Plus className="mobile-list-row__icon" size={22} aria-hidden="true" />
               <span className="mobile-list-row__label">{t('orbit.launchCreate')}</span>
             </button>
-            <button type="button" className="mobile-list-row" onClick={() => setJoinOpen(true)}>
+            <button type="button" className="mobile-list-row" disabled={offline} onClick={() => setJoinOpen(true)}>
               <LogIn className="mobile-list-row__icon" size={22} aria-hidden="true" />
               <span className="mobile-list-row__label">{t('orbit.launchJoin')}</span>
             </button>

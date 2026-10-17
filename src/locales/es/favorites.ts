@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Sincronizando favoritos… {{saved}} de {{total}}',
   offlineSemaphoreSynced: 'Todos los favoritos guardados para offline',
   offlineSemaphoreError: 'Error de sincronización — no se pudieron guardar algunas pistas',
+  offlineEmpty: 'Sin conexión solo están los favoritos guardados en este dispositivo. Activa guardarlos para escuchar sin conexión mientras estés en línea.',
 };

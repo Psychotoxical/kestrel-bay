@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Now playing info weergeven',
   close: 'Sluiten',
   nextTracks: 'Volgende nummers',
+  touchNowPlaying: 'Nu aan het spelen',
   shareQueue: 'Wachtrij-deellink kopiëren',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

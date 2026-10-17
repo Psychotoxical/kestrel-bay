@@ -11,6 +11,7 @@ import { MultiAlbumToPlaylistSubmenu } from '@/features/contextMenu/components/M
 import type { ContextMenuItemsProps } from '@/features/contextMenu/components/contextMenuItemTypes';
 import { addTracksToBurnList } from '@/features/burner';
 import { useBurnMenuAvailable } from '@/features/contextMenu/hooks/useBurnMenuAvailable';
+import { useIsOwnAlbumPage } from '@/features/contextMenu/hooks/useIsOwnAlbumPage';
 import { buildAlbumDetailPath, buildArtistDetailPath } from '@/lib/navigation/detailServerScope';
 import { ownedEntityKey, ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { ContextShareMenuItem } from '@/features/share';
@@ -32,6 +33,7 @@ export default function AlbumContextItems(props: ContextMenuItemsProps) {
   // inside JSX, and a hook cannot live there.
   const { available: burnAvailable, busy: burnBusy } = useBurnMenuAvailable(offlinePolicy);
   const goLibrary = pinToPlaybackServer ? navigateLibrary : (path: string) => { navigate(path); };
+  const isOwnAlbumPage = useIsOwnAlbumPage();
 
   return (
     <>
@@ -40,11 +42,13 @@ export default function AlbumContextItems(props: ContextMenuItemsProps) {
           const albumRatingDisabled = entityRatingSupport === 'track_only';
           return (
             <>
-              <div className="context-menu-item" onClick={() => handleAction(() => goLibrary(
-                buildAlbumDetailPath(album.id, { serverId: album.serverId }),
-              ))}>
-                <Play size={14} /> {t('contextMenu.openAlbum')}
-              </div>
+              {!isOwnAlbumPage(album.id) && (
+                <div className="context-menu-item" onClick={() => handleAction(() => goLibrary(
+                  buildAlbumDetailPath(album.id, { serverId: album.serverId }),
+                ))}>
+                  <Play size={14} /> {t('contextMenu.openAlbum')}
+                </div>
+              )}
               <div className="context-menu-item" onClick={() => handleAction(async () => {
                 const serverId = resolveMediaServerId(album.serverId);
                 if (!serverId) return;

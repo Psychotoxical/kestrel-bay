@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Synchronisiere Favoriten… {{saved}} von {{total}}',
   offlineSemaphoreSynced: 'Alle Favoriten für Offline gespeichert',
   offlineSemaphoreError: 'Sync-Fehler — einige Titel konnten nicht gespeichert werden',
+  offlineEmpty: 'Offline sind nur Favoriten da, die auf diesem Gerät gespeichert sind. Schalte das Speichern für die Offline-Wiedergabe ein, solange du online bist.',
 };

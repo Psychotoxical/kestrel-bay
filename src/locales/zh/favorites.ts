@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: '正在同步收藏… {{saved}} / {{total}}',
   offlineSemaphoreSynced: '所有收藏已保存，可离线播放',
   offlineSemaphoreError: '同步出错，部分曲目未能保存',
+  offlineEmpty: '离线时只能使用保存在此设备上的收藏。请在联网时开启离线播放保存。',
 };

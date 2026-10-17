@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Εμφάνιση τρέχοντος κομματιού',
   close: 'Κλείσιμο',
   nextTracks: 'Επερχόμενα Κομμάτια',
+  touchNowPlaying: 'Παίζει τώρα',
   shareQueue: 'Αντιγραφή συνδέσμου κοινοποίησης ουράς',
   shareNavidromePublic: 'Αντιγραφή συνδέσμου κοινοποίησης Navidrome',
   shareNavidromePublicMissing: 'Ο σύνδεσμος κοινοποίησης Navidrome δεν είναι διαθέσιμος.',

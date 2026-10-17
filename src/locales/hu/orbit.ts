@@ -5,6 +5,7 @@ export const orbit = {
   launchJoin: 'Csatlakozás munkamenethez',
   launchHelp: 'Hogyan működik ez?',
   launchHelpSoon: 'Hamarosan',
+  offlineUnavailable: 'Az Orbithoz szükség van a szerverre. Amint újra online vagy, indíthatsz munkamenetet vagy csatlakozhatsz egyhez.',
   joinModalTitle: 'Csatlakozás Orbit-munkamenethez',
   joinModalSub: 'Illeszd be a meghívó linket, amelyet a házigazda küldött.',
   joinModalLinkLabel: 'Meghívó link',

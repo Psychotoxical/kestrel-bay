@@ -38,6 +38,13 @@ describe('MobileMiniPlayer', () => {
     expect(screen.getByTestId('location')).toHaveTextContent('/now-playing');
   });
 
+  it('VoiceOver hears German in a German app: no "Now Playing" or "Play"', () => {
+    seedQueue([makeTrack({ title: 'Chaos' })]);
+    renderWithProviders(<MobileMiniPlayer />, { route: '/', language: 'de' });
+    expect(screen.getByRole('button', { name: 'Läuft gerade: Chaos' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Abspielen' })).toBeInTheDocument();
+  });
+
   it('swiping it up opens the player', () => {
     seedQueue([makeTrack({ title: 'Chaos' })]);
     const { container } = renderMini();

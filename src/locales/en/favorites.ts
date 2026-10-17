@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Syncing favorites… {{saved}} of {{total}}',
   offlineSemaphoreSynced: 'All favorites saved for offline listening',
   offlineSemaphoreError: 'Sync error — some tracks could not be saved',
+  offlineEmpty: 'Offline, only favorites saved on this device are here. Turn on saving them for offline listening while you are online.',
 };

@@ -21,6 +21,7 @@ import {
   type OfflineSurface,
 } from '@/features/offline';
 import ContextMenuItems from '@/features/contextMenu/components/ContextMenuItems';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 
 function contextMenuSurfaceForType(type: string | null): OfflineSurface {
@@ -123,6 +124,8 @@ export default function ContextMenu() {
     }
   }, [contextMenu.isOpen, contextMenu.x, contextMenu.y, cancelPlaylistSubmenuCloseTimer]);
 
+  // Touch: a submenu opens in place and makes the menu taller, so fit it again.
+  const touchOpenSubmenuId = IS_MOBILE_SHELL ? activeSubmenuId : null;
   useEffect(() => {
     if (contextMenu.isOpen && menuRef.current) {
       const rect = menuRef.current.getBoundingClientRect();
@@ -134,7 +137,7 @@ export default function ContextMenu() {
       if (finalY + rect.height > winH) finalY = winH - rect.height - 10;
       setCoords({ x: finalX, y: finalY });
     }
-  }, [contextMenu.isOpen, contextMenu.x, contextMenu.y]);
+  }, [contextMenu.isOpen, contextMenu.x, contextMenu.y, touchOpenSubmenuId]);
 
   // Close on any window resize. The menu is absolutely positioned at fixed
   // coordinates, so a resize would otherwise leave it stranded and drifting

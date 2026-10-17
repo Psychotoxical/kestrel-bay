@@ -5,6 +5,7 @@ export const orbit = {
   launchJoin: '加入会话',
   launchHelp: '这是怎么工作的？',
   launchHelpSoon: '即将推出',
+  offlineUnavailable: 'Orbit 需要服务器。重新联网后，你就可以开始或加入会话。',
   joinModalTitle: '加入 Orbit 会话',
   joinModalSub: '粘贴主持人发给你的邀请链接。',
   joinModalLinkLabel: '邀请链接',

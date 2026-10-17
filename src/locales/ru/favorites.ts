@@ -27,4 +27,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Синхронизация… {{saved}} из {{total}}',
   offlineSemaphoreSynced: 'Всё избранное сохранено для offline',
   offlineSemaphoreError: 'Ошибка синхронизации — часть треков не сохранилась',
+  offlineEmpty: 'Без сети доступно только избранное, сохранённое на этом устройстве. Включите сохранение для прослушивания offline, пока вы в сети.',
 };

@@ -4,8 +4,16 @@ import {
   Palette, Wrench, WifiOff, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface FaqItem { id: string; q: string; a: string; }
+
+/**
+ * Answers about parts the phone does not have: the UI tour, mouse and keyboard
+ * (Shift-click, hotkeys), the output device, ZIP downloads, the mini player and
+ * floating player bar, hover previews, the CLI, Device Sync, Discord and Linux.
+ */
+const TOUCH_HIDDEN_ITEMS = new Set(['q3', 'q7', 'q8', 'q12', 'q19', 'q27', 'q28', 'q29', 'q32', 'q38', 'q40', 'q45']);
 interface FaqSection { id: string; icon: React.ReactNode; title: string; items: FaqItem[]; }
 
 function AccordionItem({ q, a, open, onToggle }: { q: string; a: string; open: boolean; onToggle: () => void }) {
@@ -156,10 +164,16 @@ export default function Help() {
     },
   ], [t]);
 
+  const shownSections = useMemo(() => (IS_MOBILE_SHELL
+    ? sections
+      .map(s => ({ ...s, items: s.items.filter(i => !TOUCH_HIDDEN_ITEMS.has(i.id)) }))
+      .filter(s => s.items.length > 0)
+    : sections), [sections]);
+
   const trimmedQuery = query.trim().toLowerCase();
   const filteredSections = useMemo(() => {
-    if (!trimmedQuery) return sections;
-    return sections
+    if (!trimmedQuery) return shownSections;
+    return shownSections
       .map(s => ({
         ...s,
         items: s.items.filter(i =>
@@ -168,13 +182,43 @@ export default function Help() {
         ),
       }))
       .filter(s => s.items.length > 0);
-  }, [sections, trimmedQuery]);
+  }, [shownSections, trimmedQuery]);
 
   const totalHits = filteredSections.reduce((n, s) => n + s.items.length, 0);
   const isSearching = trimmedQuery.length > 0;
 
+  const searchField = (
+    <div className="help-search">
+      <Search size={14} className="help-search-icon" />
+      <input
+        type="text"
+        className="help-search-input"
+        placeholder={t('help.searchPlaceholder')}
+        value={query}
+        onChange={e => setQuery(e.target.value)}
+      />
+      {query && (
+        <button
+          type="button"
+          className="help-search-clear"
+          onClick={() => setQuery('')}
+          aria-label={t('common.close')}
+        >
+          <X size={14} />
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className="content-body animate-fade-in">
+      {IS_MOBILE_SHELL ? (
+        // Touch: title, then the search field across the page as on the other pages.
+        <div className="mobile-browse-header">
+          <h1 className="mobile-large-title">{t('help.title')}</h1>
+          {searchField}
+        </div>
+      ) : (
       <div
         style={{
           display: 'flex',
@@ -186,27 +230,9 @@ export default function Help() {
         }}
       >
         <h1 className="page-title" style={{ margin: 0 }}>{t('help.title')}</h1>
-        <div className="help-search">
-          <Search size={14} className="help-search-icon" />
-          <input
-            type="text"
-            className="help-search-input"
-            placeholder={t('help.searchPlaceholder')}
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-          />
-          {query && (
-            <button
-              type="button"
-              className="help-search-clear"
-              onClick={() => setQuery('')}
-              aria-label={t('common.close')}
-            >
-              <X size={14} />
-            </button>
-          )}
-        </div>
+        {searchField}
       </div>
+      )}
 
       {isSearching && totalHits === 0 && (
         <div className="empty-state" style={{ padding: '2rem 0' }}>

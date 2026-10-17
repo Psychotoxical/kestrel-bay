@@ -10,6 +10,7 @@ import { RefreshCw, Download, HardDriveDownload } from 'lucide-react';
 import SelectionToggleButton from '@/ui/SelectionToggleButton';
 import AlbumCard from '@/features/album/components/AlbumCard';
 import GenreFilterBar from '@/ui/GenreFilterBar';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuthStore } from '@/store/authStore';
@@ -305,6 +306,19 @@ export default function RandomAlbums() {
 
   return (
     <div className={`content-body animate-fade-in mainstage-inpage-split${mainstageHeaderTight ? ' mainstage-inpage--header-tight' : ''}`}>
+      {IS_MOBILE_SHELL ? (
+        // Touch: the title, then reroll and the genres as one chip row.
+        <div className="mobile-browse-header">
+          <h1 className="mobile-large-title">{t('randomAlbums.title')}</h1>
+          <div className="mobile-chip-row">
+            <button type="button" className="btn btn-surface" onClick={handleRefresh} disabled={loading}>
+              <RefreshCw size={15} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
+              {t('randomAlbums.refresh')}
+            </button>
+            <GenreFilterBar selected={selectedGenres} onSelectionChange={setSelectedGenres} />
+          </div>
+        </div>
+      ) : (
       <div className="mainstage-inpage-toolbar">
         <div className="page-sticky-header mainstage-inpage-toolbar-row">
           <h1 className="page-title" style={{ marginBottom: 0 }}>
@@ -349,6 +363,7 @@ export default function RandomAlbums() {
           </div>
         </div>
       </div>
+      )}
 
       <OverlayScrollArea
         className="mainstage-inpage-scroll"

@@ -5,6 +5,7 @@ export const orbit = {
   launchJoin: 'セッションに参加',
   launchHelp: '仕組みを見る',
   launchHelpSoon: '近日対応',
+  offlineUnavailable: 'Orbit にはサーバーが必要です。オンラインに戻ると、セッションを開始または参加できます。',
   joinModalTitle: 'Orbit セッションに参加',
   joinModalSub: 'ホストから送られた招待リンクを貼り付けてください。',
   joinModalLinkLabel: '招待リンク',

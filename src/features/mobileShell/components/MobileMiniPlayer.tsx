@@ -71,7 +71,7 @@ export default function MobileMiniPlayer() {
         type="button"
         className="mobile-miniplayer__open"
         onClick={() => navigate('/now-playing')}
-        aria-label={`${t('sidebar.nowPlaying')}: ${title}`}
+        aria-label={`${t('queue.touchNowPlaying')}: ${title}`}
       >
         <span className="mobile-miniplayer__cover">
           {!currentRadio && cover
@@ -87,7 +87,7 @@ export default function MobileMiniPlayer() {
         type="button"
         className="mobile-icon-btn"
         onClick={() => togglePlay()}
-        aria-label={isPlaying ? t('player.pause') : t('player.play')}
+        aria-label={isPlaying ? t('player.pause') : t('common.play')}
       >
         {isPlaying
           ? <Pause size={24} fill="currentColor" aria-hidden="true" />

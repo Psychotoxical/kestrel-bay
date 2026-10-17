@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Play, ListPlus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Play, ListPlus, Loader2, Shuffle } from 'lucide-react';
 import { AlbumCard } from '@/features/album';
+import { MobileBackButton, MobileMoreMenu } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { LongPressWaveOverlay } from '@/ui/LongPressWaveOverlay';
 import InpageScrollSentinel from '@/ui/InpageScrollSentinel';
 import OverlayScrollArea from '@/ui/OverlayScrollArea';
@@ -193,6 +195,45 @@ export default function GenreDetail() {
 
   return (
     <div className={`content-body animate-fade-in mainstage-inpage-split${mainstageHeaderTight ? ' mainstage-inpage--header-tight' : ''}`}>
+      {IS_MOBILE_SHELL ? (
+        // Touch: one back button, then title and the two big buttons as on the album page.
+        <div className="mobile-browse-header">
+          <div className="mobile-browse-header__top">
+            <MobileBackButton />
+            {showPlayback && (
+              <MobileMoreMenu items={[{
+                id: 'enqueue',
+                label: t('genres.addToQueue'),
+                icon: <ListPlus size={17} />,
+                onSelect: handleEnqueueAll,
+              }]} />
+            )}
+          </div>
+          <h1 className="mobile-large-title">{genre}</h1>
+          {headerCount != null && headerCount > 0 && (
+            <p className="mobile-page-subtitle">{t('genres.albumCount', { count: headerCount })}</p>
+          )}
+          {showPlayback && (
+            <div className="mobile-album__buttons">
+              <button
+                type="button"
+                className="mobile-album__btn mobile-album__btn--primary"
+                onClick={handlePlayAll}
+                disabled={bulkLoading}
+              >
+                {bulkLoading
+                  ? <Loader2 size={18} className="spin" aria-hidden="true" />
+                  : <Play size={18} fill="currentColor" aria-hidden="true" />}
+                {t('common.play')}
+              </button>
+              <button type="button" className="mobile-album__btn" onClick={handleShuffleAll} disabled={bulkLoading}>
+                <Shuffle size={19} aria-hidden="true" />
+                {t('albumDetail.shuffle')}
+              </button>
+            </div>
+          )}
+        </div>
+      ) : (
       <div className="mainstage-inpage-toolbar">
         <div className="page-sticky-header mainstage-inpage-toolbar-row">
           <button
@@ -247,6 +288,7 @@ export default function GenreDetail() {
           )}
         </div>
       </div>
+      )}
 
       <OverlayScrollArea
         className="mainstage-inpage-scroll"

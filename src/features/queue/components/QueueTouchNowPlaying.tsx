@@ -16,7 +16,7 @@ export function QueueTouchNowPlaying({ track, t }: { track: Track; t: TFunction 
 
   return (
     <div className="queue-touch-now">
-      <span className="queue-touch-label">{t('sidebar.nowPlaying')}</span>
+      <span className="queue-touch-label">{t('queue.touchNowPlaying')}</span>
       <div className="queue-touch-now__row">
         <span className="queue-touch-now__cover">
           {cover ? <img src={cover} alt="" /> : <Music size={20} aria-hidden="true" />}

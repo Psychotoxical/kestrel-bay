@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Pokaż informacje "Teraz odtwarzane"',
   close: 'Zamknij',
   nextTracks: 'Następne utwory',
+  touchNowPlaying: 'Teraz odtwarzane',
   shareQueue: 'Skopiuj link do udostępnienia kolejki',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

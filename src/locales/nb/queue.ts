@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Vis avspillingsinfo',
   close: 'Lukk',
   nextTracks: 'Neste spor',
+  touchNowPlaying: 'Spilles nå',
   shareQueue: 'Kopiér lenke til kø',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

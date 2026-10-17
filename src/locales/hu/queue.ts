@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Most szól infó megjelenítése',
   close: 'Bezárás',
   nextTracks: 'Következő számok',
+  touchNowPlaying: 'Most szól',
   shareQueue: 'Sor megosztási linkjének másolása',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

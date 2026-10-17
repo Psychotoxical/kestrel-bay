@@ -5,6 +5,7 @@ export const orbit = {
   launchJoin: 'Unirse a una sesión',
   launchHelp: '¿Cómo funciona esto?',
   launchHelpSoon: 'Próximamente',
+  offlineUnavailable: 'Orbit necesita el servidor. En cuanto vuelvas a estar en línea, podrás iniciar o unirte a una sesión.',
   joinModalTitle: 'Unirse a una sesión Orbit',
   joinModalSub: 'Pega el enlace de invitación que te envió tu anfitrión.',
   joinModalLinkLabel: 'Enlace de invitación',

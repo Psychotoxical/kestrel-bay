@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Kedvencek szinkronizálása… {{saved}}/{{total}}',
   offlineSemaphoreSynced: 'Minden kedvenc mentve offline hallgatáshoz',
   offlineSemaphoreError: 'Szinkronizálási hiba — néhány szám nem menthető',
+  offlineEmpty: 'Offline csak az ezen az eszközön mentett kedvencek érhetők el. Kapcsold be az offline hallgatáshoz mentést, amíg online vagy.',
 };

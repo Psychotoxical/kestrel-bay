@@ -5,7 +5,8 @@ import { Disc3, Library, ListMusic, Orbit as OrbitIcon, Search } from 'lucide-re
 import { MobileSearchOverlay } from '@/features/search';
 import { OPEN_SEARCH_EVENT } from '@/lib/dom/openSearch';
 import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
-import { activeMobileTab, MOBILE_TAB_ROOTS, type MobileTabId } from '@/features/mobileShell/utils/mobileTabs';
+import { MOBILE_TAB_ROOTS, type MobileTabId } from '@/features/mobileShell/utils/mobileTabs';
+import { useMobileActiveTab, useRecordMobileTab } from '@/features/mobileShell/hooks/useMobileActiveTab';
 import { useCollapseBarsOnScroll } from '@/features/mobileShell/hooks/useCollapseBarsOnScroll';
 import { useOrbitPendingApprovalCount, useOrbitStore } from '@/features/orbit';
 
@@ -25,7 +26,8 @@ export default function MobileTabBar() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const active = activeMobileTab(pathname);
+  useRecordMobileTab();
+  const active = useMobileActiveTab();
   const orbitLive = useOrbitStore(s => s.role !== null && s.phase === 'active');
   // Host: guest suggestions waiting for approval, shown on the tab wherever you are.
   const pendingApprovals = useOrbitPendingApprovalCount();

@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Afficher les infos de lecture',
   close: 'Fermer',
   nextTracks: 'Pistes suivantes',
+  touchNowPlaying: 'En cours de lecture',
   shareQueue: 'Copier le lien de la file d’attente',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Se sincronizează favoritele… {{saved}} din {{total}}',
   offlineSemaphoreSynced: 'Toate favoritele sunt salvate pentru offline',
   offlineSemaphoreError: 'Eroare de sincronizare — unele piese nu au putut fi salvate',
+  offlineEmpty: 'Offline sunt disponibile doar favoritele salvate pe acest dispozitiv. Activează salvarea pentru ascultare offline cât timp ești online.',
 };

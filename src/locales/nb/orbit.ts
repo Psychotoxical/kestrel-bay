@@ -5,6 +5,7 @@ export const orbit = {
   launchJoin: 'Bli med i en økt',
   launchHelp: 'Hvordan fungerer dette?',
   launchHelpSoon: 'Kommer snart',
+  offlineUnavailable: 'Orbit trenger serveren. Så snart du er på nett igjen, kan du starte eller bli med i en økt.',
   joinModalTitle: 'Bli med i en Orbit-økt',
   joinModalSub: 'Lim inn invitasjonslenken verten sendte deg.',
   joinModalLinkLabel: 'Invitasjonslenke',

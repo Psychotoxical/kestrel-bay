@@ -30,7 +30,7 @@ const album = {
 } as SubsonicAlbum;
 const songs = [{ id: 't1', title: 'One', albumId: 'al-1', duration: 180 } as SubsonicSong];
 
-function renderMenu() {
+function renderMenu(route?: string) {
   const props = {
     type: 'album',
     item: album,
@@ -54,7 +54,7 @@ function renderMenu() {
     applyAlbumRating: vi.fn(),
     navigateLibrary: vi.fn(),
   } as unknown as ContextMenuItemsProps;
-  renderWithProviders(<AlbumContextItems {...props} />);
+  renderWithProviders(<AlbumContextItems {...props} />, route ? { route } : undefined);
   return props;
 }
 
@@ -101,5 +101,16 @@ describe('album menu in the touch shell', () => {
     });
     renderMenu();
     expect(screen.getByText('Waiting for Wi-Fi')).toBeInTheDocument();
+  });
+
+  it('offers "Open Album" away from the album page', () => {
+    renderMenu('/albums');
+    expect(screen.getByText('Open Album')).toBeInTheDocument();
+  });
+
+  it('leaves out "Open Album" on the album page itself', () => {
+    renderMenu('/album/al-1');
+    expect(screen.queryByText('Open Album')).not.toBeInTheDocument();
+    expect(screen.getByText('Go to Artist')).toBeInTheDocument();
   });
 });

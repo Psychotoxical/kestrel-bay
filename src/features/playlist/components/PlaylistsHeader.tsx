@@ -14,6 +14,8 @@ import SortDropdown from '@/ui/SortDropdown';
 import { usePlaylistLayoutStore } from '@/features/playlist/store/playlistLayoutStore';
 import { usePlaylistListSortOptions } from '@/features/playlist/hooks/usePlaylistListSortOptions';
 import type { PlaylistOwnershipBucket } from '@/features/playlist/utils/playlistOwnership';
+import { MobileMoreMenu } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface Props {
   selectionMode: boolean;
@@ -63,6 +65,107 @@ export default function PlaylistsHeader({
     setCreating(false);
     setNewName('');
   };
+  const startPlaylistCreate = () => { onEditorIntent(); setCreatingSmart(false); setCreating(true); };
+  const startSmartCreate = () => {
+    onEditorIntent();
+    setCreating(false);
+    if (!smartCreateServerOptions.some(server => server.id === createServerId)) {
+      setCreateServerId(smartCreateServerOptions[0].id);
+    }
+    setEditingSmartId(null);
+    setSmartFilters(defaultSmartFilters);
+    setGenreQuery('');
+    setCreatingSmart(v => !v);
+  };
+
+  const createForm = creating && (
+    <form
+      className="playlist-create-panel"
+      onSubmit={event => {
+        event.preventDefault();
+        void handleCreate();
+      }}
+    >
+      <div className="playlist-create-panel__heading">
+        <Plus size={16} />
+        <span>{t('playlists.newPlaylist')}</span>
+      </div>
+      <PlaylistCreateFields
+        name={newName}
+        nameLabel={t('queue.playlistName')}
+        namePlaceholder={t('playlists.createName')}
+        onNameChange={setNewName}
+        onNameKeyDown={event => {
+          if (event.key === 'Escape') cancelCreate();
+        }}
+        nameInputRef={nameInputRef}
+        serverId={createServerId}
+        onServerChange={setCreateServerId}
+        serverOptions={createServerOptions}
+      />
+      <div className="playlist-create-panel__actions">
+        <button type="button" className="btn btn-surface" onClick={cancelCreate}>
+          {t('playlists.cancel')}
+        </button>
+        <button type="submit" className="btn btn-primary" disabled={!createServerId}>
+          {t('playlists.create')}
+        </button>
+      </div>
+    </form>
+  );
+
+  if (IS_MOBILE_SHELL) {
+    // Touch: the title with sort and "+" (new playlist or smart playlist) as round
+    // buttons beside it, folders and the ownership filter as one chip row below.
+    return (
+      <div className="playlists-header-stack">
+        <div className="mobile-browse-header">
+          <div className="mobile-browse-header__top">
+            <h1 className="mobile-large-title">{t('playlists.title')}</h1>
+            <div className="mobile-browse-header__actions">
+              <SortDropdown
+                value={listSortKey}
+                options={sortOptions}
+                onChange={setListSortKey}
+                ariaLabel={t('playlists.listSort.label')}
+                tooltip={t('playlists.listSort.label')}
+                iconOnly
+                align="right"
+              />
+              {policy.canEditPlaylist && !creating && (
+                <MobileMoreMenu
+                  trigger={({ open, toggle }) => (
+                    <button
+                      type="button"
+                      className={`mobile-round-btn${open ? ' is-active' : ''}`}
+                      aria-label={t('playlists.create')}
+                      aria-haspopup="menu"
+                      aria-expanded={open}
+                      onClick={toggle}
+                    >
+                      <Plus size={22} aria-hidden="true" />
+                    </button>
+                  )}
+                  items={[
+                    { id: 'playlist', label: t('playlists.newPlaylist'), icon: <Plus size={19} />, onSelect: startPlaylistCreate },
+                    ...(smartCreateServerOptions.length > 0
+                      ? [{ id: 'smart', label: t('smartPlaylists.create'), icon: <Sparkles size={19} />, onSelect: startSmartCreate }]
+                      : []),
+                  ]}
+                />
+              )}
+            </div>
+          </div>
+          <div className="mobile-chip-row">
+            <PlaylistsOwnershipFilter counts={ownershipCounts} />
+            {foldersEnabled && <PlaylistsFolderViewToggle />}
+            {foldersEnabled && <PlaylistsNewFolderButton />}
+          </div>
+        </div>
+        {createForm}
+      </div>
+    );
+  }
 
   return (
     <div className="playlists-header-stack">
@@ -75,22 +178,12 @@ export default function PlaylistsHeader({
         <div className="compact-action-bar" style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
           {policy.canEditPlaylist && !(selectionMode && selectedIds.size > 0) && (<>
             {!creating && (
-              <button className="btn btn-primary" onClick={() => { onEditorIntent(); setCreatingSmart(false); setCreating(true); }} aria-label={t('playlists.newPlaylist')} data-tooltip={t('playlists.newPlaylist')}>
+              <button className="btn btn-primary" onClick={startPlaylistCreate} aria-label={t('playlists.newPlaylist')} data-tooltip={t('playlists.newPlaylist')}>
                 <Plus size={15} /> <span className="compact-btn-label">{t('playlists.newPlaylist')}</span>
               </button>
             )}
             {!creating && smartCreateServerOptions.length > 0 && (
-              <button className="btn btn-surface" onClick={() => {
-                onEditorIntent();
-                setCreating(false);
-                if (!smartCreateServerOptions.some(server => server.id === createServerId)) {
-                  setCreateServerId(smartCreateServerOptions[0].id);
-                }
-                setEditingSmartId(null);
-                setSmartFilters(defaultSmartFilters);
-                setGenreQuery('');
-                setCreatingSmart(v => !v);
-              }} aria-label={t('smartPlaylists.create')} data-tooltip={t('smartPlaylists.create')}>
+              <button className="btn btn-surface" onClick={startSmartCreate} aria-label={t('smartPlaylists.create')} data-tooltip={t('smartPlaylists.create')}>
                 <Sparkles size={15} /> <span className="compact-btn-label">{t('smartPlaylists.create')}</span>
               </button>
             )}
@@ -141,41 +234,7 @@ export default function PlaylistsHeader({
           </button>
         </div>
       </div>
-      {creating && (
-        <form
-          className="playlist-create-panel"
-          onSubmit={event => {
-            event.preventDefault();
-            void handleCreate();
-          }}
-        >
-          <div className="playlist-create-panel__heading">
-            <Plus size={16} />
-            <span>{t('playlists.newPlaylist')}</span>
-          </div>
-          <PlaylistCreateFields
-            name={newName}
-            nameLabel={t('queue.playlistName')}
-            namePlaceholder={t('playlists.createName')}
-            onNameChange={setNewName}
-            onNameKeyDown={event => {
-              if (event.key === 'Escape') cancelCreate();
-            }}
-            nameInputRef={nameInputRef}
-            serverId={createServerId}
-            onServerChange={setCreateServerId}
-            serverOptions={createServerOptions}
-          />
-          <div className="playlist-create-panel__actions">
-            <button type="button" className="btn btn-surface" onClick={cancelCreate}>
-              {t('playlists.cancel')}
-            </button>
-            <button type="submit" className="btn btn-primary" disabled={!createServerId}>
-              {t('playlists.create')}
-            </button>
-          </div>
-        </form>
-      )}
+      {createForm}
     </div>
   );
 }

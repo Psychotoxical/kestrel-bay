@@ -44,6 +44,8 @@ describe('hasOwnMobileHeader', () => {
     expect(hasOwnMobileHeader('/album/1')).toBe(true);
     expect(hasOwnMobileHeader('/artist/1')).toBe(true);
     expect(hasOwnMobileHeader('/playlists/7')).toBe(true);
+    expect(hasOwnMobileHeader('/genres/Metal')).toBe(true);
+    expect(hasOwnMobileHeader('/genres')).toBe(false);
     expect(hasOwnMobileHeader('/playlists')).toBe(false);
     expect(hasOwnMobileHeader('/settings')).toBe(false);
   });

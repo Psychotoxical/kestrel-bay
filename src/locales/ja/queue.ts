@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Now Playing情報を表示',
   close: '閉じる',
   nextTracks: '次のトラック',
+  touchNowPlaying: '再生中',
   shareQueue: 'キューの共有リンクをコピー',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

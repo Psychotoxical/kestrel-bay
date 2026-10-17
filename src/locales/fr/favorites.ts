@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Synchronisation des favoris… {{saved}} sur {{total}}',
   offlineSemaphoreSynced: 'Tous les favoris enregistrés pour l’écoute hors ligne',
   offlineSemaphoreError: 'Erreur de synchronisation — certains titres n’ont pas pu être enregistrés',
+  offlineEmpty: 'Hors ligne, seuls les favoris enregistrés sur cet appareil sont disponibles. Activez leur enregistrement pour l’écoute hors ligne tant que vous êtes en ligne.',
 };

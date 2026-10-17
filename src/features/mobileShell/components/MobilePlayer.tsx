@@ -359,7 +359,7 @@ export default function MobilePlayer() {
                   type="button"
                   className="mobile-player__play"
                   {...playPauseBind}
-                  aria-label={isPlaying ? t('player.pause') : t('player.play')}
+                  aria-label={isPlaying ? t('player.pause') : t('common.play')}
                 >
                   {scheduleRemaining != null ? (
                     <span className={`player-btn-schedule-stack player-btn-schedule-stack--${scheduleRemaining.mode} player-btn-schedule-stack--mobile`}>

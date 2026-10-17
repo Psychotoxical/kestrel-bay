@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Show now playing info',
   close: 'Close',
   nextTracks: 'Next Tracks',
+  touchNowPlaying: 'Now Playing',
   shareQueue: 'Copy queue share link',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

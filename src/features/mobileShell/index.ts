@@ -9,6 +9,7 @@ export type { MobileDownloadStatus } from './components/MobileDownloadButton';
 export { default as MobileMoreMenu } from './components/MobileMoreMenu';
 export { default as MobileSheet } from './components/MobileSheet';
 export { default as MobileSongRow } from './components/MobileSongRow';
+export { default as MobileVirtualSongList } from './components/MobileVirtualSongList';
 export { default as TransitionModeChips } from './components/TransitionModeChips';
 export { default as CrossfadeLengthSlider } from './components/CrossfadeLengthSlider';
 export type { MobileMoreMenuAction, MobileMoreMenuItem, MobileMoreMenuShare } from './components/MobileMoreMenu';

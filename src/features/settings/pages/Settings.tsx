@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 import {
@@ -23,6 +23,7 @@ import { normalizeSearchText } from '@/features/settings/components/settingsSear
 import { TAB_LABEL_KEY, TOUCH_HIDDEN_TABS, type Tab, resolveTab } from '@/features/settings/components/settingsTabs';
 import { UserManagementSection } from '@/features/settings/components/UserManagementSection';
 import SettingsTouchHome from '@/features/settings/components/SettingsTouchHome';
+import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
 import { ndLogin } from '@/lib/api/navidromeAdmin';
 import { type ServerMagicPayload } from '@/lib/server/serverMagicString';
 
@@ -146,6 +147,12 @@ export default function Settings() {
   // history entry carrying the tab, so the shell's back button returns home.
   const stateTab = (routeState as { tab?: string } | null)?.tab;
   const touchHome = IS_MOBILE_SHELL && (!stateTab || TOUCH_HIDDEN_TABS.has(resolveTab(stateTab)));
+  // Each category is its own page but the path stays /settings, so the shell does not
+  // reset the scroll: open every category, and the list, at the top.
+  useLayoutEffect(() => {
+    if (!IS_MOBILE_SHELL) return;
+    document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID)?.scrollTo({ top: 0 });
+  }, [stateTab]);
   const openTouchTab = (tab: Tab, focus?: PendingFocus) => {
     navigate('/settings', { state: { tab, focus: focus?.title, focusText: focus?.text } });
   };

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { version } from '@/../package.json';
 import { useReleaseNotes } from '@/features/whatsNew/hooks/useReleaseNotes';
 import { renderChangelogBody } from '@/features/whatsNew/utils/changelogMarkdown';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 type WhatsNewView = 'highlights' | 'changelog';
 
@@ -25,9 +26,10 @@ export default function WhatsNew() {
     <div className="whats-new">
       <header className="whats-new__header">
         <div className="whats-new__title-row">
-          <Sparkles size={20} className="whats-new__icon" />
+          {/* Touch: a page like the others, the app's back button closes it. */}
+          {!IS_MOBILE_SHELL && <Sparkles size={20} className="whats-new__icon" />}
           <div>
-            <h1 className="whats-new__title">
+            <h1 className={IS_MOBILE_SHELL ? 'mobile-large-title' : 'whats-new__title'}>
               {view === 'changelog' ? t('whatsNew.changelogTitle') : t('whatsNew.title')}
             </h1>
             <div className="whats-new__subtitle">
@@ -35,7 +37,7 @@ export default function WhatsNew() {
               {activeEntry?.date && <span className="whats-new__date"> · {activeEntry.date}</span>}
             </div>
           </div>
-          <button
+          {!IS_MOBILE_SHELL && <button
             type="button"
             className="whats-new__close"
             onClick={close}
@@ -44,7 +46,7 @@ export default function WhatsNew() {
             data-tooltip-pos="bottom"
           >
             <X size={18} />
-          </button>
+          </button>}
         </div>
 
         {changelogEntry && (

@@ -20,6 +20,7 @@ import { appendServerQuery } from '@/lib/navigation/detailServerScope';
 import { playTimelineFromHere } from '@/features/playback';
 import { addSongsToBurnList } from '@/features/burner';
 import { useBurnMenuAvailable } from '@/features/contextMenu/hooks/useBurnMenuAvailable';
+import { useIsOwnAlbumPage } from '@/features/contextMenu/hooks/useIsOwnAlbumPage';
 
 export default function SongContextItems(props: ContextMenuItemsProps) {
   const {
@@ -41,6 +42,7 @@ export default function SongContextItems(props: ContextMenuItemsProps) {
   const navigateToAlbum = useNavigateToAlbum();
   const navigateToArtist = useNavigateToArtist();
   const { available: burnAvailable, busy: burnBusy } = useBurnMenuAvailable(offlinePolicy);
+  const isOwnAlbumPage = useIsOwnAlbumPage();
 
   return (
     <>
@@ -138,7 +140,7 @@ export default function SongContextItems(props: ContextMenuItemsProps) {
                 </div>
               )}
               <div className="context-menu-divider" />
-              {song.albumId && (
+              {song.albumId && !isOwnAlbumPage(song.albumId) && (
                 <div className="context-menu-item" onClick={() => handleAction(() => navigateToAlbum(
                   song.albumId!,
                   { search: appendServerQuery(undefined, song.serverId) },
@@ -310,7 +312,7 @@ export default function SongContextItems(props: ContextMenuItemsProps) {
                 </div>
               )}
               <div className="context-menu-divider" />
-              {song.albumId && (
+              {song.albumId && !isOwnAlbumPage(song.albumId) && (
                 <div className="context-menu-item" onClick={() => handleAction(() => navigateToAlbum(
                   song.albumId!,
                   { search: appendServerQuery(undefined, song.serverId) },

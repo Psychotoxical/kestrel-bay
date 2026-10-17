@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: 'Показати інформацію про поточний трек',
   close: 'Закрити',
   nextTracks: 'Наступні треки',
+  touchNowPlaying: 'Зараз грає',
   shareQueue: 'Копіювати посилання на чергу',
   shareNavidromePublic: 'Копіювати публічне посилання Navidrome',
   shareNavidromePublicMissing: 'Публічне посилання Navidrome недоступне.',

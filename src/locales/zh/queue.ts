@@ -32,6 +32,7 @@ export const queue = {
   showNowPlaying: '显示播放信息',
   close: '关闭',
   nextTracks: '即将播放',
+  touchNowPlaying: '正在播放',
   shareQueue: '复制队列分享链接',
   shareNavidromePublic: 'Copy Navidrome share link',
   shareNavidromePublicMissing: 'Navidrome share link is unavailable.',

@@ -12,6 +12,7 @@ import { renderWithProviders } from '@/test/helpers/renderWithProviders';
 import { resetAllStores } from '@/test/helpers/storeReset';
 import { onInvoke } from '@/test/mocks/tauri';
 import { useAuthStore } from '@/store/authStore';
+import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
 
 function BackButton() {
   const navigate = useNavigate();
@@ -45,6 +46,22 @@ describe('Settings (touch shell)', () => {
     expect(screen.queryByRole('button', { name: 'Input' })).toBeNull();
     // The search field is there right away, but does not grab focus (no keyboard on arrival).
     expect(screen.getByRole('searchbox')).not.toHaveFocus();
+  });
+
+  it('a category opens at the top, not where the last page was scrolled to', async () => {
+    const viewport = document.createElement('div');
+    viewport.id = APP_MAIN_SCROLL_VIEWPORT_ID;
+    const scrollTo = vi.fn();
+    viewport.scrollTo = scrollTo as unknown as typeof viewport.scrollTo;
+    document.body.appendChild(viewport);
+    try {
+      await renderSettings();
+      scrollTo.mockClear();
+      fireEvent.click(screen.getByRole('button', { name: 'Audio' }));
+      expect(scrollTo).toHaveBeenCalledWith({ top: 0 });
+    } finally {
+      viewport.remove();
+    }
   });
 
   it('a category opens as its own page, and the shell back button returns to the list', async () => {

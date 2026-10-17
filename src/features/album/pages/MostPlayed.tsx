@@ -9,6 +9,7 @@ import { songToTrack } from '@/lib/media/songToTrack';
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router';
 import { ArrowUpDown, ArrowDown, ArrowUp, TrendingUp, UsersRound, Play, ListPlus } from 'lucide-react';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useAuthStore } from '@/store/authStore';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { CoverArtImage } from '@/cover/CoverArtImage';
@@ -223,6 +224,28 @@ export default function MostPlayed() {
 
   return (
     <div className="content-body animate-fade-in">
+      {IS_MOBILE_SHELL ? (
+        // Touch: the title alone, as on the other pages; sort order and the
+        // compilations filter as one chip row under it.
+        <div className="mobile-browse-header">
+          <h1 className="mobile-large-title">{t('mostPlayed.title')}</h1>
+          <div className="mobile-chip-row">
+            <button type="button" className="btn btn-surface" onClick={() => setSortAsc(v => !v)}>
+              {sortAsc ? <ArrowUp size={14} aria-hidden="true" /> : <ArrowDown size={14} aria-hidden="true" />}
+              {sortAsc ? t('mostPlayed.sortLeast') : t('mostPlayed.sortMost')}
+            </button>
+            <button
+              type="button"
+              className={`btn btn-surface${filterCompilations ? ' btn-sort-active' : ''}`}
+              aria-pressed={filterCompilations}
+              onClick={() => setFilterCompilations(v => !v)}
+            >
+              <UsersRound size={14} aria-hidden="true" />
+              {t('mostPlayed.filterCompilationsShort')}
+            </button>
+          </div>
+        </div>
+      ) : (
       <div className="mp-header">
         <div className="mp-header-left">
           <TrendingUp size={22} className="mp-header-icon" />
@@ -239,13 +262,14 @@ export default function MostPlayed() {
           <ArrowUpDown size={12} style={{ opacity: 0.45 }} />
         </button>
       </div>
+      )}
 
       {/* ── Top Artists ── */}
       {!loading && (
         <section className="mp-section">
           <div className="mp-section-header">
             <h2 className="mp-section-title">{t('mostPlayed.topArtists')}</h2>
-            <button
+            {!IS_MOBILE_SHELL && <button
               className={`btn btn-surface mp-filter-btn${filterCompilations ? ' mp-filter-btn--active' : ''}`}
               onClick={() => setFilterCompilations(v => !v)}
               aria-label={t('mostPlayed.filterCompilations')}
@@ -254,7 +278,7 @@ export default function MostPlayed() {
             >
               <UsersRound size={14} />
               <span className="compact-btn-label">{t('mostPlayed.filterCompilationsShort')}</span>
-            </button>
+            </button>}
           </div>
           {topArtists.length === 0 && (
             <div className="empty-state" style={{ padding: '12px 0' }}>{t('mostPlayed.noArtists')}</div>

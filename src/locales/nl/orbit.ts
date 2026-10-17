@@ -5,6 +5,7 @@ export const orbit = {
   launchJoin: 'Deelnemen aan sessie',
   launchHelp: 'Hoe werkt dit?',
   launchHelpSoon: 'Binnenkort beschikbaar',
+  offlineUnavailable: 'Orbit heeft de server nodig. Zodra je weer online bent, kun je een sessie starten of eraan deelnemen.',
   joinModalTitle: 'Deelnemen aan een Orbit-sessie',
   joinModalSub: 'Plak de uitnodigingslink die je host je gestuurd heeft.',
   joinModalLinkLabel: 'Uitnodigingslink',

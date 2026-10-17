@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'お気に入りを同期中… {{saved}} / {{total}}',
   offlineSemaphoreSynced: 'すべてのお気に入りをオフライン再生用に保存しました',
   offlineSemaphoreError: '同期エラーです。一部のトラックを保存できませんでした',
+  offlineEmpty: 'オフラインでは、このデバイスに保存されたお気に入りだけが表示されます。オンラインのうちにオフライン再生用の保存をオンにしてください。',
 };

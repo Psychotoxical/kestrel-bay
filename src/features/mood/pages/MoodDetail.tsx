@@ -30,6 +30,7 @@ import { usePerfProbeFlags } from '@/lib/perf/perfFlags';
 import { useUnavailableServerIds } from '@/lib/network/serverReachability';
 import { useAuthStore } from '@/store/authStore';
 import { useLibraryIndexStore } from '@/store/libraryIndexStore';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import InpageScrollSentinel from '@/ui/InpageScrollSentinel';
 import OverlayScrollArea from '@/ui/OverlayScrollArea';
 import { VirtualCardGrid } from '@/ui/VirtualCardGrid';
@@ -285,6 +286,15 @@ useEffect(() => {
         }`
       }
     >
+      {IS_MOBILE_SHELL ? (
+        // Touch: the shell's back bar leads back; title and count as on the genre page.
+        <div className="mobile-browse-header">
+          <h1 className="mobile-large-title">{mood}</h1>
+          {headerCount != null && headerCount > 0 && (
+            <p className="mobile-page-subtitle">{t('moods.albumCount', { count: headerCount })}</p>
+          )}
+        </div>
+      ) : (
       <div className="mainstage-inpage-toolbar">
         <div className="page-sticky-header mainstage-inpage-toolbar-row">
           <button
@@ -336,6 +346,7 @@ useEffect(() => {
           </div>
         </div>
       </div>
+      )}
 
       <OverlayScrollArea
         className="mainstage-inpage-scroll"

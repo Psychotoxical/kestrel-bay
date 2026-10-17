@@ -1,8 +1,8 @@
-import { useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ChevronLeft } from 'lucide-react';
 import { useMobileBack } from '@/features/mobileShell/hooks/useMobileBack';
-import { activeMobileTab, MOBILE_TAB_LABEL_KEYS } from '@/features/mobileShell/utils/mobileTabs';
+import { MOBILE_TAB_LABEL_KEYS } from '@/features/mobileShell/utils/mobileTabs';
+import { useMobileActiveTab } from '@/features/mobileShell/hooks/useMobileActiveTab';
 
 /**
  * Glass back button. `pill` shows the parent tab's name ("‹ Library"),
@@ -10,9 +10,8 @@ import { activeMobileTab, MOBILE_TAB_LABEL_KEYS } from '@/features/mobileShell/u
  */
 export default function MobileBackButton({ variant = 'pill' }: { variant?: 'pill' | 'round' }) {
   const { t } = useTranslation();
-  const { pathname } = useLocation();
   const goBack = useMobileBack();
-  const tab = activeMobileTab(pathname);
+  const tab = useMobileActiveTab();
   const label = tab ? t(MOBILE_TAB_LABEL_KEYS[tab]) : t('common.back');
 
   if (variant === 'round') {

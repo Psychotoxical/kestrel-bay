@@ -25,4 +25,5 @@ export const favorites = {
   offlineSemaphoreSyncing: 'Synkroniserer favoritter… {{saved}} av {{total}}',
   offlineSemaphoreSynced: 'Alle favoritter lagret for offline',
   offlineSemaphoreError: 'Synkfeil — noen spor kunne ikke lagres',
+  offlineEmpty: 'Offline er bare favoritter som er lagret på denne enheten tilgjengelige. Slå på lagring for offline lytting mens du er på nett.',
 };
