@@ -11,6 +11,8 @@ import { offlineActionPolicy, useOfflineBrowseContext } from '@/features/offline
 import GenreFilterBar from '@/ui/GenreFilterBar';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { useAuthStore } from '@/store/authStore';
+import { MobileMoreMenu } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface Props {
   visibleSongs: SubsonicSong[];
@@ -66,6 +68,146 @@ export default function FavoritesSongsSectionHeader({
     const serverIds = new Set(targetSongs.map(song => song.serverId ?? activeServerId).filter(Boolean));
     return serverIds.size === 1 ? [...serverIds][0] : undefined;
   }, [activeServerId, targetSongs]);
+
+  const filtersActive = !!selectedArtist || selectedGenres.length > 0
+    || yearRange[0] !== minYear || yearRange[1] !== currentYear;
+
+  // Shared by the desktop and the touch layout.
+  const filtersPanel = showFilters && (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.75rem', background: 'var(--surface)', borderRadius: '8px', marginTop: '0.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+        <GenreFilterBar selected={selectedGenres} onSelectionChange={setSelectedGenres} />
+      </div>
+
+      {/* Year Range Filter */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--muted)' }}>
+          <span>{t('common.yearRange')}:</span>
+          <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{yearRange[0]} - {yearRange[1]}</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <input
+            type="range"
+            min={minYear}
+            max={currentYear}
+            value={yearRange[0]}
+            onChange={e => {
+              const val = parseInt(e.target.value);
+              setYearRange(prev => [Math.min(val, prev[1] - 1), prev[1]]);
+            }}
+            style={{ flex: 1 }}
+          />
+          <input
+            type="range"
+            min={minYear}
+            max={currentYear}
+            value={yearRange[1]}
+            onChange={e => {
+              const val = parseInt(e.target.value);
+              setYearRange(prev => [prev[0], Math.max(val, prev[0] + 1)]);
+            }}
+            style={{ flex: 1 }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const artistFilterClear = selectedArtist && (
+    <button
+      onClick={() => setSelectedArtist(null)}
+      className="btn btn-ghost btn-sm"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: '0.3rem',
+        fontSize: '0.75rem',
+        alignSelf: 'flex-start',
+      }}
+    >
+      <X size={11} />
+      {t('favorites.clearArtistFilter')}
+    </button>
+  );
+
+  const playTargets = (shuffle: boolean) => {
+    if (targetSongs.length === 0) return;
+    const tracks = targetSongs.map(songToTrack);
+    const queue = shuffle ? shuffleTracks(tracks) : tracks;
+    playTrack(queue[0], queue);
+  };
+
+  const clearFilters = () => {
+    setSelectedArtist(null);
+    setSelectedGenres([]);
+    setYearRange([minYear, currentYear]);
+    setSortKey('natural');
+    setSortClickCount(0);
+  };
+
+  if (IS_MOBILE_SHELL) {
+    // Touch layout, as the album page: play and shuffle as the two big buttons,
+    // queue and filters in the "…" beside the heading.
+    return (
+      <div className="mobile-favorite-songs-head">
+        <div className="mobile-favorite-songs-head__title">
+          <h2 className="mobile-section-title">
+            {t('favorites.songs')}{titleCount == null ? '' : ` (${titleCount})`}
+          </h2>
+          <MobileMoreMenu items={[
+            {
+              id: 'enqueue',
+              label: inSelectMode ? t('favorites.enqueueSelected') : t('favorites.enqueueAll'),
+              icon: <ListPlus size={19} aria-hidden="true" />,
+              disabled: targetSongs.length === 0,
+              onSelect: () => enqueue(targetSongs.map(songToTrack)),
+            },
+            {
+              id: 'filters',
+              label: t('common.filters'),
+              icon: <SlidersHorizontal size={19} aria-hidden="true" />,
+              onSelect: () => setShowFilters(v => !v),
+            },
+          ]} />
+        </div>
+        <div className="mobile-album__buttons">
+          <button
+            type="button"
+            className="mobile-album__btn mobile-album__btn--primary"
+            disabled={targetSongs.length === 0}
+            onClick={() => playTargets(false)}
+          >
+            <Play size={18} fill="currentColor" aria-hidden="true" />
+            {t('common.play')}
+          </button>
+          <button
+            type="button"
+            className="mobile-album__btn"
+            disabled={targetSongs.length === 0}
+            onClick={() => playTargets(true)}
+          >
+            <Shuffle size={19} aria-hidden="true" />
+            {t('albumDetail.shuffle')}
+          </button>
+        </div>
+        {filtersActive && (
+          <div className="mobile-favorite-songs-head__filtered">
+            <span>
+              {t('favorites.showingCount', {
+                filtered: visibleSongs.length,
+                total: songs.filter(s => (starredOverrides[ownedEntityKey(s)] ?? starredOverrides[s.id]) !== false).length,
+              })}
+            </span>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={clearFilters}>
+              <X size={13} aria-hidden="true" />
+              {t('common.clearAll')}
+            </button>
+          </div>
+        )}
+        {filtersPanel}
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '0.75rem' }}>
@@ -206,63 +348,9 @@ export default function FavoritesSongsSectionHeader({
         )}
       </div>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', padding: '0.75rem', background: 'var(--surface)', borderRadius: '8px', marginTop: '0.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-            <GenreFilterBar selected={selectedGenres} onSelectionChange={setSelectedGenres} />
-          </div>
+      {filtersPanel}
 
-          {/* Year Range Filter */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--muted)' }}>
-              <span>{t('common.yearRange')}:</span>
-              <span style={{ color: 'var(--accent)', fontWeight: 500 }}>{yearRange[0]} - {yearRange[1]}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <input
-                type="range"
-                min={minYear}
-                max={currentYear}
-                value={yearRange[0]}
-                onChange={e => {
-                  const val = parseInt(e.target.value);
-                  setYearRange(prev => [Math.min(val, prev[1] - 1), prev[1]]);
-                }}
-                style={{ flex: 1 }}
-              />
-              <input
-                type="range"
-                min={minYear}
-                max={currentYear}
-                value={yearRange[1]}
-                onChange={e => {
-                  const val = parseInt(e.target.value);
-                  setYearRange(prev => [prev[0], Math.max(val, prev[0] + 1)]);
-                }}
-                style={{ flex: 1 }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedArtist && (
-        <button
-          onClick={() => setSelectedArtist(null)}
-          className="btn btn-ghost btn-sm"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '0.3rem',
-            fontSize: '0.75rem',
-            alignSelf: 'flex-start',
-          }}
-        >
-          <X size={11} />
-          {t('favorites.clearArtistFilter')}
-        </button>
-      )}
+      {artistFilterClear}
     </div>
   );
 }

@@ -1,6 +1,9 @@
-import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import FavoriteSongRow, { type FavoriteSongRowCallbacks } from '@/features/favorites/components/FavoriteSongRow';
+import FavoriteSongTouchRow from '@/features/favorites/components/FavoriteSongTouchRow';
+import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { TracklistColumnPicker } from '@/ui/TracklistColumnPicker';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -207,7 +210,7 @@ export default function FavoritesSongsTracklist({
   const rowVirtualizer = useVirtualizer({
     count: visibleSongs.length,
     getScrollElement: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID),
-    estimateSize: () => 48,
+    estimateSize: () => (IS_MOBILE_SHELL ? 60 : 48),
     overscan: Math.max(8, Math.ceil(viewportH / 48)),
     scrollMargin,
     getItemKey: i => ownedEntityKey(visibleSongs[i]),
@@ -223,6 +226,46 @@ export default function FavoritesSongsTracklist({
   useWarmTrackListAlbumCovers(warmVisibleSongs, COVER_ARTIST_TOP_TRACK_CSS_PX, {
     enabled: trackListCoversOn,
   });
+
+  const openTouchMenu = useCallback((song: SubsonicSong, at: { x: number; y: number }) => {
+    prepareTransientUiOpen();
+    openContextMenu(at.x, at.y, songToTrack(song), 'favorite-song');
+  }, [openContextMenu]);
+
+  if (IS_MOBILE_SHELL) {
+    // Touch: the album page's track rows instead of the column table; the song
+    // menu ("…") carries what the columns offer (remove, rate, go to album).
+    return (
+      <div className="mobile-favorite-tracks" data-preview-loc="favorites" ref={tracklistRef}>
+        <div ref={listWrapRef} style={{ height: rowVirtualizer.getTotalSize(), width: '100%', position: 'relative' }}>
+          {virtualItems.map(vi => {
+            const song = visibleSongs[vi.index];
+            const active = currentTrack ? ownedEntityKey(currentTrack) === ownedEntityKey(song) : false;
+            return (
+              <div
+                key={vi.key}
+                data-index={vi.index}
+                ref={rowVirtualizer.measureElement}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${vi.start - scrollMargin}px)` }}
+              >
+                <FavoriteSongTouchRow
+                  song={song}
+                  index={vi.index}
+                  isActive={active}
+                  showEq={active && isPlaying}
+                  onPlay={cb.play}
+                  onMore={openTouchMenu}
+                />
+              </div>
+            );
+          })}
+        </div>
+        {visibleSongs.length === 0 && hasFilters && (
+          <p className="mobile-favorite-tracks__empty">{t('favorites.noFilterResults')}</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>

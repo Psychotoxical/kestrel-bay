@@ -2746,8 +2746,43 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
 
 /* Virtualized: every row sits in its own wrapper, so `:last-child` would drop all borders. */
 .mobile-track[data-playlist-touch-row],
-.mobile-track[data-artist-track-row] {
+.mobile-track[data-artist-track-row],
+.mobile-track[data-virtual-track-row] {
   border-bottom: 1px solid var(--mobile-row-border);
+}
+
+/* Favourites: songs heading with "…", then play / shuffle as on the album page. */
+.mobile-favorite-songs-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.mobile-favorite-songs-head__title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mobile-favorite-songs-head__title .mobile-section-title {
+  margin: 0;
+}
+
+.mobile-favorite-songs-head__filtered {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.mobile-favorite-tracks__empty {
+  margin: 24px 0;
+  text-align: center;
+  color: var(--text-secondary);
 }
 
 .app-shell[data-mobile-app] .playlist-suggestions-header {
