@@ -7,3 +7,5 @@ export { default } from './components/Sidebar';
 export { useSidebarStore, CONSERVED_SIDEBAR_NAV_IDS } from './store/sidebarStore';
 export type { SidebarItemConfig } from './store/sidebarStore';
 export { applySidebarReorderById, resolveStartRoute } from './utils/sidebarNavReorder';
+export { useMobileNavItems } from './hooks/useMobileNavItems';
+export { useReactiveOfflineBrowseContext } from './hooks/useReactiveOfflineBrowseContext';

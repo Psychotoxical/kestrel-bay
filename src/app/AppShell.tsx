@@ -68,7 +68,7 @@ import {
   MobileTopBar,
   MobileSwipeNavigation,
   MobileTouchContextMenu,
-} from '@/features/mobileShell';
+} from '@/features/mobileShell/shell';
 import { useConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import { useIdlePlayQueuePull } from '@/app/hooks/useIdlePlayQueuePull';
 import { useShareBootstrap } from '@/features/share';

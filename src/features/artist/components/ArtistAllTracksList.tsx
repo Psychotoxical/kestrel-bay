@@ -119,11 +119,14 @@ export default function ArtistAllTracksList({ songs, albums = NO_ALBUMS, loading
     estimateSize: () => ROW_HEIGHT,
     overscan: Math.max(8, Math.ceil(viewportH / ROW_HEIGHT)),
     scrollMargin,
-    // The list mounts when its tab opens, usually after the page was scrolled.
-    // On attach the virtualiser writes its offset into the scroll element it is
-    // given — here the page's own — and the default offset is 0, which threw the
-    // page back to the top. Start from where the page already is.
-    initialOffset: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID)?.scrollTop ?? 0,
+    // Touch shell: the list mounts when its tab opens, usually after the page was
+    // scrolled. On attach the virtualiser writes its offset into the scroll element
+    // it is given — here the page's own — and the default offset is 0, which threw
+    // the page back to the top. Start from where the page already is. The desktop
+    // keeps the virtualiser's default.
+    ...(IS_MOBILE_SHELL
+      ? { initialOffset: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID)?.scrollTop ?? 0 }
+      : {}),
     // Index-suffixed: the same track can legitimately appear twice (an album and
     // its compilation reissue), and a duplicate key would drop one of the rows.
     getItemKey: i => `${displayed[i].id}:${i}`,

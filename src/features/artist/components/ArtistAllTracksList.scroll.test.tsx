@@ -1,6 +1,7 @@
 /**
- * The full track list mounts when its tab opens, usually after the page has
- * been scrolled, and it virtualises against the page's own scroll element.
+ * Desktop counterpart of `ArtistAllTracksList.scroll.mobile.test.tsx`: the start
+ * offset there is a touch-shell rule, and the desktop keeps the virtualiser's
+ * default.
  */
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
@@ -23,7 +24,7 @@ function List({ songs }: { songs: SubsonicSong[] }) {
 
 const songs = Array.from({ length: 30 }, (_, i) => makeSubsonicSong({ id: `t${i}`, title: `Track ${i}` }));
 
-describe('ArtistAllTracksList on a scrolled page', () => {
+describe('ArtistAllTracksList on a scrolled page (desktop)', () => {
   let viewport: HTMLDivElement;
   let scrollTo: ReturnType<typeof vi.fn>;
   let offsetSpy: MockInstance;
@@ -50,12 +51,10 @@ describe('ArtistAllTracksList on a scrolled page', () => {
     viewport.remove();
   });
 
-  it('keeps the page where it is when the list mounts', () => {
+  it('starts the virtualiser at its default offset', () => {
     renderWithProviders(<List songs={songs} />);
     const targets = scrollTo.mock.calls.map(([options]) => (options as ScrollToOptions).top);
-    // The virtualiser writes its offset into the page's scroll element on attach;
-    // that write has to be the page's own position, not a fresh 0.
     expect(targets.length).toBeGreaterThan(0);
-    expect(targets).toEqual(targets.map(() => 600));
+    expect(targets).toEqual(targets.map(() => 0));
   });
 });

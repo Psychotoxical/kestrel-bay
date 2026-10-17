@@ -1,4 +1,4 @@
-import { usePlayerStore } from '@/features/playback/store/playerStore';
+import { usePlayerStore } from '@/features/playback';
 import { useRadioMetadata, useRadioMprisSync } from '@/features/radio';
 
 /**

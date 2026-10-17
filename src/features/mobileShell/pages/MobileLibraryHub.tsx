@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight, HardDriveDownload, Search, type LucideIcon } from 'lucide-react';
-import { useMobileNavItems } from '@/features/sidebar/hooks/useMobileNavItems';
+import { useMobileNavItems } from '@/features/sidebar';
 import { requestOpenSearch } from '@/lib/dom/openSearch';
 import { NOT_IN_TOUCH_LIBRARY as NOT_IN_LIBRARY } from '@/config/navItems';
 

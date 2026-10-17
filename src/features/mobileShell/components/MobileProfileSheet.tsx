@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import { usePrivateModeStore } from '@/features/privateMode';
-import { useReactiveOfflineBrowseContext } from '@/features/sidebar/hooks/useReactiveOfflineBrowseContext';
+import { useReactiveOfflineBrowseContext } from '@/features/sidebar';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import { version as appVersion } from '@/../package.json';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';

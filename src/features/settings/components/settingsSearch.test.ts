@@ -105,6 +105,22 @@ describe('searchSettings', () => {
   });
 });
 
+describe('settings search keywords on the desktop', () => {
+  const queueHit = (q: string) => searchSettings(q, 'library', tEn, { tEn })
+    .find(h => h.key === 'settings.queueSettingsTitle');
+
+  it('keeps the full keyword list as one field, so adjacent words count as a phrase', () => {
+    // "customize shuffle" stands together only in the full desktop list
+    // (`touchKeywords` drops "customize"); the reversed order is the same words
+    // without the phrase.
+    const phrase = queueHit('customize shuffle');
+    const reversed = queueHit('shuffle customize');
+    expect(phrase).toBeDefined();
+    expect(reversed).toBeDefined();
+    expect(phrase!.score).toBeGreaterThan(reversed!.score);
+  });
+});
+
 describe('settings search in the touch shell', () => {
   const desktop = (q: string) => searchSettings(q, 'library', tEn, { tEn });
   const touch = (q: string) => searchSettings(q, 'library', tEn, { tEn, touchShell: true });

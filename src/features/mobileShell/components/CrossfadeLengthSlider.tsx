@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@/store/authStore';
 import { useOrbitStore } from '@/features/orbit';
-import { getTransitionMode } from '@/features/playback/utils/playback/playbackTransition';
+import { getTransitionMode } from '@/features/playback';
 
 /** Same range as the desktop crossfade popover (queue toolbar). */
 const MIN_SECS = 0.1;

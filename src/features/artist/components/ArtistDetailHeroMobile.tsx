@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, HardDriveDownload, Heart, ListPlus, Play, Radio, Shuffle, Users } from 'lucide-react';
 import { ArtistHeroCover } from '@/cover/artistHero';
 import { useOfflineStore, offlineActionPolicy } from '@/features/offline';
-import { usePlayerStore } from '@/features/playback/store/playerStore';
+import { usePlayerStore } from '@/features/playback';
 import { useArtistOfflineState } from '@/features/artist/hooks/useArtistOfflineState';
 import { useArtistHeaderBackdrop } from '@/features/artist/hooks/useArtistHeaderBackdrop';
 import { lastFmArtistUrl } from '@/features/artist/utils/lastFmArtistUrl';

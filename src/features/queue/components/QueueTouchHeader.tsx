@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { TFunction } from 'i18next';
 import { Check, FolderOpen, Infinity as InfinityIcon, Link, MoreHorizontal, Save, Shuffle, Trash2 } from 'lucide-react';
 import type { QueueDisplayMode } from '@/store/authStoreTypes';
-import TransitionModeChips from '@/features/mobileShell/components/TransitionModeChips';
-import CrossfadeLengthSlider from '@/features/mobileShell/components/CrossfadeLengthSlider';
+import { CrossfadeLengthSlider, TransitionModeChips } from '@/features/mobileShell';
 import { QueueShareButton } from '@/features/queue/components/QueueShareButton';
 import type { QueueShareController } from '@/features/queue/hooks/useQueueShare';
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
-import { useHomeRefreshStore } from '@/features/home/store/homeRefreshStore';
+import { useHomeRefreshStore } from '@/features/home';
 
 /** Pull distance (after damping) that triggers a refresh on release. */
 const TRIGGER_PX = 64;

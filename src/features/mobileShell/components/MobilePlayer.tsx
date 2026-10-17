@@ -5,19 +5,23 @@ import {
   ChevronDown, ChevronUp, Heart, ListMusic, MicVocal, Moon, MoreHorizontal, Music, Pause, Play, Radio,
   Repeat, Repeat1, Shuffle, SkipBack, SkipForward, Sunrise,
 } from 'lucide-react';
-import { usePlayerStore } from '@/features/playback/store/playerStore';
-import { getPlaybackProgressSnapshot, subscribePlaybackProgress } from '@/features/playback/store/playbackProgress';
-import { queueSongStar } from '@/features/playback/store/pendingStarSync';
-import { TrackArtistLinks, usePlaybackLibraryNavigate } from '@/features/playback';
-import { usePlaybackDelayPress } from '@/features/playback/hooks/usePlaybackDelayPress';
-import PlaybackDelayModal from '@/features/playback/components/PlaybackDelayModal';
-import PlaybackScheduleBadge from '@/features/playback/components/PlaybackScheduleBadge';
-import { usePlaybackScheduleRemaining } from '@/features/playback/utils/playbackScheduleFormat';
+import {
+  getPlaybackProgressSnapshot,
+  PlaybackDelayModal,
+  PlaybackScheduleBadge,
+  queueSongStar,
+  subscribePlaybackProgress,
+  TrackArtistLinks,
+  usePlaybackDelayPress,
+  usePlaybackLibraryNavigate,
+  usePlaybackScheduleRemaining,
+  usePlayerStore,
+} from '@/features/playback';
 import { usePlaybackCoverArt } from '@/cover/usePlaybackCoverArt';
 import { usePlaybackTrackCoverRef } from '@/cover/useLibraryCoverRef';
 import { useCachedUrl } from '@/ui/CachedImage';
 import PsysonicLogo from '@/ui/PsysonicLogo';
-import { useCoverAccentColor } from '@/features/nowPlaying/hooks/useCoverAccentColor';
+import { useCoverAccentColor } from '@/features/nowPlaying';
 import { LyricsPane } from '@/features/lyrics';
 import { WaveformSeek } from '@/features/waveform';
 import { effectiveAudioFormat } from '@/lib/media/streamFormat';

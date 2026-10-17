@@ -24,7 +24,8 @@ export function sanitizeHtml(html: string): string {
 }
 
 /** `sanitizeHtml` for artist bios: also drops the trailing "Read more on Last.fm"
- * style link, so clamped bios end cleanly. */
+ * style link, so clamped bios end cleanly. Used by the touch shell; the desktop
+ * keeps its own older pattern in `nowPlayingHelpers.sanitizeHtml`. */
 export function sanitizeBioHtml(html: string): string {
   // Only the last link: the match may not run across another `<a`, or a link
   // earlier in the text would take everything after it along.

@@ -4,7 +4,7 @@ import type { Track } from '@/lib/media/trackTypes';
 import { usePlaybackCoverArt } from '@/cover/usePlaybackCoverArt';
 import { usePlaybackTrackCoverRef } from '@/cover/useLibraryCoverRef';
 import { useCachedUrl } from '@/ui/CachedImage';
-import { usePlayerStore } from '@/features/playback/store/playerStore';
+import { usePlayerStore } from '@/features/playback';
 
 /** "Now playing" row above the upcoming list in the touch queue (queue mode). */
 export function QueueTouchNowPlaying({ track, t }: { track: Track; t: TFunction }) {

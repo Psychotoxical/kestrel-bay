@@ -7,7 +7,7 @@ import {
   getTransitionMode,
   setTransitionMode,
   type TransitionMode,
-} from '@/features/playback/utils/playback/playbackTransition';
+} from '@/features/playback';
 
 const CHIPS: ReadonlyArray<{ mode: Exclude<TransitionMode, 'none'>; icon: LucideIcon; labelKey: string }> = [
   { mode: 'gapless', icon: MoveRight, labelKey: 'queue.gapless' },

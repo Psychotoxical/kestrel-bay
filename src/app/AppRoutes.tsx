@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation } from 'react-router';
 import { lazyLoadAlbumsPage } from '@/features/album/utils/albumBrowseRoutePrefetch';
 import { lazyLoadArtistsPage } from '@/features/artist/utils/artistBrowseRoutePrefetch';
 import MobilePlayerView from '@/features/nowPlaying/components/MobilePlayerView';
-import { MobilePlayer } from '@/features/mobileShell';
+import { MobilePlayer } from '@/features/mobileShell/shell';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { useSidebarStore } from '@/features/sidebar';

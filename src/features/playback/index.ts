@@ -42,3 +42,9 @@ export { playListFromPosition } from './utils/playback/playListFromPosition';
 export { skipToNextAlbum, skipToPreviousAlbum } from './store/albumSkip';
 export { albumSkipTooltip } from './utils/albumSkipTooltip';
 export { usePlayQueueSyncSettingsStore } from './store/playQueueSyncSettingsStore';
+/** Transition mode, playback delay and schedule: used by the touch shell's player. */
+export { getTransitionMode, setTransitionMode, type TransitionMode } from './utils/playback/playbackTransition';
+export { usePlaybackDelayPress } from './hooks/usePlaybackDelayPress';
+export { default as PlaybackDelayModal } from './components/PlaybackDelayModal';
+export { default as PlaybackScheduleBadge } from './components/PlaybackScheduleBadge';
+export { usePlaybackScheduleRemaining } from './utils/playbackScheduleFormat';

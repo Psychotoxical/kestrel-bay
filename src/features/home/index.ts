@@ -16,3 +16,4 @@ export {
 } from './store/homeStore';
 export { useSonicSimilarityAvailable } from './hooks/useSonicSimilarityAvailable';
 export { default as SongRail } from './components/SongRail';
+export { useHomeRefreshStore } from './store/homeRefreshStore';

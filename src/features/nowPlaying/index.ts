@@ -18,3 +18,4 @@ export { nowPlayingPresence } from './api/nowPlayingPresence';
 export { default as NowPlayingInfo } from './components/NowPlayingInfo';
 export { default as ArtistCard } from './components/ArtistCard';
 export { useNowPlayingPrewarm } from './hooks/useNowPlayingPrewarm';
+export { useCoverAccentColor } from './hooks/useCoverAccentColor';

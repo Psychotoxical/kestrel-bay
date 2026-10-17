@@ -122,8 +122,8 @@ function buildDocs(t: TFunction, tEn: TFunction | undefined, touchShell: boolean
     const keys = touchShell ? section.keys.filter(key => !desktopOnlyKeys.has(key)) : section.keys;
     const fields = [...headingFields(title, titleEn), ...contentFields(keys, t, tEn, skip)];
     const manual = section.titleKey ? KEYWORDS_BY_TITLE_KEY.get(section.titleKey) : undefined;
-    if (manual?.keywords) fields.push({ text: prepareText(manual.keywords), weight: 0.8 });
-    if (manual?.desktopKeywords && !touchShell) fields.push({ text: prepareText(manual.desktopKeywords), weight: 0.8 });
+    const manualKeywords = touchShell ? manual?.touchKeywords ?? manual?.keywords : manual?.keywords;
+    if (manualKeywords) fields.push({ text: prepareText(manualKeywords), weight: 0.8 });
     docs.push({
       tab, key: section.titleKey ?? `${tab}:${title}`, title, focusTitle: title, advanced: !!section.advanced, fields,
     });
@@ -136,8 +136,8 @@ function buildDocs(t: TFunction, tEn: TFunction | undefined, touchShell: boolean
     const title = translate(t, entry.titleKey) ?? entry.titleKey;
     const titleEn = tEn ? translate(tEn, entry.titleKey) : null;
     const fields = headingFields(title, titleEn);
-    if (entry.keywords) fields.push({ text: prepareText(entry.keywords), weight: 0.8 });
-    if (entry.desktopKeywords && !touchShell) fields.push({ text: prepareText(entry.desktopKeywords), weight: 0.8 });
+    const entryKeywords = touchShell ? entry.touchKeywords ?? entry.keywords : entry.keywords;
+    if (entryKeywords) fields.push({ text: prepareText(entryKeywords), weight: 0.8 });
     const focusTitle = entry.focusTitleKey ? translate(t, entry.focusTitleKey) ?? undefined : undefined;
     docs.push({ tab: entry.tab, key: entry.titleKey, title, focusTitle, advanced: false, fields });
   }
