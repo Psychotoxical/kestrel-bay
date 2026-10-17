@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Wifi, WifiOff, Eye, EyeOff, Server, Globe } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -23,6 +23,13 @@ import {
 import { shortHostFromServerUrl, serverListDisplayLabel } from '@/lib/server/serverDisplayName';
 import { scheduleStartupSplashDismiss } from '@/app/startupSplash';
 import { admitSuccessfulPingForProfile } from '@/lib/server/serverEndpoint';
+import { useTouchKeyboardAvoidance } from '@/lib/hooks/useTouchKeyboardAvoidance';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+
+/** Touch keyboards: no capital letter or correction in addresses and user names. */
+const TOUCH_PLAIN_FIELD = IS_MOBILE_SHELL
+  ? { autoCapitalize: 'none', autoCorrect: 'off', spellCheck: false } as const
+  : {};
 
 const PsysonicLogo = () => (
   <img src="/logo-psysonic.png" width="64" height="64" alt="Psysonic" draggable={false} style={{ borderRadius: 18 }} />
@@ -55,6 +62,8 @@ export default function Login() {
   const [blockPasswordReveal, setBlockPasswordReveal] = useState(false);
   const [status, setStatus] = useState<'idle' | 'testing' | 'ok' | 'error'>('idle');
   const [testMessage, setTestMessage] = useState('');
+  const pageRef = useRef<HTMLDivElement>(null);
+  useTouchKeyboardAvoidance(pageRef);
 
   useEffect(() => {
     scheduleStartupSplashDismiss();
@@ -310,7 +319,7 @@ export default function Login() {
   };
 
   return (
-    <div className="login-page">
+    <div className="login-page" ref={pageRef}>
       <div className="login-bg" aria-hidden="true" />
       <div className="login-card animate-fade-in">
         <div className="login-lang-picker" aria-label={t('settings.language')}>
@@ -342,7 +351,7 @@ export default function Login() {
           <PsysonicLogo />
         </div>
         <h1 className="login-title">Psysonic</h1>
-        <p className="login-subtitle">{t('login.subtitle')}</p>
+        <p className="login-subtitle">{t(IS_MOBILE_SHELL ? 'login.subtitleTouch' : 'login.subtitle')}</p>
 
         {/* Saved servers quick-connect */}
         {servers.length > 0 && (
@@ -390,6 +399,8 @@ export default function Login() {
               value={form.url}
               onChange={update('url')}
               autoComplete="off"
+              {...TOUCH_PLAIN_FIELD}
+              {...(IS_MOBILE_SHELL ? { inputMode: 'url' as const } : {})}
             />
           </div>
 
@@ -405,6 +416,7 @@ export default function Login() {
                 onChange={update('username')}
                 readOnly={blockPasswordReveal}
                 autoComplete="username"
+                {...TOUCH_PLAIN_FIELD}
                 style={blockPasswordReveal ? { cursor: 'default' } : undefined}
               />
             </div>
@@ -466,6 +478,7 @@ export default function Login() {
               value={magicString}
               onChange={handleMagicStringChange}
               autoComplete="off"
+              {...TOUCH_PLAIN_FIELD}
             />
           </div>
 

@@ -1,5 +1,6 @@
 export const login = {
   subtitle: 'Din Navidrome-mediaspiller',
+  subtitleTouch: 'Din Navidrome-musikkspiller',
   serverName: 'Tjenernavn (valgfritt)',
   serverNamePlaceholder: 'Mitt mediabibliotek',
   serverUrl: 'Tjener-URL',

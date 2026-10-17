@@ -1,5 +1,6 @@
 export const login = {
   subtitle: 'Το δικό σου πρόγραμμα αναπαραγωγής για διακομιστές Navidrome',
+  subtitleTouch: 'Το δικό σου πρόγραμμα αναπαραγωγής μουσικής για διακομιστές Navidrome',
   serverName: 'Όνομα Διακομιστή (προαιρετικό)',
   serverNamePlaceholder: 'Ο Navidrome μου',
   serverUrl: 'URL Διακομιστή',

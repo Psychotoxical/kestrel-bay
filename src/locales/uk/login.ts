@@ -1,5 +1,6 @@
 export const login = {
   subtitle: 'Ваш десктопний плеєр для Navidrome',
+  subtitleTouch: 'Ваш музичний плеєр для Navidrome',
   serverName: 'Назва сервера (необов’язково)',
   serverNamePlaceholder: 'Мій Navidrome',
   serverUrl: 'URL сервера',

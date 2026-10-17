@@ -1,5 +1,6 @@
 export const login = {
   subtitle: '您的 Navidrome 桌面播放器',
+  subtitleTouch: '您的 Navidrome 音乐播放器',
   serverName: '服务器名称（可选）',
   serverNamePlaceholder: '我的 Navidrome',
   serverUrl: '服务器地址',

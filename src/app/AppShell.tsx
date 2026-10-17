@@ -87,6 +87,7 @@ import { useEqStore } from '../store/eqStore';
 import { usePlaybackRateStore } from '@/features/playback/store/playbackRateStore';
 import { usePlaybackRateOrbitSync } from '@/features/orbit';
 import { usePerfProbeFlags } from '@/lib/perf/perfFlags';
+import { prepareTouchDocument } from '@/lib/dom/touchDocument';
 import { emitAlbumBrowseNav } from '@/lib/library/albumBrowseDebug';
 import { emitArtistsBrowseNav } from '@/lib/library/artistBrowseDebug';
 import {
@@ -259,15 +260,9 @@ export function AppShell() {
 
   const isMobilePlayer = (isMobile || IS_MOBILE_SHELL) && location.pathname === '/now-playing';
 
+  // Also done at start-up (main.tsx); repeated for shells mounted on their own (tests).
   useEffect(() => {
-    if (!IS_MOBILE_SHELL) return;
-    // Portaled overlays (search, sheets, modals) live outside `.app-shell`.
-    document.documentElement.setAttribute('data-mobile-app', 'true');
-    // iOS zooms into inputs below 16px on focus; an app shell never wants that.
-    document.querySelector('meta[name="viewport"]')?.setAttribute(
-      'content',
-      'width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover',
-    );
+    prepareTouchDocument();
   }, []);
 
   // Custom in-page titlebar. Linux: opt-in, native decorations off. macOS:

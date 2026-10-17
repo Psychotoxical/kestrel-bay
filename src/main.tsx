@@ -30,6 +30,9 @@ import './styles/layout/index.css';
 import './styles/components/index.css';
 import './styles/tracks/index.css';
 import './styles/mobile/index.css';
+import { prepareTouchDocument } from '@/lib/dom/touchDocument';
+
+prepareTouchDocument();
 
 const rootElement = document.getElementById('root')!;
 let applicationRoot: Root | null = null;

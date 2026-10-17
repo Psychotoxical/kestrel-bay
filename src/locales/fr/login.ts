@@ -1,5 +1,6 @@
 export const login = {
   subtitle: 'Votre lecteur de bureau Navidrome',
+  subtitleTouch: 'Votre lecteur de musique Navidrome',
   serverName: 'Nom du serveur (facultatif)',
   serverNamePlaceholder: 'Mon Navidrome',
   serverUrl: 'URL du serveur',

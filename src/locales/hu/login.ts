@@ -1,5 +1,6 @@
 export const login = {
   subtitle: 'A Navidrome asztali lejátszód',
+  subtitleTouch: 'A Navidrome zenelejátszód',
   serverName: 'Szerver neve (opcionális)',
   serverNamePlaceholder: 'Az én Navidrome-om',
   serverUrl: 'Szerver URL',
