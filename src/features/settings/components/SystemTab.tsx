@@ -193,6 +193,17 @@ export function SystemTab() {
           </DesktopOnly>
 
           <DesktopOnly>
+            <SettingsGroup title={t('settings.groupNotifications')}>
+              <SettingsToggle
+                label={t('settings.trackChangeNotifications')}
+                desc={t('settings.trackChangeNotificationsDesc')}
+                checked={auth.trackChangeNotificationsEnabled}
+                onChange={auth.setTrackChangeNotificationsEnabled}
+              />
+            </SettingsGroup>
+          </DesktopOnly>
+
+          <DesktopOnly>
             {IS_LINUX && (
               <SettingsGroup title={t('settings.groupLinuxRendering')}>
                 <SettingsToggle

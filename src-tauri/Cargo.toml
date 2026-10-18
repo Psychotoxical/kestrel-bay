@@ -83,6 +83,11 @@ image = { version = "0.25", default-features = false, features = ["jpeg", "png",
 webp = "0.3"
 tauri-plugin-clipboard-manager = "2"
 
+# Not on iOS: there it would take its Linux D-Bus path, and iOS has no
+# notification daemon (show_track_notification answers "not shown" there).
+[target.'cfg(not(any(windows, target_os = "ios")))'.dependencies]
+notify-rust = "4.11"
+
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
@@ -115,6 +120,7 @@ windows = { version = "0.62", features = [
     "Win32_UI_Shell",
     "Win32_UI_WindowsAndMessaging",
 ] }
+tauri-winrt-notification = "0.8"
 
 # Preserve the current `mdat` boundary when a seekable ISO/MP4 reader reaches EOF.
 # Stock Symphonia loses its pending atom there, so a later seek fails with
