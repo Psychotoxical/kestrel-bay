@@ -1,5 +1,4 @@
 import { orbitAllowsTrackServer, orbitBulkGuard, orbitGuestTakesQueueAdd, orbitSnapshot } from '@/store/orbitRuntime';
-import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useAuthStore } from '@/store/authStore';
 import { prefetchLoudnessForEnqueuedTracks } from '@/features/playback/store/loudnessPrefetch';
 import type { QueueItemRef, Track } from '@/lib/media/trackTypes';
@@ -180,7 +179,7 @@ export function createQueueMutationActions(set: SetState, get: GetState): Pick<
         });
         return;
       }
-      if (IS_MOBILE_SHELL && orbitGuestTakesQueueAdd(tracks)) return;
+      if (orbitGuestTakesQueueAdd(tracks)) return;
       const stateBeforeEnqueue = get();
       const shouldMountFirstTrack = stateBeforeEnqueue.queueItems.length === 0
         && !stateBeforeEnqueue.currentTrack
@@ -295,7 +294,7 @@ export function createQueueMutationActions(set: SetState, get: GetState): Pick<
         });
         return;
       }
-      if (IS_MOBILE_SHELL && orbitGuestTakesQueueAdd(tracks)) return;
+      if (orbitGuestTakesQueueAdd(tracks)) return;
       pushQueueUndoFromGetter(get);
       ensureQueueServerPinned(tracks);
       set(state => {

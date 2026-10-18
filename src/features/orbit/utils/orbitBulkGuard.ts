@@ -4,7 +4,6 @@ import i18n from '@/lib/i18n';
 import { registerOrbitRuntime } from '@/store/orbitRuntime';
 import { orbitActionServerMatches } from '@/features/orbit/utils/orbitServerScope';
 import { useAuthStore } from '@/store/authStore';
-import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { suggestOrbitTracks } from '@/features/orbit/utils/guest';
 
 /**
@@ -22,9 +21,9 @@ export async function orbitBulkGuard(count: number): Promise<boolean> {
   if (role !== 'host' && role !== 'guest') return true;
   if (count <= 1) return true;
 
-  // Touch shell: a guest's additions go to the host as suggestions
-  // (orbitGuestTakesQueueAdd), so the question says that.
-  const guestSuggests = IS_MOBILE_SHELL && role === 'guest' && useOrbitStore.getState().phase === 'active';
+  // A guest's additions go to the host as suggestions (orbitGuestTakesQueueAdd),
+  // so the question says that.
+  const guestSuggests = role === 'guest' && useOrbitStore.getState().phase === 'active';
   return useConfirmModalStore.getState().request({
     title: i18n.t(guestSuggests ? 'orbit.bulkConfirmGuestTitle' : 'orbit.bulkConfirmTitle'),
     message: i18n.t(guestSuggests ? 'orbit.bulkConfirmGuestBody' : 'orbit.bulkConfirmBody', { count }),

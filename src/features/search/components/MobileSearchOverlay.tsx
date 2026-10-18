@@ -22,6 +22,7 @@ import { ArtistCoverArtImage } from '@/cover/ArtistCoverArtImage';
 import { CoverArtImage } from '@/cover/CoverArtImage';
 import { albumCoverRefForSong } from '@/cover/ref';
 import { showToast } from '@/lib/dom/toast';
+import { orbitGuestSuggestsQueueAdds } from '@/store/orbitRuntime';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useOrbitSongRowBehavior } from '@/features/orbit';
 import { albumArtistDisplayName } from '@/features/album';
@@ -198,7 +199,7 @@ export default function MobileSearchOverlay({ onClose }: { onClose: () => void }
     }
     const track = songToTrack(song);
     enqueue([track]);
-    showToast(t('search.addedToQueueToast', { title: track.title }), 2200, 'info');
+    if (!orbitGuestSuggestsQueueAdds()) showToast(t('search.addedToQueueToast', { title: track.title }), 2200, 'info');
     onClose();
   };
   const applyRecentSearch = (term: string) => {
