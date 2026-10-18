@@ -7,6 +7,7 @@ import { writeFile } from '@tauri-apps/plugin-fs';
 import SettingsSubSection from '@/features/settings/components/SettingsSubSection';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { SettingsSubCard } from '@/features/settings/components/SettingsSubCard';
+import { AnalyticsStrategyTouchList } from '@/features/settings/components/AnalyticsStrategyTouchList';
 import { useAnalysisStrategyStore } from '@/store/analysisStrategyStore';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -256,6 +257,34 @@ export default function AnalyticsStrategySection() {
       title={t('settings.analyticsStrategyTitle')}
       icon={<BarChart3 size={16} />}
     >
+      {/* Touch: one iOS-style group per server instead of the table. */}
+      {IS_MOBILE_SHELL && (
+        <AnalyticsStrategyTouchList
+          rows={servers.map(server => {
+            const key = serverIndexKeyForProfile(server);
+            const failedCount = failedCountByServer[key] ?? 0;
+            return {
+              serverId: server.id,
+              indexKey: key,
+              label: serverListDisplayLabel(server, servers),
+              strategy: getStrategyForServer(server.id),
+              parallelism: getAdvancedParallelismForServer(server.id),
+              progressText: progressLabel(progressByServer[key] ?? null, failedCount),
+              failedCount,
+              clearing: clearingServerId === server.id,
+            };
+          })}
+          removedServerIds={removedServerIds}
+          clearingServerId={clearingServerId}
+          strategyLabel={strategyLabel}
+          onStrategy={setServerStrategy}
+          onParallelism={setServerAdvancedParallelism}
+          onOpenFailed={row => void openFailedTracksModal({ serverId: row.serverId, label: row.label, indexKey: row.indexKey })}
+          onClear={(serverId, label) => setClearTarget({ serverId, label })}
+        />
+      )}
+
+      {!IS_MOBILE_SHELL && (
       <div className="settings-card">
         <SettingsGroup>
         <SettingsSubCard>
@@ -441,6 +470,7 @@ export default function AnalyticsStrategySection() {
         </SettingsSubCard>
         </SettingsGroup>
       </div>
+      )}
 
       {clearTarget &&
         createPortal(

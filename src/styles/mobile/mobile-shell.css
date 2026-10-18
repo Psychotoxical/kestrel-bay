@@ -5368,3 +5368,118 @@ html[data-mobile-app] .player-heatmap-legend {
   font-size: 12px;
   color: var(--text-muted);
 }
+
+/* ─── Settings → Library → Analytics strategies (AnalyticsStrategyTouchList) ─── */
+.analytics-touch {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.analytics-touch__name {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0 0 8px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.analytics-touch__removed {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--warning, #f59e0b);
+}
+
+.analytics-touch__group {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.analytics-touch__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  box-sizing: border-box;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+}
+
+.analytics-touch__row + .analytics-touch__row {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.analytics-touch__row--stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.analytics-touch__row--button:active:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.analytics-touch__row--danger {
+  justify-content: center;
+  color: var(--danger, #e5484d);
+  font-weight: 500;
+}
+
+.analytics-touch__row--danger:disabled {
+  opacity: 0.5;
+}
+
+.analytics-touch__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.analytics-touch__value {
+  flex-shrink: 0;
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.analytics-touch__range {
+  flex: 0 1 140px;
+  min-width: 0;
+}
+
+.analytics-touch__warn {
+  flex-shrink: 0;
+  color: var(--warning, #f59e0b);
+}
+
+.analytics-touch__chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.analytics-touch__footnote {
+  padding: 0 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+.analytics-touch__footnote p {
+  margin: 0 0 6px;
+}
+
+.analytics-touch__footnote strong {
+  color: var(--text-secondary);
+}
