@@ -561,6 +561,7 @@ pub fn run() {
             {
                 ios_audio_session::observe_interruptions(app.handle());
                 ios_orientation::listen(app.handle());
+                ios_carplay::listen(app.handle());
                 ios_network::observe(app.handle());
                 ios_backup::exclude_media_dir(app.handle());
             }

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useCarPlayBridge } from '@/features/mobileShell/hooks/useCarPlayBridge';
 import { useIosAudioInterruptions } from '@/features/mobileShell/hooks/useIosAudioInterruptions';
 import { syncLandscape } from '@/features/mobileShell/utils/iosOrientation';
 import { watchMeteredNetwork } from '@/lib/network/meteredNetwork';
@@ -6,10 +7,11 @@ import { watchMeteredNetwork } from '@/lib/network/meteredNetwork';
 /**
  * Touch shell plumbing to the native iOS side: calls / lost headphones pause the
  * player, the window starts upright (only the player may rotate), and downloads
- * learn whether the connection is mobile data.
+ * learn whether the connection is mobile data. CarPlay asks here for its lists.
  */
 export default function MobileIosBridge() {
   useIosAudioInterruptions();
+  useCarPlayBridge();
   useEffect(() => { syncLandscape(); }, []);
   useEffect(() => {
     let off: (() => void) | undefined;
