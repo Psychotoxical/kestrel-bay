@@ -78,29 +78,33 @@ export function AudioTab() {
         </div>
       </SettingsSubSection>
 
-      {/* Native Hi-Res Playback */}
-      <SettingsSubSection
-        title={t('settings.hiResTitle')}
-        icon={<Waves size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup>
-            <SettingsToggle
-              desc={t('settings.hiResDesc')}
-              ariaLabel={t('settings.hiResEnabled')}
-              id="hires-enabled-toggle"
-              checked={auth.enableHiRes}
-              onChange={auth.setEnableHiRes}
-            />
-            <HiResCrossfadeResampleBlock
-              enabled={auth.enableHiRes}
-              resampleHz={auth.hiResCrossfadeResampleHz}
-              onResampleHzChange={auth.setHiResCrossfadeResampleHz}
-              t={t}
-            />
-          </SettingsGroup>
-        </div>
-      </SettingsSubSection>
+      {/* Native Hi-Res Playback. Not on iPhone and iPad: without an external
+          USB converter the output stays at 48 kHz, so there is no device rate to
+          switch to. */}
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.hiResTitle')}
+          icon={<Waves size={16} />}
+        >
+          <div className="settings-card">
+            <SettingsGroup>
+              <SettingsToggle
+                desc={t('settings.hiResDesc')}
+                ariaLabel={t('settings.hiResEnabled')}
+                id="hires-enabled-toggle"
+                checked={auth.enableHiRes}
+                onChange={auth.setEnableHiRes}
+              />
+              <HiResCrossfadeResampleBlock
+                enabled={auth.enableHiRes}
+                resampleHz={auth.hiResCrossfadeResampleHz}
+                onResampleHzChange={auth.setHiResCrossfadeResampleHz}
+                t={t}
+              />
+            </SettingsGroup>
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       {/* Equalizer */}
       <SettingsSubSection

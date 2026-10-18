@@ -1,3 +1,5 @@
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+
 /** Hi-Res transition blend output rates (Hz) for crossfade, AutoDJ, and gapless. */
 export const HI_RES_CROSSFADE_RESAMPLE_OPTIONS = [44_100, 88_200, 96_000] as const;
 
@@ -10,7 +12,11 @@ export function sanitizeHiResCrossfadeResampleHz(value: unknown): HiResCrossfade
   return DEFAULT_HI_RES_CROSSFADE_RESAMPLE_HZ;
 }
 
-/** Args forwarded to `audio_play` for hi-res + crossfade blend rate. */
+/**
+ * Args forwarded to `audio_play` for hi-res + crossfade blend rate. Always off
+ * in the touch shell, also when a desktop settings backup brought the setting
+ * along: the iPhone output stays at 48 kHz without an external converter.
+ */
 export function audioPlayHiResBlendArgs(auth: {
   enableHiRes: boolean;
   hiResCrossfadeResampleHz: HiResCrossfadeResampleHz;
@@ -18,8 +24,9 @@ export function audioPlayHiResBlendArgs(auth: {
   hiResEnabled: boolean;
   hiResCrossfadeResampleHz: number | null;
 } {
+  const hiResEnabled = !IS_MOBILE_SHELL && auth.enableHiRes;
   return {
-    hiResEnabled: auth.enableHiRes,
-    hiResCrossfadeResampleHz: auth.enableHiRes ? auth.hiResCrossfadeResampleHz : null,
+    hiResEnabled,
+    hiResCrossfadeResampleHz: hiResEnabled ? auth.hiResCrossfadeResampleHz : null,
   };
 }
