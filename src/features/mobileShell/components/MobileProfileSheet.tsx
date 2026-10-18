@@ -35,7 +35,7 @@ function SheetRow({ icon: Icon, label, detail, onClick }: {
   );
 }
 
-/** Account sheet behind the Mainstage header button: server, statistics, settings, help. */
+/** Account sheet behind the Mainstage header button: server, settings, statistics, help. */
 export default function MobileProfileSheet({ serverName, connStatus, isLan, onClose }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -69,6 +69,7 @@ export default function MobileProfileSheet({ serverName, connStatus, isLan, onCl
       </button>
 
       <div className="mobile-list-group">
+        <SheetRow icon={Settings} label={t('sidebar.settings')} onClick={() => go('/settings')} />
         <SheetRow icon={BarChart3} label={t('sidebar.statistics')} onClick={() => go('/statistics')} />
         {hasOfflineContent && (
           <SheetRow icon={HardDriveDownload} label={t('connection.downloaded')} onClick={() => go('/offline')} />
@@ -104,7 +105,6 @@ export default function MobileProfileSheet({ serverName, connStatus, isLan, onCl
       </div>
 
       <div className="mobile-list-group">
-        <SheetRow icon={Settings} label={t('sidebar.settings')} onClick={() => go('/settings')} />
         <SheetRow icon={Sparkles} label={t('whatsNew.title')} onClick={() => go('/whats-new')} />
         <SheetRow icon={HelpCircle} label={t('sidebar.help')} onClick={() => go('/help')} />
       </div>
