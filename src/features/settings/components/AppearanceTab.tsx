@@ -22,6 +22,7 @@ import { SeekbarPreview } from '@/features/waveform';
 import WindowButtonPreview from '@/features/settings/components/WindowButtonPreview';
 import { VisualizerSection } from '@/features/settings/components/VisualizerSection';
 import DesktopOnly from '@/features/settings/components/DesktopOnly';
+import TouchOnly from '@/features/settings/components/TouchOnly';
 
 export function AppearanceTab() {
   const { t } = useTranslation();
@@ -306,6 +307,16 @@ export function AppearanceTab() {
           <SettingsGroup>
             <SettingsSubCard>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {/* Touch only, and its default: the platform's own UI font. */}
+              <TouchOnly>
+                <button
+                  className={`btn ${fontStore.font === 'system' ? 'btn-primary' : 'btn-ghost'}`}
+                  style={{ justifyContent: 'flex-start', fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif" }}
+                  onClick={() => fontStore.setFont('system')}
+                >
+                  <span>{t('settings.fontSystem')}</span>
+                </button>
+              </TouchOnly>
               {(
                 [
                   // Accessibility-first: OpenDyslexic at the top so dyslexic

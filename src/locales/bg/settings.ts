@@ -19,6 +19,7 @@ export const settings = {
   languageIt: 'Italiano',
   font: 'Шрифт',
   fontHintOpenDyslexic: 'Подходящ за дислексия · без поддръжка на китайски',
+  fontSystem: 'Системен шрифт',
   theme: 'Тема',
   appearance: 'Външен вид',
   servers: 'Сървъри',

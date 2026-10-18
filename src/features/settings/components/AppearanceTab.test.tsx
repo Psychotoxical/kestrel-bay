@@ -41,4 +41,11 @@ describe('AppearanceTab', () => {
     expect(getByRole('checkbox', { name: 'Album art in track lists' })).toBeInTheDocument();
     expect(getByRole('checkbox', { name: 'Show Bitrate' })).toBeInTheDocument();
   });
+
+  it('offers no system font: that option is touch only', () => {
+    const { queryByRole, getByRole } = renderWithProviders(<AppearanceTab />);
+
+    expect(getByRole('button', { name: 'Lexend' })).toBeInTheDocument();
+    expect(queryByRole('button', { name: 'System font' })).not.toBeInTheDocument();
+  });
 });

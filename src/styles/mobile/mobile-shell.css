@@ -1,8 +1,6 @@
 /* ─── Touch shell (iOS/Android app build, src/features/mobileShell) ───
    Only `[data-mobile-app]` selectors: desktop builds never set the attribute. */
 
-/* iOS system text, Space Grotesk for titles (as in the design drafts). Beats the
-   user font setting (`[data-font]`) and the theme roots by specificity. */
 html[data-mobile-app] {
   --mobile-bar-gap: 10px;
   --mobile-tabbar-height: 64px;
@@ -14,6 +12,12 @@ html[data-mobile-app] {
   --mobile-glass-bg: color-mix(in srgb, var(--bg-elevated, var(--bg-card)) 74%, transparent);
   --mobile-glass-border: color-mix(in srgb, var(--text-primary) 12%, transparent);
   --mobile-row-border: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+/* The touch-only system font (the default there): iOS system text, Space
+   Grotesk for titles (as in the design drafts). Beats the theme roots by
+   specificity. Any other font choice applies as on the desktop. */
+html[data-mobile-app][data-font='system'] {
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Space Grotesk Variable', -apple-system, 'Segoe UI', sans-serif;
 }

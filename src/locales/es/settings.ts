@@ -19,6 +19,7 @@ export const settings = {
   languageUk: 'Українська',
   font: 'Fuente',
   fontHintOpenDyslexic: 'Compatible con dislexia · sin soporte para chino',
+  fontSystem: 'Fuente del sistema',
   theme: 'Tema',
   appearance: 'Apariencia',
   servers: 'Servidores',

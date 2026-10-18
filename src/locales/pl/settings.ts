@@ -19,6 +19,7 @@ export const settings = {
   languageEl: 'Ελληνικά',
   font: 'Czcionka',
   fontHintOpenDyslexic: 'Przyjazna dla dyslektyków · brak obsługi chińskiego',
+  fontSystem: 'Czcionka systemowa',
   theme: 'Motyw',
   appearance: 'Wygląd',
   servers: 'Serwery',

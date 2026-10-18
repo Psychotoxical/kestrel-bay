@@ -19,6 +19,7 @@ export const settings = {
   languageEl: 'Ελληνικά',
   font: 'Police',
   fontHintOpenDyslexic: 'Adapté à la dyslexie · sans prise en charge du chinois',
+  fontSystem: 'Police du système',
   theme: 'Thème',
   appearance: 'Apparence',
   servers: 'Serveurs',

@@ -19,6 +19,7 @@ export const settings = {
   languageEl: 'Ελληνικά',
   font: 'Lettertype',
   fontHintOpenDyslexic: 'Dyslexie-vriendelijk · geen Chinese ondersteuning',
+  fontSystem: 'Systeemlettertype',
   theme: 'Thema',
   appearance: 'Weergave',
   servers: 'Servers',

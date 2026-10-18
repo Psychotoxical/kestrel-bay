@@ -19,6 +19,7 @@ export const settings = {
   languageEl: 'Ελληνικά',
   font: 'Betűtípus',
   fontHintOpenDyslexic: 'Diszlexiabarát · nincs kínai támogatás',
+  fontSystem: 'Rendszerbetűtípus',
   theme: 'Téma',
   appearance: 'Megjelenés',
   servers: 'Szerverek',
