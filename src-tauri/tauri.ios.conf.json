@@ -4,7 +4,7 @@
   "bundle": {
     "iOS": {
       "minimumSystemVersion": "15.0",
-      "frameworks": ["AudioToolbox", "AVFAudio", "MediaPlayer"]
+      "frameworks": ["AudioToolbox", "AVFAudio", "CarPlay", "MediaPlayer"]
     }
   }
 }

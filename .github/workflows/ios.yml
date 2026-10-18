@@ -125,6 +125,15 @@ jobs:
 
       - run: npx tauri ios init --ci
 
+      # Tauri has no iOS entitlements setting; the generated project carries an
+      # entitlements file, and automatic signing picks the capability up from the App ID.
+      - name: Add the CarPlay entitlement
+        run: |
+          f=$(find src-tauri/gen/apple -name '*_iOS.entitlements' | head -n 1)
+          if [ -z "$f" ]; then echo "::error::No entitlements file in the generated project"; exit 1; fi
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.carplay-audio bool true" "$f"
+          cat "$f"
+
       - name: Show linked SDK frameworks
         run: grep -n "sdk:" src-tauri/gen/apple/project.yml
 
@@ -135,6 +144,13 @@ jobs:
           # Touch shell; TAURI_ENV_PLATFORM=ios selects it too, this keeps it explicit.
           PSY_MOBILE_SHELL: '1'
         run: npx tauri ios build --ci --export-method app-store-connect --build-number ${{ github.run_number }}
+
+      - name: Show signed entitlements
+        if: inputs.mode == 'testflight'
+        run: |
+          ipa=$(find src-tauri/gen/apple/build -name '*.ipa' | head -n 1)
+          rm -rf ipa-check && mkdir ipa-check && unzip -q "$ipa" -d ipa-check
+          codesign -d --entitlements - ipa-check/Payload/*.app
 
       - name: Upload to TestFlight
         if: inputs.mode == 'testflight'

@@ -48,6 +48,18 @@
 					<string>TaoSceneDelegate</string>
 				</dict>
 			</array>
+			<!-- CarPlay: own scene delegate (src/ios_carplay.rs), answered in src/ios_scene.rs. -->
+			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneConfigurationName</key>
+					<string>CarPlay</string>
+					<key>UISceneClassName</key>
+					<string>CPTemplateApplicationScene</string>
+					<key>UISceneDelegateClassName</key>
+					<string>PsysonicCarPlaySceneDelegate</string>
+				</dict>
+			</array>
 		</dict>
 	</dict>
 </dict>

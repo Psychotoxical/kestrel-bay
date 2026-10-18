@@ -11,6 +11,8 @@ mod ios_audio_session;
 #[cfg(target_os = "ios")]
 mod ios_backup;
 #[cfg(target_os = "ios")]
+mod ios_carplay;
+#[cfg(target_os = "ios")]
 mod ios_network;
 #[cfg(target_os = "ios")]
 mod ios_orientation;
