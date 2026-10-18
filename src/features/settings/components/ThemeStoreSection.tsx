@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Download, RefreshCw, Trash2, WifiOff } from 'lucide-react';
-import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as openUrl } from '@/lib/api/externalLink';
 import CoverLightbox from '@/ui/CoverLightbox';
 import { useThemeAnimationRisk } from '@/features/settings/hooks/useThemeAnimationRisk';
 import { AnimatedThemeBadge } from '@/features/settings/components/AnimatedThemeBadge';

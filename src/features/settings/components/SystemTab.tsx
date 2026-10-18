@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import { commands } from '@/generated/bindings';
 import { linuxWaylandTextRenderSettingsAvailable } from '@/lib/api/platformShell';
 import { offerExportFile, pickExportPath } from '@/lib/util/exportFile';
-import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as openUrl } from '@/lib/api/externalLink';
 import { AppWindow, ChevronDown, Download, ExternalLink, Globe, HardDrive, Info, Scale, Sliders, Users } from 'lucide-react';
 import { version as appVersion } from '@/../package.json';
 import i18n from '@/lib/i18n';

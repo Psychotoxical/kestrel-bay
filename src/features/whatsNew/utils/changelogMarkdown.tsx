@@ -1,5 +1,5 @@
 import React from 'react';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 
 /**
  * Render inline markdown segments: **bold**, *italic*, `code`, [text](url).

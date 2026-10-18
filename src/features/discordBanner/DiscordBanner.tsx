@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 import { useDiscordBanner } from './useDiscordBanner';
 
 const DISCORD_INVITE = 'https://discord.gg/AMnDRErm4u';

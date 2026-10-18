@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useThemeStore } from '@/store/themeStore';
 import { useOverflowTooltip } from '@/lib/hooks/useOverflowTooltip';
 import { Cast, Globe, Heart, Square, Trash2, X } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 import type { InternetRadioStation } from '@/lib/api/subsonicTypes';
 import { useDragDrop, useDragSource } from '@/lib/dnd/DragDropContext';
 import { CoverArtImage } from '@/cover/CoverArtImage';

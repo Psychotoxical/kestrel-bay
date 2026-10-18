@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Calendar, Info } from 'lucide-react';
-import { open as shellOpen } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as shellOpen } from '@/lib/api/externalLink';
 import type { BandsintownEvent } from '@/lib/api/bandsintown';
 import { isoToParts } from '@/features/nowPlaying/utils/nowPlayingHelpers';
 

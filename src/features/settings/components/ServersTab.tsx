@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as openUrl } from '@/lib/api/externalLink';
 import { AlertTriangle, CheckCircle2, Info, Lock, LogOut, Pencil, Plus, Power, Server, Sparkles, Wifi, WifiOff } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { formatServerSoftware } from '@/lib/server/subsonicServerIdentity';

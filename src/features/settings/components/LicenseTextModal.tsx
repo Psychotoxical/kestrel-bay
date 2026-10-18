@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { open as openExternal } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as openExternal } from '@/lib/api/externalLink';
 import type { LicenseEntry } from '@/features/settings/utils/licensesData';
 
 interface Props {

@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { open } from '@tauri-apps/plugin-shell';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
+import { invokeMock, onInvoke } from '@/test/mocks/tauri';
 import { makeServer } from '@/test/helpers/factories';
 import { resetAuthStore, resetPlayerStore } from '@/test/helpers/storeReset';
 import { resetServerReachabilitySnapshot } from '@/lib/network/serverReachability';
@@ -109,8 +109,10 @@ describe('Shared page (touch shell)', () => {
     fireEvent.click(within(sheet).getByRole('button', { name: 'Copy link' }));
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith(COLLECTION.url));
 
+    // Through the native open: the shell plugin JS open cannot start its helper on iOS.
+    onInvoke('open_external_url', () => null);
     fireEvent.click(within(sheet).getByRole('button', { name: 'Open externally' }));
-    await waitFor(() => expect(open).toHaveBeenCalledWith(COLLECTION.url));
+    await waitFor(() => expect(invokeMock).toHaveBeenCalledWith('open_external_url', { url: COLLECTION.url }));
   });
 
   it('deleting closes the sheet once the link is gone', async () => {

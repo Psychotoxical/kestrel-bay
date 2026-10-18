@@ -10,7 +10,7 @@ import { coverServerScopeForServerId } from '@/cover';
 import { useCoverLightboxSrc } from '@/cover/lightbox';
 import { ArrowLeft, Users, Heart, Feather } from 'lucide-react';
 import WikipediaIcon from '@/ui/WikipediaIcon';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from 'react-i18next';

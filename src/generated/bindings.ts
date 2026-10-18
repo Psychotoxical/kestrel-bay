@@ -686,6 +686,13 @@ export const commands = {
 	 *  notification was shown.
 	 */
 	showTrackNotification: (title: string, body: string, coverPath: string | null) => typedError<boolean, string>(__TAURI_INVOKE("show_track_notification", { title, body, coverPath })),
+	/**
+	 *  Opens a web link in the system browser from the touch shell. The shell
+	 *  plugin's JS `open` starts a helper process there, which iOS does not allow;
+	 *  the plugin's mobile path hands the link to the system instead. The desktop
+	 *  keeps the JS `open` and never calls this.
+	 */
+	openExternalUrl: (url: string) => typedError<null, string>(__TAURI_INVOKE("open_external_url", { url })),
 	/**  Returns true if `path` is an accessible directory (used for pre-flight checks in the frontend). */
 	checkDirAccessible: (path: string) => __TAURI_INVOKE<boolean>("check_dir_accessible", { path }),
 	/**

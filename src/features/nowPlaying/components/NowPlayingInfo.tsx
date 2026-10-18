@@ -4,7 +4,7 @@ import type { SubsonicArtistInfo, SubsonicSong } from '@/lib/api/subsonicTypes';
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Info, X } from 'lucide-react';
-import { open as shellOpen } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as shellOpen } from '@/lib/api/externalLink';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { useAuthStore } from '@/store/authStore';
 import { usePlaybackServerId } from '@/features/playback/hooks/usePlaybackServerId';

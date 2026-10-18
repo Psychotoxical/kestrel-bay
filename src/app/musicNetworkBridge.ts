@@ -2,7 +2,7 @@
 // MusicNetworkStore port (reads are live via getState, so init order vs. rehydrate
 // does not matter), and the Tauri shell backs the host (browser auth + uuid).
 
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 import { getMusicNetworkRuntimeOrNull, initMusicNetworkRuntime } from '../music-network/runtime/getMusicNetworkRuntime';
 import type { MusicNetworkStore, RuntimeHost } from '../music-network/runtime/store';
 import { useAuthStore } from '../store/authStore';

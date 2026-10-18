@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as openUrl } from '@/lib/api/externalLink';
 import {
   AlertTriangle, Check, CheckCircle2, ChevronRight, Lock, LogOut, Pencil, Plus, Power, RefreshCw,
   Server, ShieldCheck, Wifi, WifiOff, X, Zap,

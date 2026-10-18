@@ -5,7 +5,7 @@ import { useEffect, useState, Fragment, useMemo } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { AlbumCard } from '@/features/album';
 import { ArrowDownUp } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { useAuthStore } from '@/store/authStore';
 import { useTranslation } from 'react-i18next';

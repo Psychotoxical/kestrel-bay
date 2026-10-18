@@ -33,7 +33,8 @@ pub(crate) use core::{
 pub(crate) use flatpak::flatpak_update_info;
 pub(crate) use integration::{
     check_dir_accessible, mpris_set_metadata, mpris_set_playback, mpris_set_volume,
-    register_global_shortcut, show_track_notification, unregister_global_shortcut,
+    open_external_url, register_global_shortcut, show_track_notification,
+    unregister_global_shortcut,
 };
 pub(crate) use migration::{migration_inspect, migration_run};
 pub(crate) use network::{

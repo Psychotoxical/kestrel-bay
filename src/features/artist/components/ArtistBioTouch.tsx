@@ -1,7 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronRight } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 import { MobileSheet } from '@/features/mobileShell';
 import { sanitizeBioHtml } from '@/lib/util/sanitizeHtml';
 

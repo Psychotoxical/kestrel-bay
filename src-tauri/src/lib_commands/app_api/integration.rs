@@ -405,10 +405,54 @@ pub(crate) fn check_dir_accessible(path: String) -> bool {
     std::path::Path::new(&path).is_dir()
 }
 
+/// Opens a web link in the system browser from the touch shell. The shell
+/// plugin's JS `open` starts a helper process there, which iOS does not allow;
+/// the plugin's mobile path hands the link to the system instead. The desktop
+/// keeps the JS `open` and never calls this.
+#[tauri::command]
+#[specta::specta]
+pub(crate) fn open_external_url(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    if !is_web_link(&url) {
+        return Err("only http and https links can be opened".into());
+    }
+
+    #[cfg(mobile)]
+    {
+        use tauri_plugin_shell::ShellExt;
+
+        #[allow(deprecated)]
+        app.shell().open(url, None).map_err(|e| e.to_string())
+    }
+
+    #[cfg(desktop)]
+    {
+        let _ = app;
+        Err("open_external_url is for the touch shell only".into())
+    }
+}
+
+/// An `http://` or `https://` link: the same scope the desktop grants the JS `open`.
+fn is_web_link(url: &str) -> bool {
+    let lower = url.to_ascii_lowercase();
+    ["https://", "http://"]
+        .iter()
+        .any(|scheme| lower.starts_with(scheme) && lower.len() > scheme.len())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::path::PathBuf;
+
+    #[test]
+    fn web_links_are_http_or_https_only() {
+        assert!(is_web_link("https://www.last.fm/api/auth"));
+        assert!(is_web_link("HTTP://example.org"));
+        assert!(!is_web_link("https://"));
+        assert!(!is_web_link("file:///etc/passwd"));
+        assert!(!is_web_link("javascript:alert(1)"));
+        assert!(!is_web_link("mailto:someone@example.org"));
+    }
 
     fn fresh_dir(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(

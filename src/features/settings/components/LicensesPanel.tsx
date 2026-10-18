@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Search, ExternalLink } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { open as openExternal } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as openExternal } from '@/lib/api/externalLink';
 import {
   HIGHLIGHTED_DEPENDENCIES,
   loadLicensesData,

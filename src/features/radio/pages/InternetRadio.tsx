@@ -10,7 +10,7 @@ import {
 import { type InternetRadioStation } from '@/lib/api/subsonicTypes';
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Check, Plus, Search } from 'lucide-react';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as open } from '@/lib/api/externalLink';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useConfirmModalStore } from '@/store/confirmModalStore';
 import { MobileMoreMenu } from '@/features/mobileShell';

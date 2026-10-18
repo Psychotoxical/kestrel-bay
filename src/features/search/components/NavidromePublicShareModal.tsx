@@ -1,6 +1,6 @@
 import { ExternalLink, ListMusic, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { open as openUrl } from '@tauri-apps/plugin-shell';
+import { openExternalUrl as openUrl } from '@/lib/api/externalLink';
 import type { NavidromePublicShareRef } from '@/lib/share/navidromePublicShareUrl';
 import type { NavidromePublicSharePreviewState } from '@/features/search/hooks/useNavidromePublicSharePreview';
 import { ShareTrackList } from '@/features/share';
