@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Share2 } from 'lucide-react';
 import SettingsSubSection from '@/features/settings/components/SettingsSubSection';
 import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 import { showToast } from '@/lib/dom/toast';
 import { useAuthStore } from '@/store/authStore';
 import {
@@ -128,24 +129,28 @@ export function MusicNetworkSection() {
           </SettingsField>
         </SettingsGroup>
 
-        {advancedSettingsEnabled && (
-          <SettingsGroup>
-            <SettingsField
-              label={t('musicNetwork.forceScrobbleLabel')}
-              desc={t('musicNetwork.forceScrobbleDesc')}
-              row
-            >
-              <label className="toggle-switch" aria-label={t('musicNetwork.forceScrobbleLabel')}>
-                <input
-                  type="checkbox"
-                  checked={forceScrobbleEnabled}
-                  onChange={e => setForceScrobbleEnabled(e.target.checked)}
-                />
-                <span className="toggle-track" />
-              </label>
-            </SettingsField>
-          </SettingsGroup>
-        )}
+        {/* Not on iPhone and iPad: the control lives in the desktop player bar,
+            the touch player has none. */}
+        <DesktopOnly>
+          {advancedSettingsEnabled && (
+            <SettingsGroup>
+              <SettingsField
+                label={t('musicNetwork.forceScrobbleLabel')}
+                desc={t('musicNetwork.forceScrobbleDesc')}
+                row
+              >
+                <label className="toggle-switch" aria-label={t('musicNetwork.forceScrobbleLabel')}>
+                  <input
+                    type="checkbox"
+                    checked={forceScrobbleEnabled}
+                    onChange={e => setForceScrobbleEnabled(e.target.checked)}
+                  />
+                  <span className="toggle-track" />
+                </label>
+              </SettingsField>
+            </SettingsGroup>
+          )}
+        </DesktopOnly>
 
         <EnrichmentPrimarySelect
           accounts={accounts}

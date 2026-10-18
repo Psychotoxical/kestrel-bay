@@ -31,6 +31,7 @@ import {
 import ArtistDetailHero from '@/features/artist/components/ArtistDetailHero';
 import ArtistDetailHeroMobile from '@/features/artist/components/ArtistDetailHeroMobile';
 import ArtistBioTouch from '@/features/artist/components/ArtistBioTouch';
+import ArtistTourTouch from '@/features/artist/components/ArtistTourTouch';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import ArtistDetailTracksSection from '@/features/artist/components/ArtistDetailTracksSection';
 import { songToTrack } from '@/lib/media/songToTrack';
@@ -376,27 +377,37 @@ export default function ArtistDetail() {
             </div>
           );
 
-          case 'topTracks': return (
-            <ArtistDetailTracksSection
-              // Keyed by artist so the tab selection resets on navigation instead
-              // of carrying over to a different artist's lists.
-              key={`topTracks:${id ?? ''}`}
-              topSongs={topSongs}
-              topSongsLoading={topSongsLoading}
-              albums={albums}
-              marginTop={sectionMt('topTracks')}
-              playTopSongWithContinuation={playTopSongWithContinuation}
-              losslessOnly={losslessOnly}
-              scopes={entitySourceScopes}
-              // Same anchor pair the page loader uses: the route's server plus the
-              // route's artist id. `artist.serverId` is the scope-priority winner
-              // and can belong to a different server than `id` came from, which
-              // would make the backend look up an id the server does not have.
-              serverId={activeServerId}
-              artistId={id ?? ''}
-              onPlayAllTracks={playFromAllTracks}
-            />
-          );
+          case 'topTracks': {
+            const tracksSection = (
+              <ArtistDetailTracksSection
+                // Keyed by artist so the tab selection resets on navigation instead
+                // of carrying over to a different artist's lists.
+                key={`topTracks:${id ?? ''}`}
+                topSongs={topSongs}
+                topSongsLoading={topSongsLoading}
+                albums={albums}
+                marginTop={sectionMt('topTracks')}
+                playTopSongWithContinuation={playTopSongWithContinuation}
+                losslessOnly={losslessOnly}
+                scopes={entitySourceScopes}
+                // Same anchor pair the page loader uses: the route's server plus the
+                // route's artist id. `artist.serverId` is the scope-priority winner
+                // and can belong to a different server than `id` came from, which
+                // would make the backend look up an id the server does not have.
+                serverId={activeServerId}
+                artistId={id ?? ''}
+                onPlayAllTracks={playFromAllTracks}
+              />
+            );
+            // Touch: the tour dates sit under the tracks; the touch player has no
+            // Now Playing info tab to show them in.
+            return IS_MOBILE_SHELL ? (
+              <Fragment key="topTracks">
+                {tracksSection}
+                <ArtistTourTouch artistName={artist.name} />
+              </Fragment>
+            ) : tracksSection;
+          }
 
           case 'similar': return (
             <ArtistDetailSimilarArtists

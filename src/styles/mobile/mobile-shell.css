@@ -5258,3 +5258,113 @@ html[data-mobile-app] .player-heatmap-weekdays span,
 html[data-mobile-app] .player-heatmap-legend {
   font-size: 12px;
 }
+
+/* ─── Artist tour dates (ArtistTourTouch): Bandsintown shows under the tracks ─── */
+.mobile-artist-tour .section-title {
+  margin: 0 0 12px;
+}
+
+.mobile-artist-tour {
+  margin-top: 2rem;
+}
+
+.mobile-artist-tour__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.mobile-artist-tour__list li + li {
+  border-top: 1px solid var(--mobile-row-border);
+}
+
+.mobile-artist-tour__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 14px;
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+}
+
+.mobile-artist-tour__row:active:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.mobile-artist-tour__date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40px;
+  flex-shrink: 0;
+  line-height: 1.1;
+}
+
+.mobile-artist-tour__month {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.mobile-artist-tour__day {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.mobile-artist-tour__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.mobile-artist-tour__venue,
+.mobile-artist-tour__place {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-artist-tour__venue {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.mobile-artist-tour__place {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.mobile-artist-tour__chevron {
+  flex-shrink: 0;
+  color: var(--text-muted);
+}
+
+.mobile-artist-tour__more {
+  margin-top: 10px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.mobile-artist-tour__credit {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
