@@ -6,10 +6,10 @@ export type TrackListCoverArtSurface = 'queue' | 'pages';
 
 /**
  * Separate persisted toggles: queue chrome vs browse tracklists. The touch
- * shell's queue always shows covers, as its other song lists do.
+ * shell's song lists always show covers, so it offers neither toggle.
  */
 export function useTrackListCoverArtEnabled(surface: TrackListCoverArtSurface): boolean {
   const queueEnabled = useAuthStore(s => s.queueTrackListCovers);
   const pagesEnabled = useThemeStore(s => s.trackListCoverArtOnPages);
-  return surface === 'queue' ? IS_MOBILE_SHELL || queueEnabled : pagesEnabled;
+  return IS_MOBILE_SHELL || (surface === 'queue' ? queueEnabled : pagesEnabled);
 }

@@ -1,3 +1,5 @@
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+
 export type PlaybackStrategy =
   | 'speed_corrected'
   | 'varispeed'
@@ -72,7 +74,10 @@ export function isPlaybackEffectActive(
   return Math.abs(speed - 1) > 0.001;
 }
 
-/** True when the engine applies playback-rate DSP (Orbit sessions force passthrough). */
+/**
+ * True when the engine applies playback-rate DSP (Orbit sessions force passthrough;
+ * the touch shell offers no speed control and always plays at 1.0×).
+ */
 export function isPlaybackRateApplied(
   enabled: boolean,
   strategy: PlaybackStrategy,
@@ -80,7 +85,7 @@ export function isPlaybackRateApplied(
   pitchSemitones: number,
   orbitSessionActive: boolean,
 ): boolean {
-  if (orbitSessionActive) return false;
+  if (IS_MOBILE_SHELL || orbitSessionActive) return false;
   return isPlaybackEffectActive(enabled, strategy, speed, pitchSemitones);
 }
 

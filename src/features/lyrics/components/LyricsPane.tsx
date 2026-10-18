@@ -7,6 +7,7 @@ import type { LrcLine } from '@/features/lyrics/types';
 import { useLyrics } from '@/features/lyrics/hooks/useLyrics';
 import type { WordLyricsLine } from '@/features/lyrics/types';
 import { useAuthStore } from '@/store/authStore';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useTranslation } from 'react-i18next';
 import type { Track } from '@/lib/media/trackTypes';
 import { EaseScroller, targetForFraction } from '@/lib/dom/easeScroll';
@@ -63,7 +64,9 @@ export default function LyricsPane({ currentTrack }: Props) {
     translationEnabled: s.lyricsTranslationEnabled,
     setTranslationEnabled: s.setLyricsTranslationEnabled,
     wordHighlightMode: s.lyricsWordHighlightMode,
-    sidebarLyricsStyle: s.sidebarLyricsStyle,
+    // The touch shell offers no scroll style (both read the same on a phone),
+    // also not for one a desktop settings backup brought along.
+    sidebarLyricsStyle: IS_MOBILE_SHELL ? 'classic' : s.sidebarLyricsStyle,
     lyricsSources: s.lyricsSources,
   })));
   // Lyrics fully off: no source enabled (issue #810).

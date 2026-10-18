@@ -8,6 +8,7 @@ import { LyricsSourcesCustomizer } from '@/features/settings/components/LyricsSo
 import { SettingsSegmented, type SegmentedOption } from '@/features/settings/components/SettingsSegmented';
 import { SettingsSubCard, SettingsField } from '@/features/settings/components/SettingsSubCard';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
+import DesktopOnly from '@/features/settings/components/DesktopOnly';
 
 export function LyricsTab() {
   const { t } = useTranslation();
@@ -68,22 +69,26 @@ export function LyricsTab() {
         </SettingsGroup>
       </SettingsSubSection>
 
-      <SettingsSubSection
-        title={t('settings.sidebarLyricsStyle')}
-        icon={<AudioLines size={16} />}
-      >
-        <SettingsGroup>
-          <SettingsSegmented
-            options={lyricsStyleOptions}
-            value={sidebarLyricsStyle}
-            onChange={setSidebarLyricsStyle}
-            ariaLabel={t('settings.sidebarLyricsStyle')}
-          />
-          <SettingsSubCard style={{ marginTop: '0.85rem' }}>
-            <SettingsField desc={t(lyricsStyleDescKey)} />
-          </SettingsSubCard>
-        </SettingsGroup>
-      </SettingsSubSection>
+      {/* Not on iPhone and iPad: on a phone-sized lyrics pane both styles read
+          the same. */}
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.sidebarLyricsStyle')}
+          icon={<AudioLines size={16} />}
+        >
+          <SettingsGroup>
+            <SettingsSegmented
+              options={lyricsStyleOptions}
+              value={sidebarLyricsStyle}
+              onChange={setSidebarLyricsStyle}
+              ariaLabel={t('settings.sidebarLyricsStyle')}
+            />
+            <SettingsSubCard style={{ marginTop: '0.85rem' }}>
+              <SettingsField desc={t(lyricsStyleDescKey)} />
+            </SettingsSubCard>
+          </SettingsGroup>
+        </SettingsSubSection>
+      </DesktopOnly>
 
       <SettingsSubSection
         title={t('settings.lyricsPronunciationTitle')}

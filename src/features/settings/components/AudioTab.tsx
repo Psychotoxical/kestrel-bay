@@ -118,19 +118,23 @@ export function AudioTab() {
         </div>
       </SettingsSubSection>
 
-      {/* Playback speed */}
-      <SettingsSubSection
-        title={t('settings.playbackRateTitle')}
-        icon={<Gauge size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup>
-            <PlaybackRateBlock t={t} />
-          </SettingsGroup>
-        </div>
-      </SettingsSubSection>
+      {/* Playback speed and track previews. Not on iPhone and iPad: the touch
+          player has no speed control and the touch song lists no preview
+          buttons. */}
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.playbackRateTitle')}
+          icon={<Gauge size={16} />}
+        >
+          <div className="settings-card">
+            <SettingsGroup>
+              <PlaybackRateBlock t={t} />
+            </SettingsGroup>
+          </div>
+        </SettingsSubSection>
 
-      <TrackPreviewsSection t={t} />
+        <TrackPreviewsSection t={t} />
+      </DesktopOnly>
     </>
   );
 }

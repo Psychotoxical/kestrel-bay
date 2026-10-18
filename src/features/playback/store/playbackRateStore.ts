@@ -15,6 +15,7 @@ import {
   type PlaybackRateSnapshot,
 } from '@/features/playback/utils/audio/playbackRateRestart';
 import { isOrbitPlaybackSyncActive } from '@/store/orbitRuntime';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface PlaybackRateState extends PlaybackRateSnapshot {
   /** UI-only: smaller slider steps (Advanced). Not sent to the engine. */
@@ -31,7 +32,9 @@ interface PlaybackRateState extends PlaybackRateSnapshot {
 
 function syncPlaybackRate(state: PlaybackRateSnapshot, prev?: PlaybackRateSnapshot) {
   // Orbit sync assumes 1.0× wall-clock playback; suppress DSP without mutating prefs.
-  const effectiveEnabled = state.enabled && !isOrbitPlaybackSyncActive();
+  // The touch shell offers no speed control, also not for a rate a desktop
+  // settings backup brought along, so it always plays at 1.0×.
+  const effectiveEnabled = state.enabled && !IS_MOBILE_SHELL && !isOrbitPlaybackSyncActive();
   audioSetPlaybackRate({
     enabled: effectiveEnabled,
     strategy: engineStrategy(state.strategy),

@@ -15,12 +15,19 @@ vi.mock('@/features/playback/hooks/useAudioDevicesProbe', () => ({
   }),
 }));
 
-describe('AudioTab hi-res settings (desktop)', () => {
+describe('AudioTab (desktop)', () => {
   beforeEach(resetAuthStore);
 
   it('offers native hi-res playback', () => {
     renderWithProviders(<AudioTab />);
 
     expect(screen.getByRole('checkbox', { name: 'Enable native hi-res playback' })).toBeInTheDocument();
+  });
+
+  it('offers playback speed and track previews', () => {
+    renderWithProviders(<AudioTab />);
+
+    expect(screen.getByRole('checkbox', { name: 'Enable playback speed' })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: 'Enable track previews' })).toBeInTheDocument();
   });
 });

@@ -34,4 +34,11 @@ describe('AppearanceTab', () => {
       state: { tab: 'integrations', focus: 'Backgrounds' },
     });
   });
+
+  it('offers the track list cover and bitrate toggles', () => {
+    const { getByRole } = renderWithProviders(<AppearanceTab />);
+
+    expect(getByRole('checkbox', { name: 'Album art in track lists' })).toBeInTheDocument();
+    expect(getByRole('checkbox', { name: 'Show Bitrate' })).toBeInTheDocument();
+  });
 });

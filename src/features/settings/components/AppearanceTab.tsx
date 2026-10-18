@@ -110,7 +110,8 @@ export function AppearanceTab() {
               checked={theme.enablePlaylistCoverPhoto}
               onChange={theme.setEnablePlaylistCoverPhoto}
             />
-            {/* Touch: the queue always shows covers, as the other song lists. */}
+            {/* Touch: the queue and the other song lists always show covers and
+                never the bitrate, so these toggles would do nothing there. */}
             <DesktopOnly>
               <div className="settings-section-divider" />
               <SettingsToggle
@@ -119,21 +120,21 @@ export function AppearanceTab() {
                 checked={auth.queueTrackListCovers}
                 onChange={auth.setQueueTrackListCovers}
               />
+              <div className="settings-section-divider" />
+              <SettingsToggle
+                label={t('settings.trackListCoverArtOnPages')}
+                desc={t('settings.trackListCoverArtOnPagesSub')}
+                checked={theme.trackListCoverArtOnPages}
+                onChange={theme.setTrackListCoverArtOnPages}
+              />
+              <div className="settings-section-divider" />
+              <SettingsToggle
+                label={t('settings.showBitrate')}
+                desc={t('settings.showBitrateSub')}
+                checked={theme.showBitrate}
+                onChange={theme.setShowBitrate}
+              />
             </DesktopOnly>
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.trackListCoverArtOnPages')}
-              desc={t('settings.trackListCoverArtOnPagesSub')}
-              checked={theme.trackListCoverArtOnPages}
-              onChange={theme.setTrackListCoverArtOnPages}
-            />
-            <div className="settings-section-divider" />
-            <SettingsToggle
-              label={t('settings.showBitrate')}
-              desc={t('settings.showBitrateSub')}
-              checked={theme.showBitrate}
-              onChange={theme.setShowBitrate}
-            />
             <div className="settings-section-divider" />
             <SettingsToggle
               label={t('settings.showExplicitBadges')}

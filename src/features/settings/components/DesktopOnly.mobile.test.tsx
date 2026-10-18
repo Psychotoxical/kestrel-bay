@@ -22,11 +22,12 @@ describe('settings the touch shell leaves out', () => {
     for (const gone of [
       'Preload mini player', 'Floating Player Bar', 'Full Title on Hover', 'Cover Art Background',
       'Interface Scale', 'Fullscreen player style', 'Library card grids',
+      'Album art in track lists', 'Show Bitrate',
     ]) {
       expect(queryByText(gone), gone).toBeNull();
     }
     // Kept: settings the touch pages use.
-    expect(queryByText('Show Bitrate')).not.toBeNull();
+    expect(queryByText('Mark explicit tracks')).not.toBeNull();
     expect(queryByText('Seekbar Style')).not.toBeNull();
   });
 

@@ -130,8 +130,8 @@ describe('settings search in the touch shell', () => {
     expect(discord?.desktopOnly).toBe(true);
     const visual = SETTINGS_SEARCH_SECTIONS.find(s => s.titleKey === 'settings.visualOptionsTitle');
     expect(visual?.desktopOnly).toBeFalsy();
-    expect(visual?.desktopOnlyKeys).toEqual(expect.arrayContaining(['settings.preloadMiniPlayer', 'settings.floatingPlayerBar']));
-    expect(visual?.desktopOnlyKeys).not.toContain('settings.showBitrate');
+    expect(visual?.desktopOnlyKeys).toEqual(expect.arrayContaining(['settings.preloadMiniPlayer', 'settings.floatingPlayerBar', 'settings.showBitrate']));
+    expect(visual?.desktopOnlyKeys).not.toContain('settings.showExplicitBadges');
   });
 
   it('leaves out sections the touch shell does not render', () => {
@@ -144,7 +144,8 @@ describe('settings search in the touch shell', () => {
     expect(desktop('tray').some(h => h.key === 'settings.behavior')).toBe(true);
     expect(touch('tray').some(h => h.key === 'settings.behavior')).toBe(false);
     expect(touch('preload mini player').some(h => h.key === 'settings.visualOptionsTitle')).toBe(false);
-    expect(touch('bitrate').some(h => h.key === 'settings.visualOptionsTitle')).toBe(true);
+    expect(touch('bitrate').some(h => h.key === 'settings.visualOptionsTitle')).toBe(false);
+    expect(touch('explicit').some(h => h.key === 'settings.visualOptionsTitle')).toBe(true);
   });
 
   it('offers no keyboard shortcuts or other Input tab results', () => {
