@@ -52,6 +52,16 @@ describe('MobilePlayer', () => {
     }
   });
 
+  it('favourite and more sit in the top bar, not beside the title', () => {
+    const { container } = renderPlayer();
+    const top = container.querySelector('.mobile-player__top') as HTMLElement;
+    const meta = container.querySelector('.mobile-player__meta') as HTMLElement;
+    expect(within(top).getByRole('button', { name: 'Favorite' })).toBeInTheDocument();
+    expect(within(top).getByRole('button', { name: 'More options' })).toBeInTheDocument();
+    expect(within(meta).queryByRole('button')).toBeNull();
+    expect(within(meta).getByText('Chaos')).toBeInTheDocument();
+  });
+
   it('names the close button for VoiceOver with a real translation, not a raw key', () => {
     renderPlayer();
     expect(screen.getByRole('button', { name: 'Back' })).toHaveClass('mobile-player__close');

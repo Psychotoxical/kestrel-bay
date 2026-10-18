@@ -1338,17 +1338,19 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   transition: background 0.8s ease;
 }
 
+/* Back on the left, logo centred, favourite + more on the right. */
 .mobile-player__top {
   flex: none;
   width: 100%;
   max-width: 520px;
   height: 48px;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
 }
 
 .mobile-player__close {
-  flex: none;
+  justify-self: start;
   width: 44px;
   height: 44px;
   margin-left: -8px;
@@ -1365,12 +1367,19 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
 .mobile-player__logo {
   height: 18px;
   width: auto;
-  margin: 0 auto;
 }
 
-.mobile-player__top-spacer {
-  flex: none;
-  width: 36px;
+.mobile-player__top-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-round-btn--compact {
+  width: 38px;
+  height: 38px;
+  border-radius: 19px;
 }
 
 /* Everything fits on one screen: controls keep their height, the cover takes
@@ -1436,6 +1445,16 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  text-align: center;
+}
+
+/* Centred while it fits; a longer line scrolls from its start (TouchMarquee). */
+.touch-marquee.is-scrolling {
+  text-align: left;
+}
+
+.touch-marquee__line {
+  display: inline-block;
 }
 
 .mobile-player__title {
@@ -1443,18 +1462,12 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   font-size: 23px;
   line-height: 28px;
   font-weight: 700;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .mobile-player__artist {
   font-size: 19px;
   line-height: 24px;
   color: var(--accent);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .mobile-player__artist a,

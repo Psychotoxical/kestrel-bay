@@ -21,6 +21,7 @@ import { usePlaybackCoverArt } from '@/cover/usePlaybackCoverArt';
 import { usePlaybackTrackCoverRef } from '@/cover/useLibraryCoverRef';
 import { useCachedUrl } from '@/ui/CachedImage';
 import PsysonicLogo from '@/ui/PsysonicLogo';
+import TouchMarquee from './TouchMarquee';
 import { useCoverAccentColor } from '@/features/nowPlaying';
 import { LyricsPane } from '@/features/lyrics';
 import { WaveformSeek } from '@/features/waveform';
@@ -272,7 +273,34 @@ export default function MobilePlayer() {
           <ChevronDown size={30} strokeWidth={2} aria-hidden="true" />
         </button>
         <PsysonicLogo className="mobile-player__logo" gradientIdSuffix="mobile-player" />
-        <span className="mobile-player__top-spacer" />
+        <div className="mobile-player__top-actions">
+          {title && currentTrack && !currentRadio && (
+            <>
+              <button
+                type="button"
+                className={`mobile-round-btn mobile-round-btn--compact${isStarred ? ' is-active' : ''}`}
+                onClick={toggleStar}
+                aria-pressed={isStarred}
+                aria-label={isStarred ? t('contextMenu.unfavorite') : t('contextMenu.favorite')}
+              >
+                <Heart size={19} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="mobile-round-btn mobile-round-btn--compact"
+                aria-label={t('player.moreOptions')}
+                aria-haspopup="menu"
+                onClick={e => {
+                  prepareTransientUiOpen();
+                  const r = e.currentTarget.getBoundingClientRect();
+                  openContextMenu(r.right, r.bottom, currentTrack, 'song', undefined, undefined, undefined, undefined, true);
+                }}
+              >
+                <MoreHorizontal size={20} aria-hidden="true" />
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {!title ? (
@@ -295,39 +323,13 @@ export default function MobilePlayer() {
           <div className="mobile-player__body">
             <div className="mobile-player__meta">
               <div className="mobile-player__meta-text">
-                <div className="mobile-player__title">{title}</div>
-                <div className="mobile-player__artist">
+                <TouchMarquee className="mobile-player__title" measureKey={title}>{title}</TouchMarquee>
+                <TouchMarquee className="mobile-player__artist" measureKey={currentTrack?.id}>
                   {currentTrack && !currentRadio
                     ? <TrackArtistLinks track={currentTrack} onNavigate={navigatePlaybackLibrary} />
                     : t('sidebar.radio')}
-                </div>
+                </TouchMarquee>
               </div>
-              {currentTrack && !currentRadio && (
-                <>
-                  <button
-                    type="button"
-                    className={`mobile-round-btn${isStarred ? ' is-active' : ''}`}
-                    onClick={toggleStar}
-                    aria-pressed={isStarred}
-                    aria-label={isStarred ? t('contextMenu.unfavorite') : t('contextMenu.favorite')}
-                  >
-                    <Heart size={21} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    className="mobile-round-btn"
-                    aria-label={t('player.moreOptions')}
-                    aria-haspopup="menu"
-                    onClick={e => {
-                      prepareTransientUiOpen();
-                      const r = e.currentTarget.getBoundingClientRect();
-                      openContextMenu(r.right, r.bottom, currentTrack, 'song', undefined, undefined, undefined, undefined, true);
-                    }}
-                  >
-                    <MoreHorizontal size={22} aria-hidden="true" />
-                  </button>
-                </>
-              )}
             </div>
 
             {!currentRadio && <Scrubber duration={currentTrack?.duration ?? 0} formatLabel={formatLabel} />}
