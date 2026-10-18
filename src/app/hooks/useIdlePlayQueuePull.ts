@@ -15,6 +15,7 @@ import {
 import { hasPendingQueueSync } from '@/features/playback/store/queueSync';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
 import { canAutoIdlePlayQueuePull } from '@/app/hooks/usePlayQueueSyncLedState';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 const IDLE_THRESHOLD_MS = 30_000;
 const POLL_INTERVAL_MS = 10_000;
@@ -25,6 +26,7 @@ export function useIdlePlayQueuePull(status: ConnectionStatus) {
   const isPlaying = usePlayerStore(s => s.isPlaying);
   const queueItems = usePlayerStore(s => s.queueItems);
   const inFlightRef = useRef(false);
+  const startupPullDoneRef = useRef(false);
 
   useEffect(() => {
     if (!isPlaying && getPlaybackIdleSinceMs() === 0) {
@@ -35,11 +37,8 @@ export function useIdlePlayQueuePull(status: ConnectionStatus) {
   useEffect(() => {
     if (!canAutoIdlePlayQueuePull(status, orbitRole)) return;
 
-    const tick = () => {
+    const pull = () => {
       if (inFlightRef.current) return;
-      if (!canAutoIdlePlayQueuePull(status, orbitRole)) return;
-      if (isPlaying) return;
-      if (!isPlaybackIdleLongEnough(IDLE_THRESHOLD_MS)) return;
       if (isIdleQueuePullSuspended()) return;
       if (isQueueNaturallyEnded()) return;
       const serverIds = [...new Set(queueItems.map(profileIdFromQueueRef).filter(Boolean))];
@@ -60,6 +59,21 @@ export function useIdlePlayQueuePull(status: ConnectionStatus) {
           inFlightRef.current = false;
         });
     };
+
+    const tick = () => {
+      if (!canAutoIdlePlayQueuePull(status, orbitRole)) return;
+      if (isPlaying) return;
+      if (!isPlaybackIdleLongEnough(IDLE_THRESHOLD_MS)) return;
+      pull();
+    };
+
+    // Touch shell: an app swiped away never flushes its position, and in the car
+    // Play comes right after launch, so take the server's position once at
+    // startup instead of after the idle threshold.
+    if (IS_MOBILE_SHELL && !startupPullDoneRef.current) {
+      startupPullDoneRef.current = true;
+      if (!isPlaying) pull();
+    }
 
     const id = window.setInterval(tick, POLL_INTERVAL_MS);
     return () => window.clearInterval(id);
