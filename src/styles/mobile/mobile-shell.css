@@ -5217,3 +5217,44 @@ html[data-mobile-bars='collapsed'] .mobile-orbit-room {
     grid-column: 2;
   }
 }
+
+/* ─── Statistics (server and player stats): compact 2×2 tiles, short heatmap ─── */
+
+html[data-mobile-app] .stats-page {
+  gap: 2rem;
+}
+
+html[data-mobile-app] .stats-overview {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+html[data-mobile-app] .stats-card {
+  padding: 14px 14px 12px;
+  align-items: flex-start;
+  text-align: left;
+  gap: 6px;
+}
+
+/* One line, also for the playtime ("11.670h 16m"). */
+html[data-mobile-app] .stats-card-value {
+  max-width: 100%;
+  font-size: clamp(1.2rem, 5.6vw, 1.5rem);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+html[data-mobile-app] .stats-card-label {
+  font-size: 11px;
+}
+
+/* The heatmap cells grow to the width (PlayerStatsHeatmap: last weeks only); the
+   labels stay at text size instead of growing with them. */
+html[data-mobile-app] .player-heatmap-month,
+html[data-mobile-app] .player-heatmap-weekdays span,
+html[data-mobile-app] .player-heatmap-legend {
+  font-size: 12px;
+}

@@ -3,14 +3,29 @@ import { useTranslation } from 'react-i18next';
 import {
   HEATMAP_LEVEL_COUNT,
   heatmapCellMetrics,
+  heatmapColumnMonthLabels,
   heatmapLevel,
   heatmapMonthLabels,
+  heatmapRecentWeekColumns,
   heatmapWeekColumns,
   heatmapWeekdayLabels,
   type HeatmapCell,
 } from '@/features/stats/utils/heatmapLevels';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 const LEVEL_OPACITY = [0.14, 0.32, 0.52, 0.72, 1] as const;
+
+/**
+ * Touch shell: a whole year leaves pin-sized cells on a phone, so it shows the
+ * last weeks (up to today, or to the end of a past year) with large cells.
+ */
+const TOUCH_WEEK_COUNT = 15;
+const TOUCH_CELL_MAX = 22;
+
+function touchEndDate(year: number): Date {
+  const today = new Date();
+  return year === today.getFullYear() ? today : new Date(year, 11, 31);
+}
 
 type Props = {
   year: number;
@@ -42,10 +57,15 @@ export default function PlayerStatsHeatmap({ year, dayCounts, selectedDate, onSe
   const [layoutWidth, setLayoutWidth] = useState(0);
 
   const { weeks, maxCount } = useMemo(
-    () => heatmapWeekColumns(year, dayCounts),
+    () => (IS_MOBILE_SHELL
+      ? heatmapRecentWeekColumns(year, dayCounts, touchEndDate(year), TOUCH_WEEK_COUNT)
+      : heatmapWeekColumns(year, dayCounts)),
     [year, dayCounts],
   );
-  const monthLabels = useMemo(() => heatmapMonthLabels(year, locale), [year, locale]);
+  const monthLabels = useMemo(
+    () => (IS_MOBILE_SHELL ? heatmapColumnMonthLabels(weeks, locale) : heatmapMonthLabels(year, locale)),
+    [weeks, year, locale],
+  );
   const weekdayLabels = useMemo(() => heatmapWeekdayLabels(locale), [locale]);
 
   useEffect(() => {
@@ -59,7 +79,7 @@ export default function PlayerStatsHeatmap({ year, dayCounts, selectedDate, onSe
   }, [weeks.length]);
 
   const { cell, gap, labelW, bodyGap } = useMemo(
-    () => heatmapCellMetrics(layoutWidth, weeks.length),
+    () => heatmapCellMetrics(layoutWidth, weeks.length, IS_MOBILE_SHELL ? TOUCH_CELL_MAX : undefined),
     [layoutWidth, weeks.length],
   );
 

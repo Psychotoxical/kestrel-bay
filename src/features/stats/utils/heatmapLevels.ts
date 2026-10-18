@@ -89,6 +89,66 @@ export function heatmapWeekdayLabels(locale?: string): string[] {
   });
 }
 
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * The last `weekCount` week columns (Sun→Sat rows) up to `endDate`, for the
+ * touch shell's short heatmap. Days after `endDate` or outside `year` pad;
+ * `maxCount` covers the shown days only.
+ */
+export function heatmapRecentWeekColumns(
+  year: number,
+  dayCounts: Map<string, number>,
+  endDate: Date,
+  weekCount: number,
+): { weeks: HeatmapCell[][]; maxCount: number } {
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  const start = new Date(end);
+  start.setDate(end.getDate() - end.getDay() - (weekCount - 1) * 7);
+  const weeks: HeatmapCell[][] = [];
+  let maxCount = 0;
+  const d = new Date(start);
+  for (let w = 0; w < weekCount; w++) {
+    const week: HeatmapCell[] = [];
+    for (let i = 0; i < 7; i++) {
+      if (d > end || d.getFullYear() !== year) {
+        week.push({ date: '', count: 0 });
+      } else {
+        const date = dayKey(d);
+        const count = dayCounts.get(date) ?? 0;
+        maxCount = Math.max(maxCount, count);
+        week.push({ date, count });
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+  return { weeks, maxCount };
+}
+
+/** Month labels for arbitrary week columns: at the first column and where a month starts. */
+export function heatmapColumnMonthLabels(
+  weeks: HeatmapCell[][],
+  locale?: string,
+): { columnIndex: number; label: string }[] {
+  const fmt = new Intl.DateTimeFormat(usableLocale(locale), { month: 'short' });
+  const labels: { columnIndex: number; label: string }[] = [];
+  weeks.forEach((week, columnIndex) => {
+    const days = week.filter(c => c.date);
+    if (days.length === 0) return;
+    const firstOfMonth = days.find(c => c.date.endsWith('-01'));
+    const labelDay = labels.length === 0 ? days[0] : firstOfMonth;
+    if (!labelDay) return;
+    // A label right after the first one would overlap it.
+    if (labels.length === 1 && columnIndex - labels[0].columnIndex < 2) labels.pop();
+    const [y, m] = labelDay.date.split('-').map(Number);
+    labels.push({ columnIndex, label: fmt.format(new Date(y, m - 1, 1)) });
+  });
+  return labels;
+}
+
 const HEATMAP_LABEL_W = 24;
 const HEATMAP_BODY_GAP = 8;
 const HEATMAP_CELL_MIN = 4;
@@ -98,6 +158,7 @@ const HEATMAP_CELL_MAX = 14;
 export function heatmapCellMetrics(
   containerWidth: number,
   weekCount: number,
+  cellMax = HEATMAP_CELL_MAX,
 ): { cell: number; gap: number; labelW: number; bodyGap: number } {
   const gap = containerWidth > 640 ? 3 : 2;
   const available = containerWidth - HEATMAP_LABEL_W - HEATMAP_BODY_GAP;
@@ -105,7 +166,7 @@ export function heatmapCellMetrics(
     return { cell: HEATMAP_CELL_MIN, gap, labelW: HEATMAP_LABEL_W, bodyGap: HEATMAP_BODY_GAP };
   }
   const cell = Math.min(
-    HEATMAP_CELL_MAX,
+    cellMax,
     Math.max(HEATMAP_CELL_MIN, (available - (weekCount - 1) * gap) / weekCount),
   );
   return { cell, gap, labelW: HEATMAP_LABEL_W, bodyGap: HEATMAP_BODY_GAP };
