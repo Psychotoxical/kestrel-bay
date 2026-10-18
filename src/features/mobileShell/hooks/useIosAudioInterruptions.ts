@@ -43,8 +43,6 @@ async function reopenOutput(): Promise<void> {
  * the player resumes what was playing before, only when iOS allows it
  * (`shouldResume`), like Apple Music. A lost route pauses for good. If iOS never
  * reports the end, coming back to the app reopens the output without playing.
- * A new route (CarPlay plugged in, headphones connected) can leave the output
- * stalled on the old one, so it is reopened right away; playback carries on.
  */
 export function useIosAudioInterruptions(): void {
   useEffect(() => {
@@ -95,12 +93,6 @@ export function useIosAudioInterruptions(): void {
       });
       if (cancelled) { offRouteLost(); return; }
       unlisten.push(offRouteLost);
-
-      const offRouteNew = await listen('ios-audio:route-new', () => {
-        void reopenOutput();
-      });
-      if (cancelled) { offRouteNew(); return; }
-      unlisten.push(offRouteNew);
     };
     void setup();
 

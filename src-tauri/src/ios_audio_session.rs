@@ -7,8 +7,8 @@
 //! so both reach the web layer as events (`ios-audio:interruption`,
 //! `ios-audio:route-lost`) and the touch shell pauses / resumes the player.
 //! A newly available output (CarPlay plugged in, headphones connected) can leave
-//! the running output stalled on the old route; `ios-audio:route-new` lets the
-//! touch shell reopen it.
+//! the running output stalled on the old route, so the engine reopens it the way
+//! it does after a system resume: the track carries on where it was.
 
 use std::ptr::NonNull;
 
@@ -106,7 +106,12 @@ pub(crate) fn observe_interruptions(app: &AppHandle) {
                     let _ = route_app.emit("ios-audio:route-lost", ());
                 }
                 Some(ROUTE_NEW_DEVICE_AVAILABLE) => {
-                    let _ = route_app.emit("ios-audio:route-new", ());
+                    if crate::audio::debounce_allow_resume_reopen() {
+                        let app = route_app.clone();
+                        tauri::async_runtime::spawn(async move {
+                            crate::audio::reopen_audio_after_system_resume(&app).await;
+                        });
+                    }
                 }
                 _ => {}
             }

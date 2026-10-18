@@ -17,7 +17,7 @@ static RESUME_REOPEN_DEBOUNCE: Mutex<Option<Instant>> = Mutex::new(None);
 const DEBOUNCE: Duration = Duration::from_millis(900);
 
 /// Returns false if this resume should be ignored (coalesce bursts from the OS).
-pub(crate) fn debounce_allow_resume_reopen() -> bool {
+pub fn debounce_allow_resume_reopen() -> bool {
     let mut g = RESUME_REOPEN_DEBOUNCE.lock().unwrap();
     let now = Instant::now();
     if let Some(t) = *g {
@@ -30,7 +30,7 @@ pub(crate) fn debounce_allow_resume_reopen() -> bool {
 }
 
 /// Delay so the audio stack re-enumerates before we open a new stream.
-pub(crate) async fn reopen_audio_after_system_resume(app: &AppHandle) {
+pub async fn reopen_audio_after_system_resume(app: &AppHandle) {
     tokio::time::sleep(Duration::from_millis(400)).await;
 
     let Some(state) = app.try_state::<AudioEngine>() else {

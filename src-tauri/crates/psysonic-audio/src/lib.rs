@@ -32,7 +32,7 @@ pub mod playback_rate;
 mod power_notify_linux;
 #[cfg(target_os = "windows")]
 mod power_notify_win;
-#[cfg(any(target_os = "windows", target_os = "linux"))]
+#[cfg(any(target_os = "windows", target_os = "linux", target_os = "ios"))]
 mod power_resume;
 pub mod preload_commands;
 mod preserve_worker;
@@ -56,6 +56,8 @@ pub use helpers::{
     cleanup_orphan_stream_spill_dir, take_stream_completed_for_url,
     take_stream_completed_spill_for_url,
 };
+#[cfg(target_os = "ios")]
+pub use power_resume::{debounce_allow_resume_reopen, reopen_audio_after_system_resume};
 pub use stream_idle::start_stream_idle_watcher;
 
 /// Register platform-specific listeners so the output stream is reopened after sleep/resume
