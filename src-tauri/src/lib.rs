@@ -14,6 +14,8 @@ mod ios_backup;
 mod ios_network;
 #[cfg(target_os = "ios")]
 mod ios_orientation;
+#[cfg(target_os = "ios")]
+mod ios_scene;
 mod lib_commands;
 pub(crate) mod library_analysis_backfill;
 mod library_identity_maintenance;
@@ -529,7 +531,7 @@ pub fn run() {
     #[cfg(all(desktop, not(target_os = "linux"), not(debug_assertions)))]
     let builder = builder.plugin(tauri_plugin_single_instance::init(on_second_instance));
 
-    builder
+    let app = builder
         .on_page_load(|webview, payload| {
             if webview.label() == "main" && matches!(payload.event(), PageLoadEvent::Started) {
                 webview
@@ -986,8 +988,12 @@ pub fn run() {
             #[cfg(target_os = "windows")]
             taskbar_win::update_taskbar_icon,
         ])
-        .run(tauri::generate_context!())
+        .build(tauri::generate_context!())
         .expect("error while running Psysonic");
+    // Between build (tao declares its app delegate) and run (UIApplicationMain).
+    #[cfg(target_os = "ios")]
+    ios_scene::install();
+    app.run(|_, _| {});
 }
 
 #[cfg(test)]
