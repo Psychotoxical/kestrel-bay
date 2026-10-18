@@ -16,7 +16,7 @@ const resume = vi.fn(() => usePlayerStore.setState({ isPlaying: true }));
 
 async function mount() {
   const hook = renderHook(() => useIosAudioInterruptions());
-  await waitFor(() => expect(tauriMockListenerCount('ios-audio:route-lost')).toBe(1));
+  await waitFor(() => expect(tauriMockListenerCount('ios-audio:route-new')).toBe(1));
   return hook;
 }
 
@@ -101,10 +101,20 @@ describe('useIosAudioInterruptions', () => {
     unmount();
   });
 
+  it('a new output (CarPlay plugged in) reopens the output and keeps playing', async () => {
+    const { unmount } = await mount();
+    await act(async () => { emitTauriEvent('ios-audio:route-new', null); });
+    await waitFor(() => expect(audio.audioSetDevice).toHaveBeenCalledWith({ deviceName: null }));
+    expect(pause).not.toHaveBeenCalled();
+    expect(usePlayerStore.getState().isPlaying).toBe(true);
+    unmount();
+  });
+
   it('stops listening when unmounted', async () => {
     const { unmount } = await mount();
     unmount();
     expect(tauriMockListenerCount('ios-audio:interruption')).toBe(0);
     expect(tauriMockListenerCount('ios-audio:route-lost')).toBe(0);
+    expect(tauriMockListenerCount('ios-audio:route-new')).toBe(0);
   });
 });

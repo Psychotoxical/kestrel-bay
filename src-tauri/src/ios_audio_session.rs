@@ -6,6 +6,9 @@
 //! lost Bluetooth device change its route. iOS does not pause the player for us,
 //! so both reach the web layer as events (`ios-audio:interruption`,
 //! `ios-audio:route-lost`) and the touch shell pauses / resumes the player.
+//! A newly available output (CarPlay plugged in, headphones connected) can leave
+//! the running output stalled on the old route; `ios-audio:route-new` lets the
+//! touch shell reopen it.
 
 use std::ptr::NonNull;
 
@@ -22,6 +25,8 @@ use tauri::{AppHandle, Emitter};
 const INTERRUPTION_BEGAN: usize = 1;
 /// `AVAudioSessionInterruptionOptionShouldResume`.
 const OPTION_SHOULD_RESUME: usize = 1;
+/// `AVAudioSessionRouteChangeReasonNewDeviceAvailable`: CarPlay or headphones connected.
+const ROUTE_NEW_DEVICE_AVAILABLE: usize = 1;
 /// `AVAudioSessionRouteChangeReasonOldDeviceUnavailable`: headphones unplugged, Bluetooth gone.
 const ROUTE_OLD_DEVICE_UNAVAILABLE: usize = 2;
 
@@ -50,7 +55,7 @@ struct InterruptionPayload {
     should_resume: bool,
 }
 
-/// Forwards session interruptions and lost output routes to the web layer.
+/// Forwards session interruptions and lost / new output routes to the web layer.
 /// The observers live as long as the app.
 pub(crate) fn observe_interruptions(app: &AppHandle) {
     let center = NSNotificationCenter::defaultCenter();
@@ -90,8 +95,20 @@ pub(crate) fn observe_interruptions(app: &AppHandle) {
             let note = unsafe { note.as_ref() };
             // SAFETY: immutable framework constant.
             let reason_key = unsafe { AVAudioSessionRouteChangeReasonKey };
-            if number_for(note, reason_key) == Some(ROUTE_OLD_DEVICE_UNAVAILABLE) {
-                let _ = route_app.emit("ios-audio:route-lost", ());
+            let reason = number_for(note, reason_key);
+            crate::app_eprintln!(
+                "[audio] iOS route change reason={} outputs={}",
+                reason.map_or_else(|| "?".to_string(), |r| r.to_string()),
+                current_outputs()
+            );
+            match reason {
+                Some(ROUTE_OLD_DEVICE_UNAVAILABLE) => {
+                    let _ = route_app.emit("ios-audio:route-lost", ());
+                }
+                Some(ROUTE_NEW_DEVICE_AVAILABLE) => {
+                    let _ = route_app.emit("ios-audio:route-new", ());
+                }
+                _ => {}
             }
         });
 
@@ -114,6 +131,38 @@ pub(crate) fn observe_interruptions(app: &AppHandle) {
         )
     };
     std::mem::forget(observers);
+}
+
+/// Port types of the session's current outputs (e.g. `CarAudio`, `Speaker`), for the log.
+fn current_outputs() -> String {
+    use objc2::msg_send;
+    use objc2::runtime::AnyObject;
+    // SAFETY: plain getters on the process-wide session; nil is checked at every step.
+    unsafe {
+        let session = AVAudioSession::sharedInstance();
+        let route: *mut AnyObject = msg_send![&*session, currentRoute];
+        if route.is_null() {
+            return "-".to_string();
+        }
+        let outputs: *mut AnyObject = msg_send![route, outputs];
+        if outputs.is_null() {
+            return "-".to_string();
+        }
+        let count: usize = msg_send![outputs, count];
+        let mut ports = Vec::with_capacity(count);
+        for index in 0..count {
+            let port: *mut AnyObject = msg_send![outputs, objectAtIndex: index];
+            let port_type: *mut NSString = msg_send![port, portType];
+            if let Some(port_type) = port_type.as_ref() {
+                ports.push(port_type.to_string());
+            }
+        }
+        if ports.is_empty() {
+            "-".to_string()
+        } else {
+            ports.join(",")
+        }
+    }
 }
 
 /// The unsigned number stored under `key` in the notification's userInfo.
