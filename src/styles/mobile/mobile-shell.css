@@ -2993,9 +2993,14 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
   color: var(--accent);
 }
 
+/* Sized like `.mobile-track__cover`: the desktop sizing of these thumbs is scoped to
+   desktop rows, so without it a playlist row drew the cover at its full image size. */
 .mobile-track .track-row-cover-thumb,
 .mobile-track [class*='cover-thumb'] {
   flex: none;
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
   border-radius: 6px;
 }
 
