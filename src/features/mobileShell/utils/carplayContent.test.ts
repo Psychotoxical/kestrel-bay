@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   toggleShuffleMode: vi.fn(),
   toggleRepeat: vi.fn(),
   player: {} as Record<string, unknown>,
+  playlists: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock('@/features/playback', () => ({
@@ -33,7 +34,7 @@ vi.mock('@/features/playback', () => ({
 }));
 vi.mock('@/features/home', () => ({ loadHomeChronologicalFeed: mocks.loadHomeChronologicalFeed }));
 vi.mock('@/features/playlist', () => ({
-  usePlaylistStore: { getState: () => ({ playlists: [], fetchPlaylists: vi.fn(async () => {}) }) },
+  usePlaylistStore: { getState: () => ({ playlists: mocks.playlists, fetchPlaylists: vi.fn(async () => {}) }) },
   resolvePlaylistTracks: vi.fn(async () => []),
 }));
 vi.mock('@/features/offline', () => ({
@@ -72,6 +73,18 @@ describe('carplayContent', () => {
     vi.clearAllMocks();
     _resetCarPlayContentForTest();
     mocks.player = {};
+    mocks.playlists = [];
+  });
+
+  it('playlist rows carry their cover source only when the playlist has a cover', async () => {
+    mocks.playlists = [
+      { id: 'p1', name: 'Road', songCount: 12, coverArt: 'pl-p1', serverId: 'srv' },
+      { id: 'p2', name: 'Bare', songCount: 3 },
+    ];
+    const list = await carPlayList('playlists');
+    const [withCover, without] = list.sections[0].items;
+    expect(withCover.cover).toEqual({ kind: 'playlist', id: 'p1', coverArt: 'pl-p1', serverId: 'srv' });
+    expect(without.cover).toBeUndefined();
   });
 
   it('up next lists the queue from the playing track and a row jumps there', async () => {

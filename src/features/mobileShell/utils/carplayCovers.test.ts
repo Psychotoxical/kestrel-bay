@@ -10,6 +10,7 @@ vi.mock('@/lib/api/coverCache', () => ({
   coverCacheEnsureBatch: covers.ensure,
 }));
 vi.mock('@/cover', () => ({
+  albumCoverRef: (_albumId: string, coverArt: string) => ({ fetchCoverArtId: `pl-${coverArt}` }),
   coverServerScopeForServerId: () => ({ kind: 'active' }),
   coverStorageKeyFromRef: (ref: { fetchCoverArtId: string }, tier: number) => `${ref.fetchCoverArtId}:${tier}`,
   resolveAlbumCoverRefsFromLibrary: async (albums: Array<{ id: string }>) =>
@@ -37,6 +38,19 @@ describe('attachCarPlayCovers', () => {
     expect(sections[0].items.map(item => item.image)).toEqual(['/covers/a/256.webp', '/covers/b/256.webp']);
     expect(refresh).toBeNull();
     expect(covers.ensure).not.toHaveBeenCalled();
+  });
+
+  it('gives a playlist row the playlist cover by its cover id, without a library lookup', async () => {
+    covers.peek.mockResolvedValue({ 'pl-p1:256': '/covers/p1/256.webp' });
+    const sections = [{
+      items: [
+        { cover: { kind: 'playlist' as const, id: 'p', coverArt: 'p1', serverId: 'srv' } } as { cover: { kind: 'playlist'; id: string; coverArt: string; serverId: string }; image?: string },
+        { cover: { kind: 'playlist' as const, id: 'q', serverId: 'srv' } } as { cover: { kind: 'playlist'; id: string; serverId: string }; image?: string },
+      ],
+    }];
+    const refresh = await attachCarPlayCovers(sections);
+    expect(sections[0].items.map(item => item.image)).toEqual(['/covers/p1/256.webp', undefined]);
+    expect(refresh).toBeNull();
   });
 
   it('downloads the missing covers afterwards and reports where they belong', async () => {

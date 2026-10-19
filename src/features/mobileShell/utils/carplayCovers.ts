@@ -1,5 +1,6 @@
 import { coverCacheEnsureBatch, coverCachePeekBatch } from '@/lib/api/coverCache';
 import {
+  albumCoverRef,
   coverServerScopeForServerId,
   coverStorageKeyFromRef,
   resolveAlbumCoverRefsFromLibrary,
@@ -14,7 +15,7 @@ const CARPLAY_COVER_ROWS = 60;
 
 /** The entity whose cover a row shows. */
 export interface CarPlayCoverSource {
-  kind: 'album' | 'artist';
+  kind: 'album' | 'artist' | 'playlist';
   id: string;
   coverArt?: string;
   serverId: string;
@@ -46,6 +47,11 @@ function bareCoverPath(path: string): string {
 
 async function refFor(cover: CarPlayCoverSource): Promise<CoverArtRef | null> {
   const scope = coverServerScopeForServerId(cover.serverId);
+  // A playlist's cover is the server's collage, keyed by its cover id like the
+  // playlist cards do (no library lookup: the index holds no playlist covers).
+  if (cover.kind === 'playlist') {
+    return cover.coverArt ? albumCoverRef(cover.coverArt, cover.coverArt, scope) : null;
+  }
   const entity = [{ id: cover.id, coverArt: cover.coverArt }];
   const refs = cover.kind === 'album'
     ? await resolveAlbumCoverRefsFromLibrary(entity, scope)

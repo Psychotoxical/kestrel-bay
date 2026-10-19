@@ -174,6 +174,9 @@ async function playlistsList(): Promise<CarPlayList> {
         title: playlist.name,
         subtitle: String(playlist.songCount),
         browse: true,
+        cover: playlist.coverArt
+          ? { kind: 'playlist' as const, id: playlist.id, coverArt: playlist.coverArt, serverId: playlist.serverId ?? '' }
+          : undefined,
       })),
     }],
   };
