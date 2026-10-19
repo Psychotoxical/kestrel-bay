@@ -23,4 +23,12 @@ describe('Info.ios.plist Siri declarations', () => {
   it('declares the music media category so Siri routes play requests to the app', () => {
     expect(arrayStrings('INSupportedMediaCategories')).toContain('INMediaCategoryMusic');
   });
+
+  it('gives Siri a "sounds like" hint for the app name (it heard "Psychic")', () => {
+    const block = plist.match(/<key>INAlternativeAppNames<\/key>\s*<array>([\s\S]*?)<\/array>\s*(?=<!--|<key>)/)?.[1] ?? '';
+    expect(block).toContain('<key>INAlternativeAppName</key>');
+    expect(block).toContain('<key>INAlternativeAppNamePronunciationHint</key>');
+    // Apple allows at most three entries.
+    expect((block.match(/<dict>/g) ?? []).length).toBeLessThanOrEqual(3);
+  });
 });

@@ -29,7 +29,26 @@ vi.mock('@/store/mediaResolver', () => ({ resolveAlbum: mocks.resolveAlbum }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: { getState: () => ({ activeServerId: 'srv' }) } }));
 vi.mock('./carplayContent', () => ({ carPlayPlay: mocks.carPlayPlay }));
 
-import { playSiriRequest } from './siriPlay';
+import { playSiriRequest, stripSpokenAppName } from './siriPlay';
+
+describe('stripSpokenAppName', () => {
+  it('drops a trailing app name or its mishearing, in German and English', () => {
+    expect(stripSpokenAppName('Metallica and Justice for All mit Psychic')).toBe('Metallica and Justice for All');
+    expect(stripSpokenAppName('Chaos in Psysonic')).toBe('Chaos');
+    expect(stripSpokenAppName('Chaos with Psy Sonic')).toBe('Chaos');
+  });
+
+  it('leaves titles that only contain such words alone', () => {
+    expect(stripSpokenAppName('Psychic TV')).toBe('Psychic TV');
+    expect(stripSpokenAppName('Back in Black')).toBe('Back in Black');
+    expect(stripSpokenAppName('Sonic Youth')).toBe('Sonic Youth');
+  });
+
+  it('returns nothing for empty input or a request that was only the app name', () => {
+    expect(stripSpokenAppName(null)).toBeUndefined();
+    expect(stripSpokenAppName('   ')).toBeUndefined();
+  });
+});
 
 const song = (id: string, title: string, artistId = 'ar1') => ({
   id, title, artist: 'Band', artistId, album: 'Record', albumId: 'al1', duration: 200,
@@ -90,6 +109,12 @@ describe('playSiriRequest', () => {
     mocks.playlistTracks.mockResolvedValue([{ id: 't1', title: 'One' }]);
     expect(await playSiriRequest({ mediaName: 'road', mediaType: 5 })).toBe(true);
     expect(mocks.withQueueSource).toHaveBeenCalledWith({ kind: 'playlist', id: 'p1', serverId: 'srv' }, expect.any(Function));
+  });
+
+  it('searches without the app name Siri left in the request', async () => {
+    mocks.runLocalLiveSearch.mockResolvedValue(null);
+    await playSiriRequest({ mediaName: 'Chaos mit Psychic', mediaType: 0 });
+    expect(mocks.runNetworkLiveSearch).toHaveBeenCalledWith('Chaos');
   });
 
   it('reports false when nothing matches', async () => {

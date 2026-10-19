@@ -27,6 +27,18 @@ const MEDIA_PLAYLIST = 5;
 
 const same = (a: string | undefined | null, b: string) => !!a && a.trim().toLowerCase() === b.trim().toLowerCase();
 
+/**
+ * Siri sometimes leaves the app name in the request ("… mit Psychic": it heard "Psysonic"
+ * as a word it knows). A trailing "<with|in|on|…> <app name or mishearing>" is not part of
+ * the title.
+ */
+const APP_NAME_TAIL = /\s+(?:mit|in|auf|bei|via|über|on|with|using)\s+(?:psy\s?sonic|psysonik|psychonic|psychic)\s*$/i;
+
+export function stripSpokenAppName(name: string | null | undefined): string | undefined {
+  const cleaned = name?.replace(APP_NAME_TAIL, '').trim();
+  return cleaned || undefined;
+}
+
 /** Local index first, the server's search when the index has nothing. */
 async function search(query: string): Promise<SearchResults> {
   const serverId = useAuthStore.getState().activeServerId;
@@ -71,7 +83,9 @@ async function playPlaylist(name: string): Promise<boolean> {
  * random mix. Returns whether anything started.
  */
 export async function playSiriRequest(request: SiriPlayRequest): Promise<boolean> {
-  const query = request.mediaName?.trim() || request.artistName?.trim() || request.albumName?.trim();
+  const query = stripSpokenAppName(request.mediaName)
+    ?? stripSpokenAppName(request.artistName)
+    ?? stripSpokenAppName(request.albumName);
   if (!query) {
     await carPlayPlay('random');
     return true;

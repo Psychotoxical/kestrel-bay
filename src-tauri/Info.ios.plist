@@ -41,6 +41,22 @@
 	<array>
 		<string>INMediaCategoryMusic</string>
 	</array>
+	<!-- Siri heard "Psysonic" as "Psychic": spelling variants with a "sounds like" hint. -->
+	<key>INAlternativeAppNames</key>
+	<array>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Psysonic</string>
+			<key>INAlternativeAppNamePronunciationHint</key>
+			<string>sigh sonic</string>
+		</dict>
+		<dict>
+			<key>INAlternativeAppName</key>
+			<string>Psy Sonic</string>
+			<key>INAlternativeAppNamePronunciationHint</key>
+			<string>sigh sonic</string>
+		</dict>
+	</array>
 	<key>NSSiriUsageDescription</key>
 	<string>Psysonic uses Siri to play music from your library when you ask for it.</string>
 	<!-- Scene lifecycle, which CarPlay requires. tao (0.35) only attaches its window to a
