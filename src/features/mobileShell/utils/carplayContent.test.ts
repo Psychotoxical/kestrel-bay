@@ -149,7 +149,14 @@ describe('carplayContent', () => {
     expect(list.sections[1].items.map(item => item.node)[0]).toContain('playall');
   });
 
-  it('without an artist id the button shows just the album', async () => {
+  it('takes the artist id from the album tracks when the playing track lacks it', async () => {
+    mocks.player = { currentTrack: { id: 't1', title: 'One', artist: 'Band', albumId: 'al1', serverId: 'srv' } };
+    mocks.resolveAlbum.mockResolvedValue({ album: {}, songs: [{ ...song('t1'), artistId: 'ar9' }] });
+    const list = await carPlayList('current');
+    expect(list.sections[0].items[0]).toMatchObject({ node: 'artist|srv|ar9', title: 'Band', browse: true });
+  });
+
+  it('without any artist id the button shows just the album', async () => {
     mocks.player = { currentTrack: { id: 't1', title: 'One', artist: 'Band', albumId: 'al1', serverId: 'srv' } };
     mocks.resolveAlbum.mockResolvedValue({ album: {}, songs: [song('t1')] });
     const list = await carPlayList('current');

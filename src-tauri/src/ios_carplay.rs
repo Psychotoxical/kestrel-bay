@@ -69,6 +69,9 @@ thread_local! {
     static NOW_PLAYING_OBSERVER: RefCell<Option<Retained<NowPlayingObserver>>> = const { RefCell::new(None) };
     /// The shuffle / repeat remote commands are enabled and have their target (done once).
     static MODE_COMMANDS_READY: Cell<bool> = const { Cell::new(false) };
+    /// The heart state the now-playing buttons were last built with; rebuilding them on every
+    /// shuffle / repeat change made the buttons flash twice.
+    static BUTTONS_STARRED: Cell<Option<bool>> = const { Cell::new(None) };
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -601,6 +604,8 @@ unsafe fn setup_now_playing() {
         let () = msg_send![now_playing, addObserver: &*observer];
         NOW_PLAYING_OBSERVER.with(|slot| *slot.borrow_mut() = Some(observer));
     }
+    // A new car connection starts with default buttons.
+    BUTTONS_STARRED.with(|last| last.set(None));
     update_now_playing_buttons();
 }
 
@@ -640,33 +645,9 @@ unsafe fn ensure_mode_commands(center: *mut AnyObject) {
 /// Main thread.
 unsafe fn update_now_playing_buttons() {
     let state = STATE.with(|slot| slot.borrow().clone());
-    let now_playing: *mut AnyObject = msg_send![class!(CPNowPlayingTemplate), sharedTemplate];
-    let buttons = mutable_array();
-
-    let on_shuffle: RcBlock<dyn Fn(NonNull<AnyObject>)> =
-        RcBlock::new(|_button: NonNull<AnyObject>| send_command("shuffle"));
-    let shuffle: Allocated<AnyObject> = msg_send![class!(CPNowPlayingShuffleButton), alloc];
-    let shuffle: Retained<AnyObject> = msg_send![shuffle, initWithHandler: &*on_shuffle];
-    let () = msg_send![&*buttons, addObject: &*shuffle];
-
-    let on_repeat: RcBlock<dyn Fn(NonNull<AnyObject>)> =
-        RcBlock::new(|_button: NonNull<AnyObject>| send_command("repeat"));
-    let repeat: Allocated<AnyObject> = msg_send![class!(CPNowPlayingRepeatButton), alloc];
-    let repeat: Retained<AnyObject> = msg_send![repeat, initWithHandler: &*on_repeat];
-    let () = msg_send![&*buttons, addObject: &*repeat];
-
-    let heart_symbol = if state.starred { "heart.fill" } else { "heart" };
-    let heart_image: *mut AnyObject =
-        msg_send![class!(UIImage), systemImageNamed: &*ns(heart_symbol)];
-    if !heart_image.is_null() {
-        let on_heart: RcBlock<dyn Fn(NonNull<AnyObject>)> =
-            RcBlock::new(|_button: NonNull<AnyObject>| send_command("star"));
-        let heart: Allocated<AnyObject> = msg_send![class!(CPNowPlayingImageButton), alloc];
-        let heart: Retained<AnyObject> =
-            msg_send![heart, initWithImage: heart_image, handler: &*on_heart];
-        let () = msg_send![&*buttons, addObject: &*heart];
+    if BUTTONS_STARRED.with(|last| last.replace(Some(state.starred))) != Some(state.starred) {
+        rebuild_now_playing_buttons(state.starred);
     }
-    let () = msg_send![now_playing, updateNowPlayingButtons: &*buttons];
 
     // CarPlay draws the shuffle / repeat buttons from the remote command centre's modes.
     let center: *mut AnyObject = msg_send![class!(MPRemoteCommandCenter), sharedCommandCenter];
@@ -685,4 +666,38 @@ unsafe fn update_now_playing_buttons() {
         _ => REPEAT_OFF,
     };
     let () = msg_send![repeat_command, setCurrentRepeatType: repeat_type];
+}
+
+/// The shuffle / repeat / heart buttons themselves; only the heart changes with the state.
+///
+/// # Safety
+/// Main thread.
+unsafe fn rebuild_now_playing_buttons(starred: bool) {
+    let now_playing: *mut AnyObject = msg_send![class!(CPNowPlayingTemplate), sharedTemplate];
+    let buttons = mutable_array();
+
+    let on_shuffle: RcBlock<dyn Fn(NonNull<AnyObject>)> =
+        RcBlock::new(|_button: NonNull<AnyObject>| send_command("shuffle"));
+    let shuffle: Allocated<AnyObject> = msg_send![class!(CPNowPlayingShuffleButton), alloc];
+    let shuffle: Retained<AnyObject> = msg_send![shuffle, initWithHandler: &*on_shuffle];
+    let () = msg_send![&*buttons, addObject: &*shuffle];
+
+    let on_repeat: RcBlock<dyn Fn(NonNull<AnyObject>)> =
+        RcBlock::new(|_button: NonNull<AnyObject>| send_command("repeat"));
+    let repeat: Allocated<AnyObject> = msg_send![class!(CPNowPlayingRepeatButton), alloc];
+    let repeat: Retained<AnyObject> = msg_send![repeat, initWithHandler: &*on_repeat];
+    let () = msg_send![&*buttons, addObject: &*repeat];
+
+    let heart_symbol = if starred { "heart.fill" } else { "heart" };
+    let heart_image: *mut AnyObject =
+        msg_send![class!(UIImage), systemImageNamed: &*ns(heart_symbol)];
+    if !heart_image.is_null() {
+        let on_heart: RcBlock<dyn Fn(NonNull<AnyObject>)> =
+            RcBlock::new(|_button: NonNull<AnyObject>| send_command("star"));
+        let heart: Allocated<AnyObject> = msg_send![class!(CPNowPlayingImageButton), alloc];
+        let heart: Retained<AnyObject> =
+            msg_send![heart, initWithImage: heart_image, handler: &*on_heart];
+        let () = msg_send![&*buttons, addObject: &*heart];
+    }
+    let () = msg_send![now_playing, updateNowPlayingButtons: &*buttons];
 }

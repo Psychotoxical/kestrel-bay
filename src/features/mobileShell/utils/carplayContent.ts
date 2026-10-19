@@ -329,12 +329,17 @@ async function currentList(): Promise<CarPlayList> {
   const serverId = track.serverId ?? browseServerId() ?? '';
   const albumNode = node('album', serverId, track.albumId);
   const album = await albumList(albumNode, serverId, track.albumId);
-  if (!track.artistId || !track.artist) return album;
+  // The playing track may lack the artist id (queued from a search or the local index);
+  // the album's own tracks usually carry it.
+  const albumTrack = shownTracks.get(albumNode)?.tracks.find(candidate => candidate.artistId);
+  const artistId = track.artistId ?? albumTrack?.artistId;
+  const artistName = track.artist || albumTrack?.artist;
+  if (!artistId || !artistName) return album;
   const artistRow: CarPlayItem = {
-    node: node('artist', serverId, track.artistId),
-    title: track.artist,
+    node: node('artist', serverId, artistId),
+    title: artistName,
     browse: true,
-    cover: { kind: 'artist', id: track.artistId, serverId },
+    cover: { kind: 'artist', id: artistId, serverId },
   };
   return { ...album, sections: [{ items: [artistRow] }, ...album.sections] };
 }
