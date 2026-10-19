@@ -1,5 +1,6 @@
 import { parseLocalPlaybackEntryKey } from '@/store/localPlaybackKeys';
 import { getMediaDir } from '@/lib/media/mediaDir';
+import { localPathRebaseReady } from '@/lib/cache/localPathRebase';
 import {
   evictEphemeralCacheOrphansToFit,
   getMediaTierSize,
@@ -19,6 +20,8 @@ export interface EphemeralReconcileResult {
  */
 export interface EphemeralReconcileDeps {
   entries: Record<string, { tier: string; localPath: string }>;
+  /** The entries as they are after waiting for the path rebase (`entries` is a snapshot). */
+  getEntries?: () => Record<string, { tier: string; localPath: string }>;
   removeEntry: (trackId: string, serverIndexKey: string, reason?: string) => void;
 }
 
@@ -49,8 +52,10 @@ export async function evictEphemeralOrphansToFit(
 export async function reconcileEphemeralCache(
   deps: EphemeralReconcileDeps,
 ): Promise<EphemeralReconcileResult> {
+  // Stored paths may still name the previous iOS app container; check them once rebased.
+  await localPathRebaseReady();
   const mediaDir = getMediaDir();
-  const ephemeral = Object.entries(deps.entries).filter(([, e]) => e.tier === 'ephemeral');
+  const ephemeral = Object.entries(deps.getEntries?.() ?? deps.entries).filter(([, e]) => e.tier === 'ephemeral');
 
   const paths = ephemeral.map(([, e]) => e.localPath);
   const existsFlags =
