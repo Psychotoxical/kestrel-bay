@@ -16,7 +16,7 @@ use std::sync::{Mutex, OnceLock};
 use block2::Block;
 use objc2::rc::{Allocated, Retained};
 use objc2::runtime::{AnyClass, AnyObject, Bool, NSObject, Sel};
-use objc2::{class, define_class, ffi, msg_send, sel, ClassType};
+use objc2::{class, define_class, ffi, msg_send, sel, AnyThread, ClassType};
 use objc2_foundation::NSString;
 use tauri::{AppHandle, Emitter, Listener};
 
