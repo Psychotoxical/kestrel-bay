@@ -180,6 +180,7 @@ export default function MobilePlayer() {
   const scheduleRemaining = usePlaybackScheduleRemaining();
   const transportRef = useRef<HTMLDivElement>(null);
   const playSlotRef = useRef<HTMLSpanElement>(null);
+  const moreWasOpenRef = useRef(false);
   const [sheet, setSheet] = useState<'queue' | 'lyrics' | 'audio' | null>(null);
   // Swipe down anywhere (outside the seek bar and chip row) closes the player.
   const swipeRef = useRef<{ x: number; y: number; active: boolean; dy: number } | null>(null);
@@ -273,34 +274,6 @@ export default function MobilePlayer() {
           <ChevronDown size={30} strokeWidth={2} aria-hidden="true" />
         </button>
         <PsysonicLogo className="mobile-player__logo" gradientIdSuffix="mobile-player" />
-        <div className="mobile-player__top-actions">
-          {title && currentTrack && !currentRadio && (
-            <>
-              <button
-                type="button"
-                className={`mobile-round-btn mobile-round-btn--compact${isStarred ? ' is-active' : ''}`}
-                onClick={toggleStar}
-                aria-pressed={isStarred}
-                aria-label={isStarred ? t('contextMenu.unfavorite') : t('contextMenu.favorite')}
-              >
-                <Heart size={19} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
-              </button>
-              <button
-                type="button"
-                className="mobile-round-btn mobile-round-btn--compact"
-                aria-label={t('player.moreOptions')}
-                aria-haspopup="menu"
-                onClick={e => {
-                  prepareTransientUiOpen();
-                  const r = e.currentTarget.getBoundingClientRect();
-                  openContextMenu(r.right, r.bottom, currentTrack, 'song', undefined, undefined, undefined, undefined, true);
-                }}
-              >
-                <MoreHorizontal size={20} aria-hidden="true" />
-              </button>
-            </>
-          )}
-        </div>
       </div>
 
       {!title ? (
@@ -410,14 +383,53 @@ export default function MobilePlayer() {
               </button>
             </div>
 
+            {/* Icon-only; the names are the buttons' accessible labels. */}
             <div className="mobile-player__footer">
-              <button type="button" className="mobile-footer-btn" onClick={() => setSheet('lyrics')} disabled={!!currentRadio}>
-                <MicVocal size={22} aria-hidden="true" />
-                <span>{t('player.lyrics')}</span>
+              <button
+                type="button"
+                className={`mobile-footer-btn${isStarred ? ' is-active' : ''}`}
+                onClick={toggleStar}
+                aria-pressed={isStarred}
+                aria-label={isStarred ? t('contextMenu.unfavorite') : t('contextMenu.favorite')}
+                disabled={!currentTrack || !!currentRadio}
+              >
+                <Heart size={22} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
               </button>
-              <button type="button" className="mobile-footer-btn" onClick={() => setSheet('queue')}>
+              <button
+                type="button"
+                className="mobile-footer-btn"
+                onClick={() => setSheet('lyrics')}
+                aria-label={t('player.lyrics')}
+                disabled={!!currentRadio}
+              >
+                <MicVocal size={22} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="mobile-footer-btn"
+                onClick={() => setSheet('queue')}
+                aria-label={t('queue.title')}
+              >
                 <ListMusic size={22} aria-hidden="true" />
-                <span>{t('queue.title')}</span>
+              </button>
+              <button
+                type="button"
+                className="mobile-footer-btn"
+                aria-label={t('player.moreOptions')}
+                aria-haspopup="menu"
+                disabled={!currentTrack || !!currentRadio}
+                // The menu closes on mousedown, which lands before this click:
+                // note on pointerdown whether it was open, so a second tap closes it.
+                onPointerDown={() => { moreWasOpenRef.current = usePlayerStore.getState().contextMenu.isOpen; }}
+                onClick={e => {
+                  if (moreWasOpenRef.current) { moreWasOpenRef.current = false; return; }
+                  if (!currentTrack) return;
+                  prepareTransientUiOpen();
+                  const r = e.currentTarget.getBoundingClientRect();
+                  openContextMenu(r.right, r.top, currentTrack, 'song', undefined, undefined, undefined, undefined, true);
+                }}
+              >
+                <MoreHorizontal size={22} aria-hidden="true" />
               </button>
             </div>
           </div>

@@ -52,14 +52,28 @@ describe('MobilePlayer', () => {
     }
   });
 
-  it('favourite and more sit in the top bar, not beside the title', () => {
+  it('favourite, lyrics, queue and more are icon-only buttons in the bottom row, in that order', () => {
     const { container } = renderPlayer();
-    const top = container.querySelector('.mobile-player__top') as HTMLElement;
+    const footer = container.querySelector('.mobile-player__footer') as HTMLElement;
     const meta = container.querySelector('.mobile-player__meta') as HTMLElement;
-    expect(within(top).getByRole('button', { name: 'Favorite' })).toBeInTheDocument();
-    expect(within(top).getByRole('button', { name: 'More options' })).toBeInTheDocument();
+    const buttons = within(footer).getAllByRole('button');
+    expect(buttons.map(b => b.getAttribute('aria-label'))).toEqual(['Favorite', 'Lyrics', 'Queue', 'More options']);
+    for (const button of buttons) expect(button.textContent).toBe('');
     expect(within(meta).queryByRole('button')).toBeNull();
     expect(within(meta).getByText('Chaos')).toBeInTheDocument();
+  });
+
+  it('the more button opens the song menu and a second tap closes it again', () => {
+    renderPlayer();
+    const more = screen.getByRole('button', { name: 'More options' });
+    fireEvent.pointerDown(more);
+    fireEvent.click(more);
+    expect(usePlayerStore.getState().contextMenu.isOpen).toBe(true);
+    // The real menu closes on mousedown; that happens between pointerdown and click.
+    fireEvent.pointerDown(more);
+    act(() => { usePlayerStore.getState().closeContextMenu(); });
+    fireEvent.click(more);
+    expect(usePlayerStore.getState().contextMenu.isOpen).toBe(false);
   });
 
   it('names the close button for VoiceOver with a real translation, not a raw key', () => {

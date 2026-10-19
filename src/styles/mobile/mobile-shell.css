@@ -1338,7 +1338,7 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   transition: background 0.8s ease;
 }
 
-/* Back on the left, logo centred, favourite + more on the right. */
+/* Back on the left, logo centred (the empty third column keeps it there). */
 .mobile-player__top {
   flex: none;
   width: 100%;
@@ -1367,19 +1367,6 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
 .mobile-player__logo {
   height: 18px;
   width: auto;
-}
-
-.mobile-player__top-actions {
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mobile-round-btn--compact {
-  width: 38px;
-  height: 38px;
-  border-radius: 19px;
 }
 
 /* Everything fits on one screen: controls keep their height, the cover takes
@@ -1581,27 +1568,29 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   opacity: 0.45;
 }
 
+/* Heart, lyrics, queue, more: four icon-only buttons of one size on one line. */
 .mobile-player__footer {
   display: flex;
   justify-content: space-around;
+  align-items: center;
 }
 
 .mobile-footer-btn {
-  min-width: 96px;
-  height: 52px;
+  width: 52px;
+  height: 48px;
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  padding: 0;
   border: none;
   border-radius: 14px;
   background: none;
   color: var(--text-secondary);
-  font: inherit;
-  font-size: 11px;
-  font-weight: 600;
   cursor: pointer;
+}
+
+.mobile-footer-btn.is-active {
+  color: var(--accent);
 }
 
 .mobile-footer-btn:disabled {
