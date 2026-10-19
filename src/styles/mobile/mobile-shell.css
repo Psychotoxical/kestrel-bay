@@ -14,12 +14,12 @@ html[data-mobile-app] {
   --mobile-row-border: color-mix(in srgb, var(--text-primary) 8%, transparent);
 }
 
-/* The touch-only system font (the default there): iOS system text, Space
-   Grotesk for titles (as in the design drafts). Beats the theme roots by
-   specificity. Any other font choice applies as on the desktop. */
+/* The touch-only system font (the default there): iOS system text for body
+   and titles alike. Beats the theme roots by specificity. Any other font
+   choice applies as on the desktop. */
 html[data-mobile-app][data-font='system'] {
   --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif;
-  --font-display: 'Space Grotesk Variable', -apple-system, 'Segoe UI', sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
 }
 
 html[data-mobile-app] body {
