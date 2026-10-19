@@ -78,6 +78,8 @@ interface Props {
   onOpenArtist: (id: string, serverId?: string) => void;
   openContextMenu: PlayerState['openContextMenu'];
   t: TFunction;
+  /** A fixed number of columns (the touch layout switch). */
+  columns?: number;
 }
 
 /**
@@ -95,6 +97,7 @@ export function ArtistsGridView({
   onOpenArtist,
   openContextMenu,
   t,
+  columns,
 }: Props) {
   const tilePropsShared: TilePropsShared = {
     selectionMode,
@@ -115,6 +118,7 @@ export function ArtistsGridView({
       rowVariant="artist"
       disableVirtualization={disableVirtualization}
       layoutSignal={visible.length}
+      columns={columns}
       scrollRootId={ARTISTS_INPAGE_SCROLL_VIEWPORT_ID}
       wrapClassName={disableVirtualization ? 'album-grid-wrap album-grid-wrap--plain' : 'album-grid-wrap'}
       renderItem={artist => (

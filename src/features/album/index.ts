@@ -38,6 +38,7 @@ export * from './utils/deriveAlbumHeaderArtistRefs';
 export * from './utils/exportAlbumCard';
 export * from './utils/openFavoriteAlbums';
 export { default as AlbumCard } from './components/AlbumCard';
+export { default as AlbumTable } from './components/AlbumTable';
 export { default as AlbumHeader } from './components/AlbumHeader';
 export { default as AlbumRow } from './components/AlbumRow';
 export { default as AlbumTrackList } from './components/AlbumTrackList';

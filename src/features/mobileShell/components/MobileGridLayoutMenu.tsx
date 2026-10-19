@@ -12,22 +12,36 @@ import {
 interface MobileGridLayoutMenuProps {
   surface: MobileGridSurface;
   /** Viewport the page scrolls; reset to the top on a switch (rows change height). */
-  scrollRootId: string;
+  scrollRootId?: string;
+  /** Pages without a list layout offer the cover counts only. */
+  allowList?: boolean;
+  /**
+   * For a page that keeps its own grid/list switch (Artists): whether its list shows, and
+   * how to switch it. The cover count stays in this menu's store either way.
+   */
+  listActive?: boolean;
+  onListChange?: (list: boolean) => void;
 }
 
 /**
- * The cover-grid switch in a touch page header: two, three or four covers per row, or the
- * list. Same dropdown as the sort control beside it, so both read as one kind of control.
+ * The cover-grid switch in a touch page header: two or three covers per row, or the list.
+ * Same dropdown as the sort control beside it, so both read as one kind of control.
  */
-export default function MobileGridLayoutMenu({ surface, scrollRootId }: MobileGridLayoutMenuProps) {
+export default function MobileGridLayoutMenu({
+  surface, scrollRootId, allowList = true, listActive, onListChange,
+}: MobileGridLayoutMenuProps) {
   const { t } = useTranslation();
-  const { layout } = useMobileGridLayout(surface);
+  const { layout: stored, columns } = useMobileGridLayout(surface);
   const setLayout = useMobileGridLayoutStore(s => s.setLayout);
+  const external = onListChange !== undefined;
+  const layout = external ? (listActive ? 'list' : (columns ?? 2)) : stored;
 
-  const options = MOBILE_GRID_LAYOUTS.map(value => ({
-    value: String(value),
-    label: value === 'list' ? t('artists.listView') : String(value),
-  }));
+  const options = MOBILE_GRID_LAYOUTS
+    .filter(value => allowList || value !== 'list')
+    .map(value => ({
+      value: String(value),
+      label: value === 'list' ? t('artists.listView') : String(value),
+    }));
 
   return (
     <SortDropdown
@@ -38,8 +52,13 @@ export default function MobileGridLayoutMenu({ surface, scrollRootId }: MobileGr
         if (!isMobileGridLayout(next) || next === layout) return;
         // A list row is far shorter than a cover row; keeping the offset would clamp the
         // page near the new bottom, where the load-more sentinel waits.
-        document.getElementById(scrollRootId)?.scrollTo({ top: 0 });
-        setLayout(surface, next);
+        if (scrollRootId) document.getElementById(scrollRootId)?.scrollTo({ top: 0 });
+        if (external) {
+          if (next !== 'list') setLayout(surface, next);
+          onListChange(next === 'list');
+        } else {
+          setLayout(surface, next);
+        }
       }}
       tooltip={t('albums.gridView')}
       ariaLabel={t('albums.gridView')}

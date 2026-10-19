@@ -14,7 +14,7 @@ import SortDropdown from '@/ui/SortDropdown';
 import { usePlaylistLayoutStore } from '@/features/playlist/store/playlistLayoutStore';
 import { usePlaylistListSortOptions } from '@/features/playlist/hooks/usePlaylistListSortOptions';
 import type { PlaylistOwnershipBucket } from '@/features/playlist/utils/playlistOwnership';
-import { MobileMoreMenu } from '@/features/mobileShell';
+import { MobileGridLayoutMenu, MobileMoreMenu } from '@/features/mobileShell';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 interface Props {
@@ -123,6 +123,7 @@ export default function PlaylistsHeader({
           <div className="mobile-browse-header__top">
             <h1 className="mobile-large-title">{t('playlists.title')}</h1>
             <div className="mobile-browse-header__actions">
+              <MobileGridLayoutMenu surface="playlists" allowList={false} />
               <SortDropdown
                 value={listSortKey}
                 options={sortOptions}

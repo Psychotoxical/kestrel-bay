@@ -9,6 +9,8 @@ import React, { useEffect, useLayoutEffect, useState, useCallback, useRef } from
 import { RefreshCw, Download, HardDriveDownload } from 'lucide-react';
 import SelectionToggleButton from '@/ui/SelectionToggleButton';
 import AlbumCard from '@/features/album/components/AlbumCard';
+import AlbumTable from '@/features/album/components/AlbumTable';
+import { MobileGridLayoutMenu, useMobileGridLayout } from '@/features/mobileShell';
 import GenreFilterBar from '@/ui/GenreFilterBar';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useTranslation } from 'react-i18next';
@@ -137,8 +139,15 @@ async function fillReserve(filterId: string, genres: string[]): Promise<void> {
   }
 }
 
+/** The touch album list here offers no selection. */
+const NO_SELECTION: Set<string> = new Set();
+
 export default function RandomAlbums() {
   const { t } = useTranslation();
+  // Touch: the header switch (2 / 3 covers or the album list).
+  const mobileGrid = useMobileGridLayout('random-albums');
+  const forcedGridCols = IS_MOBILE_SHELL ? mobileGrid.columns : undefined;
+  const mobileList = IS_MOBILE_SHELL && mobileGrid.isList;
   const perfFlags = usePerfProbeFlags();
   const auth = useAuthStore();
   const musicLibraryFilterVersion = auth.musicLibraryFilterVersion;
@@ -309,7 +318,12 @@ export default function RandomAlbums() {
       {IS_MOBILE_SHELL ? (
         // Touch: the title, then reroll and the genres as one chip row.
         <div className="mobile-browse-header">
-          <h1 className="mobile-large-title">{t('randomAlbums.title')}</h1>
+          <div className="mobile-browse-header__top">
+            <h1 className="mobile-large-title">{t('randomAlbums.title')}</h1>
+            <div className="mobile-browse-header__actions">
+              <MobileGridLayoutMenu surface="random-albums" scrollRootId={RANDOM_ALBUMS_INPAGE_SCROLL_VIEWPORT_ID} />
+            </div>
+          </div>
           <div className="mobile-chip-row">
             <button type="button" className="btn btn-surface" onClick={handleRefresh} disabled={loading}>
               <RefreshCw size={15} className={loading ? 'animate-spin' : ''} aria-hidden="true" />
@@ -390,26 +404,41 @@ export default function RandomAlbums() {
         ) : (
           <div style={{ position: 'relative' }}>
             <div style={{ visibility: isScrollRestorePending ? 'hidden' : 'visible' }}>
-              <VirtualCardGrid
-                items={albums}
-                itemKey={(a, _i) => a.id}
-                rowVariant="album"
-                disableVirtualization={perfFlags.disableMainstageVirtualLists}
-                layoutSignal={albums.length}
-                scrollRootId={RANDOM_ALBUMS_INPAGE_SCROLL_VIEWPORT_ID}
-                warmGridCovers={albumGridWarmCovers()}
-                renderItem={a => (
-                  <AlbumCard
-                    album={a}
-                    observeScrollRootId={RANDOM_ALBUMS_INPAGE_SCROLL_VIEWPORT_ID}
-                    selectionMode={selectionMode}
-                    selected={selectedIds.has(a.id)}
-                    onToggleSelect={toggleSelect}
-                    selectedAlbums={selectedAlbums}
-                    ensurePriority="high"
-                  />
-                )}
-              />
+              {mobileList ? (
+                <AlbumTable
+                  albums={albums}
+                  itemKey={a => a.id}
+                  scrollRootId={RANDOM_ALBUMS_INPAGE_SCROLL_VIEWPORT_ID}
+                  disableVirtualization={perfFlags.disableMainstageVirtualLists}
+                  selectionMode={false}
+                  selectedIds={NO_SELECTION}
+                  onToggleSelect={() => {}}
+                  selectedAlbums={[]}
+                />
+              ) : (
+                <VirtualCardGrid
+                  columns={forcedGridCols}
+                  wrapClassName={forcedGridCols ? `album-grid-wrap mobile-grid-cols-${forcedGridCols}` : undefined}
+                  items={albums}
+                  itemKey={(a, _i) => a.id}
+                  rowVariant="album"
+                  disableVirtualization={perfFlags.disableMainstageVirtualLists}
+                  layoutSignal={albums.length}
+                  scrollRootId={RANDOM_ALBUMS_INPAGE_SCROLL_VIEWPORT_ID}
+                  warmGridCovers={albumGridWarmCovers()}
+                  renderItem={a => (
+                    <AlbumCard
+                      album={a}
+                      observeScrollRootId={RANDOM_ALBUMS_INPAGE_SCROLL_VIEWPORT_ID}
+                      selectionMode={selectionMode}
+                      selected={selectedIds.has(a.id)}
+                      onToggleSelect={toggleSelect}
+                      selectedAlbums={selectedAlbums}
+                      ensurePriority="high"
+                    />
+                  )}
+                />
+              )}
             </div>
             {isScrollRestorePending && (
               <div

@@ -54,3 +54,33 @@ describe('MobileGridLayoutMenu', () => {
     expect(calls).toEqual([{ top: 0 }]);
   });
 });
+
+describe('MobileGridLayoutMenu on other pages', () => {
+  beforeEach(() => {
+    useMobileGridLayoutStore.setState({ layoutBySurface: {} });
+  });
+
+  it('a page without a list offers the cover counts only', () => {
+    renderWithProviders(<MobileGridLayoutMenu surface="playlists" allowList={false} />);
+    open();
+    expect(screen.getAllByRole('option').map(option => option.textContent)).toEqual(['2', '3']);
+  });
+
+  it('a page with its own list switch gets the list from it and keeps the count here', () => {
+    const switches: boolean[] = [];
+    const { rerender } = renderWithProviders(
+      <MobileGridLayoutMenu surface="artists" listActive={false} onListChange={list => switches.push(list)} />,
+    );
+    open();
+    choose('3');
+    expect(useMobileGridLayoutStore.getState().layoutBySurface).toEqual({ artists: 3 });
+    expect(switches).toEqual([false]);
+
+    rerender(<MobileGridLayoutMenu surface="artists" listActive onListChange={list => switches.push(list)} />);
+    open();
+    expect(screen.getByRole('option', { name: 'List view' }).getAttribute('aria-selected')).toBe('true');
+    choose('2');
+    expect(switches).toEqual([false, false]);
+    expect(useMobileGridLayoutStore.getState().layoutBySurface).toEqual({ artists: 2 });
+  });
+});

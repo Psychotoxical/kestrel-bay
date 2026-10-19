@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Play, ListPlus, Loader2, Shuffle } from 'lucide-react';
-import { AlbumCard } from '@/features/album';
-import { MobileBackButton, MobileMoreMenu } from '@/features/mobileShell';
+import { AlbumCard, AlbumTable } from '@/features/album';
+import { MobileBackButton, MobileGridLayoutMenu, MobileMoreMenu, useMobileGridLayout } from '@/features/mobileShell';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { LongPressWaveOverlay } from '@/ui/LongPressWaveOverlay';
 import InpageScrollSentinel from '@/ui/InpageScrollSentinel';
@@ -38,10 +38,17 @@ import { deriveLibraryBrowseScope } from '@/lib/library/libraryBrowseScope';
 import { useUnavailableServerIds } from '@/lib/network/serverReachability';
 import { resolveGenreHeaderCount } from './genreHeaderCount';
 
+/** The touch album list here offers no selection. */
+const NO_SELECTION: Set<string> = new Set();
+
 export default function GenreDetail() {
   const { name } = useParams<{ name: string }>();
   const genre = decodeURIComponent(name ?? '');
   const { t } = useTranslation();
+  // Touch: the header switch (2 / 3 covers or the album list).
+  const mobileGrid = useMobileGridLayout('genre');
+  const forcedGridCols = IS_MOBILE_SHELL ? mobileGrid.columns : undefined;
+  const mobileList = IS_MOBILE_SHELL && mobileGrid.isList;
   const perfFlags = usePerfProbeFlags();
   const navigate = useNavigate();
   const location = useLocation();
@@ -200,14 +207,17 @@ export default function GenreDetail() {
         <div className="mobile-browse-header">
           <div className="mobile-browse-header__top">
             <MobileBackButton />
-            {showPlayback && (
-              <MobileMoreMenu items={[{
-                id: 'enqueue',
-                label: t('genres.addToQueue'),
-                icon: <ListPlus size={17} />,
-                onSelect: handleEnqueueAll,
-              }]} />
-            )}
+            <div className="mobile-browse-header__actions">
+              <MobileGridLayoutMenu surface="genre" scrollRootId={GENRE_DETAIL_INPAGE_SCROLL_VIEWPORT_ID} />
+              {showPlayback && (
+                <MobileMoreMenu items={[{
+                  id: 'enqueue',
+                  label: t('genres.addToQueue'),
+                  icon: <ListPlus size={17} />,
+                  onSelect: handleEnqueueAll,
+                }]} />
+              )}
+            </div>
           </div>
           <h1 className="mobile-large-title">{genre}</h1>
           {headerCount != null && headerCount > 0 && (
@@ -315,21 +325,36 @@ export default function GenreDetail() {
         ) : (
           <div style={{ position: 'relative' }}>
             <div style={{ visibility: isScrollRestorePending ? 'hidden' : 'visible' }}>
-              <VirtualCardGrid
-                items={displayAlbums}
-                itemKey={(a, _i) => a.id}
-                rowVariant="album"
-                disableVirtualization={perfFlags.disableMainstageVirtualLists}
-                layoutSignal={displayAlbums.length}
-                scrollRootId={GENRE_DETAIL_INPAGE_SCROLL_VIEWPORT_ID}
-                warmGridCovers={albumGridWarmCovers()}
-                renderItem={album => (
-                  <AlbumCard
-                    album={album}
-                    observeScrollRootId={GENRE_DETAIL_INPAGE_SCROLL_VIEWPORT_ID}
-                  />
-                )}
-              />
+              {mobileList ? (
+                <AlbumTable
+                  albums={displayAlbums}
+                  itemKey={a => a.id}
+                  scrollRootId={GENRE_DETAIL_INPAGE_SCROLL_VIEWPORT_ID}
+                  disableVirtualization={perfFlags.disableMainstageVirtualLists}
+                  selectionMode={false}
+                  selectedIds={NO_SELECTION}
+                  onToggleSelect={() => {}}
+                  selectedAlbums={[]}
+                />
+              ) : (
+                <VirtualCardGrid
+                  columns={forcedGridCols}
+                  wrapClassName={forcedGridCols ? `album-grid-wrap mobile-grid-cols-${forcedGridCols}` : undefined}
+                  items={displayAlbums}
+                  itemKey={(a, _i) => a.id}
+                  rowVariant="album"
+                  disableVirtualization={perfFlags.disableMainstageVirtualLists}
+                  layoutSignal={displayAlbums.length}
+                  scrollRootId={GENRE_DETAIL_INPAGE_SCROLL_VIEWPORT_ID}
+                  warmGridCovers={albumGridWarmCovers()}
+                  renderItem={album => (
+                    <AlbumCard
+                      album={album}
+                      observeScrollRootId={GENRE_DETAIL_INPAGE_SCROLL_VIEWPORT_ID}
+                    />
+                  )}
+                />
+              )}
               {hasMore && (
                 <InpageScrollSentinel
                   bindSentinel={bindLoadMoreSentinel}

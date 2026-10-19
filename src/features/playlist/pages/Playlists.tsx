@@ -52,6 +52,8 @@ import PlaylistsHeader from '@/features/playlist/components/PlaylistsHeader';
 import PlaylistCard from '@/features/playlist/components/PlaylistCard';
 import { usePerfProbeFlags } from '@/lib/perf/perfFlags';
 import { VirtualCardGrid } from '@/ui/VirtualCardGrid';
+import { useMobileGridLayout } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useOfflineBrowseContext } from '@/features/offline';
 import { offlineActionPolicy } from '@/features/offline';
 import { Info } from 'lucide-react';
@@ -64,6 +66,9 @@ import { serverListDisplayLabel } from '@/lib/server/serverDisplayName';
 
 export default function Playlists() {
   const { t } = useTranslation();
+  // Touch: the header switch sets two or three cards per row.
+  const mobileGrid = useMobileGridLayout('playlists');
+  const forcedGridCols = IS_MOBILE_SHELL ? mobileGrid.columns : undefined;
   const location = useLocation();
   const navigate = useNavigate();
   const perfFlags = usePerfProbeFlags();
@@ -571,6 +576,7 @@ export default function Playlists() {
               rowVariant="playlist"
               disableVirtualization={perfFlags.disableMainstageVirtualLists}
               layoutSignal={visiblePlaylists.length}
+              columns={forcedGridCols}
               renderItem={renderCard}
             />
           )}

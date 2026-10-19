@@ -19,7 +19,9 @@ import {
   useAlbumBrowseScrollRestore,
   useAlbumBrowseScrollSnapshotSync,
   type AlbumBrowseScrollSnapshot,
+  AlbumTable,
 } from '@/features/album';
+import { MobileGridLayoutMenu, useMobileGridLayout } from '@/features/mobileShell';
 import { MOOD_DETAIL_INPAGE_SCROLL_VIEWPORT_ID, } from '@/constants/appScroll';
 import { albumGridWarmCovers } from '@/cover/layoutSizes';
 import { useInpageScrollViewport } from '@/lib/hooks/useInpageScrollViewport';
@@ -38,6 +40,9 @@ import { useMoodAlbumBrowse } from '../hooks/useMoodAlbumBrowse';
 import { readAlbumBrowseRestore, } from '@/lib/navigation/albumDetailNavigation';
 import { useMoodDetailBrowse, } from '../hooks/useMoodDetailBrowse';
 
+/** The touch album list here offers no selection. */
+const NO_SELECTION: Set<string> = new Set();
+
 export default function MoodDetail() {
   const { name } =
     useParams<{ name: string }>();
@@ -45,6 +50,10 @@ export default function MoodDetail() {
   const mood = name ?? '';
 
   const { t } = useTranslation();
+  // Touch: the header switch (2 / 3 covers or the album list).
+  const mobileGrid = useMobileGridLayout('mood');
+  const forcedGridCols = IS_MOBILE_SHELL ? mobileGrid.columns : undefined;
+  const mobileList = IS_MOBILE_SHELL && mobileGrid.isList;
   const navigate = useNavigate();
   const location = useLocation();
   const perfFlags = usePerfProbeFlags();
@@ -289,7 +298,12 @@ useEffect(() => {
       {IS_MOBILE_SHELL ? (
         // Touch: the shell's back bar leads back; title and count as on the genre page.
         <div className="mobile-browse-header">
-          <h1 className="mobile-large-title">{mood}</h1>
+          <div className="mobile-browse-header__top">
+            <h1 className="mobile-large-title">{mood}</h1>
+            <div className="mobile-browse-header__actions">
+              <MobileGridLayoutMenu surface="mood" scrollRootId={MOOD_DETAIL_INPAGE_SCROLL_VIEWPORT_ID} />
+            </div>
+          </div>
           {headerCount != null && headerCount > 0 && (
             <p className="mobile-page-subtitle">{t('moods.albumCount', { count: headerCount })}</p>
           )}
@@ -401,33 +415,48 @@ useEffect(() => {
                     : 'visible',
               }}
             >
-              <VirtualCardGrid
-                items={displayAlbums}
-                itemKey={(album, _index) =>
-                  album.id
-                }
-                rowVariant="album"
-                disableVirtualization={
-                  perfFlags.disableMainstageVirtualLists
-                }
-                layoutSignal={
-                  displayAlbums.length
-                }
-                scrollRootId={
-                  MOOD_DETAIL_INPAGE_SCROLL_VIEWPORT_ID
-                }
-                warmGridCovers={
-                  albumGridWarmCovers()
-                }
-                renderItem={album => (
-                  <AlbumCard
-                    album={album}
-                    observeScrollRootId={
-                      MOOD_DETAIL_INPAGE_SCROLL_VIEWPORT_ID
-                    }
-                  />
-                )}
-              />
+              {mobileList ? (
+                <AlbumTable
+                  albums={displayAlbums}
+                  itemKey={album => album.id}
+                  scrollRootId={MOOD_DETAIL_INPAGE_SCROLL_VIEWPORT_ID}
+                  disableVirtualization={perfFlags.disableMainstageVirtualLists}
+                  selectionMode={false}
+                  selectedIds={NO_SELECTION}
+                  onToggleSelect={() => {}}
+                  selectedAlbums={[]}
+                />
+              ) : (
+                <VirtualCardGrid
+                  columns={forcedGridCols}
+                  wrapClassName={forcedGridCols ? `album-grid-wrap mobile-grid-cols-${forcedGridCols}` : undefined}
+                  items={displayAlbums}
+                  itemKey={(album, _index) =>
+                    album.id
+                  }
+                  rowVariant="album"
+                  disableVirtualization={
+                    perfFlags.disableMainstageVirtualLists
+                  }
+                  layoutSignal={
+                    displayAlbums.length
+                  }
+                  scrollRootId={
+                    MOOD_DETAIL_INPAGE_SCROLL_VIEWPORT_ID
+                  }
+                  warmGridCovers={
+                    albumGridWarmCovers()
+                  }
+                  renderItem={album => (
+                    <AlbumCard
+                      album={album}
+                      observeScrollRootId={
+                        MOOD_DETAIL_INPAGE_SCROLL_VIEWPORT_ID
+                      }
+                    />
+                  )}
+                />
+              )}
 
               {hasMore && (
                 <InpageScrollSentinel

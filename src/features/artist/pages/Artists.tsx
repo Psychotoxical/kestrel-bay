@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef, useLayoutEffect, useSyncExternalStore } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Check, CheckSquare2, LayoutGrid, List, Images, Search } from 'lucide-react';
-import { MobileBackButton, MobileMoreMenu } from '@/features/mobileShell';
+import { MobileBackButton, MobileGridLayoutMenu, MobileMoreMenu, useMobileGridLayout } from '@/features/mobileShell';
 import { requestOpenSearch } from '@/lib/dom/openSearch';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import SelectionToggleButton from '@/ui/SelectionToggleButton';
@@ -64,6 +64,8 @@ export default function Artists() {
     getArtistBrowseTraceSnapshot,
   );
   const { t } = useTranslation();
+  // Touch: the header switch sets two or three artists per row, or the list.
+  const mobileGrid = useMobileGridLayout('artists');
   const musicLibraryFilterVersion = useAuthStore(s => s.musicLibraryFilterVersion);
   const libraryBrowseScopeVersion = useAuthStore(s => s.libraryBrowseScopeVersion);
   const libraryBrowseVersion = musicLibraryFilterVersion + libraryBrowseScopeVersion;
@@ -437,28 +439,26 @@ export default function Artists() {
         <div className="mobile-browse-header">
           <div className="mobile-browse-header__top">
             <MobileBackButton />
-            <MobileMoreMenu items={[
-              {
-                id: 'grid', label: t('artists.gridView'), checked: viewMode === 'grid',
-                icon: viewMode === 'grid' ? <Check size={17} /> : <LayoutGrid size={17} />,
-                onSelect: () => setViewMode('grid'),
-              },
-              {
-                id: 'list', label: t('artists.listView'), checked: viewMode === 'list',
-                icon: viewMode === 'list' ? <Check size={17} /> : <List size={17} />,
-                onSelect: () => setViewMode('list'),
-              },
-              {
-                id: 'images', label: t('artists.imagesMenu'), checked: showArtistImages,
-                icon: showArtistImages ? <Check size={17} /> : <Images size={17} />,
-                onSelect: () => setShowArtistImages(!showArtistImages),
-              },
-              {
-                id: 'select', label: selectionMode ? t('artists.cancelSelect') : t('artists.select'),
-                icon: <CheckSquare2 size={17} />,
-                onSelect: toggleSelectionMode,
-              },
-            ]} />
+            <div className="mobile-browse-header__actions">
+              <MobileGridLayoutMenu
+                surface="artists"
+                scrollRootId={ARTISTS_INPAGE_SCROLL_VIEWPORT_ID}
+                listActive={viewMode === 'list'}
+                onListChange={list => setViewMode(list ? 'list' : 'grid')}
+              />
+              <MobileMoreMenu items={[
+                {
+                  id: 'images', label: t('artists.imagesMenu'), checked: showArtistImages,
+                  icon: showArtistImages ? <Check size={17} /> : <Images size={17} />,
+                  onSelect: () => setShowArtistImages(!showArtistImages),
+                },
+                {
+                  id: 'select', label: selectionMode ? t('artists.cancelSelect') : t('artists.select'),
+                  icon: <CheckSquare2 size={17} />,
+                  onSelect: toggleSelectionMode,
+                },
+              ]} />
+            </div>
           </div>
           <h1 className="mobile-large-title">
             {selectionMode && selectedIds.size > 0
@@ -638,6 +638,7 @@ export default function Artists() {
             onOpenArtist={openArtist}
             openContextMenu={openContextMenu}
             t={t}
+            columns={IS_MOBILE_SHELL ? mobileGrid.columns : undefined}
           />
         )}
 

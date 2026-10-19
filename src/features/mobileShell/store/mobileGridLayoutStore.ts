@@ -5,12 +5,15 @@ import { persist } from 'zustand/middleware';
 export type MobileGridLayout = 2 | 3 | 'list';
 
 /** Touch pages that carry the layout switch. */
-export type MobileGridSurface = 'albums' | 'new-releases';
+export type MobileGridSurface =
+  | 'albums' | 'new-releases' | 'random-albums' | 'genre' | 'mood' | 'artists' | 'playlists';
 
 export const DEFAULT_MOBILE_GRID_LAYOUT: MobileGridLayout = 2;
 export const MOBILE_GRID_LAYOUTS: readonly MobileGridLayout[] = [2, 3, 'list'];
 
-const SURFACES: readonly MobileGridSurface[] = ['albums', 'new-releases'];
+const SURFACES: readonly MobileGridSurface[] = [
+  'albums', 'new-releases', 'random-albums', 'genre', 'mood', 'artists', 'playlists',
+];
 
 export function isMobileGridLayout(value: unknown): value is MobileGridLayout {
   return value === 2 || value === 3 || value === 'list';
