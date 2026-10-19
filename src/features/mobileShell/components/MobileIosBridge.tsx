@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useCarPlayBridge } from '@/features/mobileShell/hooks/useCarPlayBridge';
 import { useIosAudioInterruptions } from '@/features/mobileShell/hooks/useIosAudioInterruptions';
+import { useSiriBridge } from '@/features/mobileShell/hooks/useSiriBridge';
 import { syncLandscape } from '@/features/mobileShell/utils/iosOrientation';
 import { watchMeteredNetwork } from '@/lib/network/meteredNetwork';
 
@@ -12,6 +13,7 @@ import { watchMeteredNetwork } from '@/lib/network/meteredNetwork';
 export default function MobileIosBridge() {
   useIosAudioInterruptions();
   useCarPlayBridge();
+  useSiriBridge();
   useEffect(() => { syncLandscape(); }, []);
   useEffect(() => {
     let off: (() => void) | undefined;

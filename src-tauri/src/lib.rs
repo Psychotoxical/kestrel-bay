@@ -18,6 +18,8 @@ mod ios_network;
 mod ios_orientation;
 #[cfg(target_os = "ios")]
 mod ios_scene;
+#[cfg(target_os = "ios")]
+mod ios_siri;
 mod lib_commands;
 pub(crate) mod library_analysis_backfill;
 mod library_identity_maintenance;
@@ -562,6 +564,7 @@ pub fn run() {
                 ios_audio_session::observe_interruptions(app.handle());
                 ios_orientation::listen(app.handle());
                 ios_carplay::listen(app.handle());
+                ios_siri::listen(app.handle());
                 ios_network::observe(app.handle());
                 ios_backup::exclude_media_dir(app.handle());
             }
@@ -995,7 +998,10 @@ pub fn run() {
         .expect("error while running Psysonic");
     // Between build (tao declares its app delegate) and run (UIApplicationMain).
     #[cfg(target_os = "ios")]
-    ios_scene::install();
+    {
+        ios_scene::install();
+        ios_siri::install();
+    }
     app.run(|_, _| {});
 }
 

@@ -30,6 +30,14 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<!-- Siri: "play X" is handled in the app (src/ios_siri.rs); the app delegate is only asked
+	     for intents listed here. -->
+	<key>INIntentsSupported</key>
+	<array>
+		<string>INPlayMediaIntent</string>
+	</array>
+	<key>NSSiriUsageDescription</key>
+	<string>Psysonic uses Siri to play music from your library when you ask for it.</string>
 	<!-- Scene lifecycle, which CarPlay requires. tao (0.35) only attaches its window to a
 	     scene when multiple scenes are enabled, so the flag is on; the phone scene uses
 	     tao's own delegate. -->

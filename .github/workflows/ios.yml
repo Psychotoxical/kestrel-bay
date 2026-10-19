@@ -132,6 +132,7 @@ jobs:
           f=$(find src-tauri/gen/apple -name '*_iOS.entitlements' | head -n 1)
           if [ -z "$f" ]; then echo "::error::No entitlements file in the generated project"; exit 1; fi
           /usr/libexec/PlistBuddy -c "Add :com.apple.developer.carplay-audio bool true" "$f"
+          /usr/libexec/PlistBuddy -c "Add :com.apple.developer.siri bool true" "$f"
           cat "$f"
 
       - name: Show linked SDK frameworks
