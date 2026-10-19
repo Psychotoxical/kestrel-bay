@@ -6,6 +6,8 @@
 export { default as MobileBackButton } from './components/MobileBackButton';
 export { default as MobileDownloadButton } from './components/MobileDownloadButton';
 export type { MobileDownloadStatus } from './components/MobileDownloadButton';
+export { default as MobileGridLayoutMenu } from './components/MobileGridLayoutMenu';
+export { useMobileGridLayout } from './store/mobileGridLayoutStore';
 export { default as MobileMoreMenu } from './components/MobileMoreMenu';
 export { default as MobileSheet } from './components/MobileSheet';
 export { default as MobileSongRow } from './components/MobileSongRow';

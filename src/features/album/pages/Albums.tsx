@@ -8,7 +8,7 @@ import { albumGridWarmCovers, coverDisplayCssPxForAlbumGrid } from '@/cover/layo
 import { useLibraryCoverPrefetch } from '@/cover/useLibraryCoverPrefetch';
 import { useAuthStore } from '@/store/authStore';
 import { clampLibraryGridMaxColumns } from '@/store/authStoreHelpers';
-import { computeCardGridColumnCount } from '@/lib/util/cardGridLayout';
+import { computeCardGridColumnCount, computeCellWidthPx } from '@/lib/util/cardGridLayout';
 import GenreFilterBar from '@/ui/GenreFilterBar';
 import YearFilterButton from '@/ui/YearFilterButton';
 import StarFilterButton from '@/ui/StarFilterButton';
@@ -24,7 +24,7 @@ import { join } from '@tauri-apps/api/path';
 import { showToast } from '@/lib/dom/toast';
 import { useZipDownloadStore } from '@/features/offline';
 import { Download, HardDriveDownload, Disc3, ListPlus, Search } from 'lucide-react';
-import { MobileBackButton } from '@/features/mobileShell';
+import { MobileBackButton, MobileGridLayoutMenu, useMobileGridLayout } from '@/features/mobileShell';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { requestOpenSearch } from '@/lib/dom/openSearch';
 import SelectionToggleButton from '@/ui/SelectionToggleButton';
@@ -129,7 +129,11 @@ export default function Albums() {
     setLosslessOnly,
   } = useAlbumBrowseFilters(serverId, scrollSnapshotRef);
 
-  const viewMode = useAlbumViewMode('albums');
+  const storedViewMode = useAlbumViewMode('albums');
+  // Touch: the header switch (2 / 3 / 4 covers or the list) replaces the desktop view mode.
+  const mobileGrid = useMobileGridLayout('albums');
+  const forcedGridCols = IS_MOBILE_SHELL ? mobileGrid.columns : undefined;
+  const viewMode = IS_MOBILE_SHELL ? (mobileGrid.isList ? 'table' : 'grid') : storedViewMode;
   const setViewMode = useAlbumViewModeStore(s => s.setViewMode);
 
   const albumsSearchQuery = useScopedBrowseSearchQuery('albums');
@@ -381,15 +385,19 @@ export default function Albums() {
     if (!el) return;
     const update = () => {
       const w = el.clientWidth;
-      const cols = computeCardGridColumnCount(w, maxGridCols);
+      const cols = forcedGridCols ?? computeCardGridColumnCount(w, maxGridCols);
       setAlbumGridCols(cols);
-      setAlbumCellDisplayCssPx(coverDisplayCssPxForAlbumGrid(w, maxGridCols));
+      setAlbumCellDisplayCssPx(
+        forcedGridCols
+          ? Math.round(computeCellWidthPx(w, forcedGridCols))
+          : coverDisplayCssPxForAlbumGrid(w, maxGridCols),
+      );
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [maxGridCols, displayAlbums.length]);
+  }, [maxGridCols, forcedGridCols, displayAlbums.length]);
 
   const prefetchLimit = Math.max(albumGridCols * 3, albumGridCols);
   const prefetchKey = useMemo(
@@ -488,15 +496,18 @@ export default function Albums() {
         <div className="mobile-browse-header">
           <div className="mobile-browse-header__top">
             <MobileBackButton />
-            <SortDropdown
-              value={sort}
-              options={sortOptions}
-              onChange={value => onSortChange(pickedSort(sort, value))}
-              tooltip={t('albums.sortTooltip')}
-              ariaLabel={t('albums.sortTooltip')}
-              iconOnly
-              align="right"
-            />
+            <div className="mobile-browse-header__actions">
+              <MobileGridLayoutMenu surface="albums" scrollRootId={ALBUMS_INPAGE_SCROLL_VIEWPORT_ID} />
+              <SortDropdown
+                value={sort}
+                options={sortOptions}
+                onChange={value => onSortChange(pickedSort(sort, value))}
+                tooltip={t('albums.sortTooltip')}
+                ariaLabel={t('albums.sortTooltip')}
+                iconOnly
+                align="right"
+              />
+            </div>
           </div>
           <h1 className="mobile-large-title">{t('albums.title')}</h1>
           <button type="button" className="mobile-search-field" onClick={() => requestOpenSearch()}>
@@ -700,6 +711,8 @@ export default function Albums() {
                       rowVariant="album"
                       disableVirtualization={albumBrowsePlainLayout}
                       layoutSignal={displayAlbums.length}
+                      columns={forcedGridCols}
+                      wrapClassName={forcedGridCols ? `album-grid-wrap mobile-grid-cols-${forcedGridCols}` : undefined}
                       scrollRootId={ALBUMS_INPAGE_SCROLL_VIEWPORT_ID}
                       warmGridCovers={albumGridWarmCovers(
                         albumCellDisplayCssPx,

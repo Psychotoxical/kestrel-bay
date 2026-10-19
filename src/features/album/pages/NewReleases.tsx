@@ -7,6 +7,7 @@ import SelectionToggleButton from '@/ui/SelectionToggleButton';
 import AlbumCard from '@/features/album/components/AlbumCard';
 import GenreFilterBar from '@/ui/GenreFilterBar';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { MobileGridLayoutMenu, useMobileGridLayout } from '@/features/mobileShell';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 import { useAuthStore } from '@/store/authStore';
@@ -136,7 +137,11 @@ export default function NewReleases() {
     enabled: !scopedSearchQuery,
   });
   const [selectionMode, setSelectionMode] = useState(false);
-  const viewMode = useAlbumViewMode('new-releases');
+  const storedViewMode = useAlbumViewMode('new-releases');
+  // Touch: the header switch (2 / 3 / 4 covers or the list) replaces the desktop view mode.
+  const mobileGrid = useMobileGridLayout('new-releases');
+  const forcedGridCols = IS_MOBILE_SHELL ? mobileGrid.columns : undefined;
+  const viewMode = IS_MOBILE_SHELL ? (mobileGrid.isList ? 'table' : 'grid') : storedViewMode;
   const setViewMode = useAlbumViewModeStore(s => s.setViewMode);
   const genreFiltered = selectedGenres.length > 0;
   const hotOverlay = useHotNewReleaseOverlay(
@@ -428,7 +433,12 @@ export default function NewReleases() {
       {IS_MOBILE_SHELL ? (
         // Touch: as All Albums, the title and one chip row (all, genres).
         <div className="mobile-browse-header">
-          <h1 className="mobile-large-title">{t('sidebar.newReleases')}</h1>
+          <div className="mobile-browse-header__top">
+            <h1 className="mobile-large-title">{t('sidebar.newReleases')}</h1>
+            <div className="mobile-browse-header__actions">
+              <MobileGridLayoutMenu surface="new-releases" scrollRootId={NEW_RELEASES_INPAGE_SCROLL_VIEWPORT_ID} />
+            </div>
+          </div>
           <div className="mobile-chip-row">
             <button
               type="button"
@@ -540,6 +550,8 @@ export default function NewReleases() {
                 rowVariant="album"
                 disableVirtualization={albumBrowsePlainLayout}
                 layoutSignal={displayAlbums.length}
+                columns={forcedGridCols}
+                wrapClassName={forcedGridCols ? `album-grid-wrap mobile-grid-cols-${forcedGridCols}` : undefined}
                 scrollRootId={NEW_RELEASES_INPAGE_SCROLL_VIEWPORT_ID}
                 warmGridCovers={albumGridWarmCovers()}
                 renderItem={a => (

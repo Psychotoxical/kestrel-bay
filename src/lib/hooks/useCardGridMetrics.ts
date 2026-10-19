@@ -17,6 +17,8 @@ export function useCardGridMetrics(
   observerEnabled: boolean,
   variant: CardGridRowHeightVariant,
   layoutSignal: number,
+  /** A fixed column count (the touch layout switch); the width-derived count and the Settings cap do not apply. */
+  forcedCols?: number,
 ): { gridCols: number; rowHeightEst: number } {
   const maxCols = useAuthStore(s => clampLibraryGridMaxColumns(s.libraryGridMaxColumns));
   const [gridCols, setGridCols] = useState(4);
@@ -33,7 +35,7 @@ export function useCardGridMetrics(
     if (!el) return;
     const onResize = () => {
       const w = el.clientWidth;
-      const cols = computeCardGridColumnCount(w, maxCols);
+      const cols = forcedCols ?? computeCardGridColumnCount(w, maxCols);
       setGridCols(cols);
       setRowHeightEst(estimateRowHeightPx(computeCellWidthPx(w, cols), variant));
     };
@@ -41,7 +43,7 @@ export function useCardGridMetrics(
     const ro = new ResizeObserver(onResize);
     ro.observe(el);
     return () => ro.disconnect();
-  }, [observerEnabled, variant, layoutSignal, maxCols, measureRef]);
+  }, [observerEnabled, variant, layoutSignal, maxCols, forcedCols, measureRef]);
 
   return { gridCols, rowHeightEst };
 }

@@ -29,6 +29,8 @@ export type VirtualCardGridProps<T> = {
    * derivation — it is not reachable by any container width above ~296px.
    */
   singleColumn?: boolean;
+  /** A fixed number of columns (the touch layout switch), instead of the width-derived count. */
+  columns?: number;
   /**
    * Marks the three layout wrappers this component owns as `presentation`, so
    * an ARIA structure the caller builds around them (a table wrapping rows)
@@ -63,6 +65,7 @@ export function VirtualCardGrid<T>({
   wrapStyle,
   gridGap = 'var(--space-4)',
   singleColumn = false,
+  columns,
   presentationalWrappers = false,
   scrollRootId,
   warmGridCovers,
@@ -87,7 +90,7 @@ export function VirtualCardGrid<T>({
   });
 
   const wrapRef = useRef<HTMLDivElement>(null);
-  const { gridCols, rowHeightEst } = useCardGridMetrics(wrapRef, true, rowVariant, layoutSignal);
+  const { gridCols, rowHeightEst } = useCardGridMetrics(wrapRef, true, rowVariant, layoutSignal, columns);
   const cols = singleColumn ? 1 : Math.max(1, gridCols);
   const virtualRowCount = Math.max(0, Math.ceil(items.length / cols));
   const scrollMetricsElementId = scrollRootId ?? APP_MAIN_SCROLL_VIEWPORT_ID;

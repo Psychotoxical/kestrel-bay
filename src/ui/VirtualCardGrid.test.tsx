@@ -56,6 +56,12 @@ describe('VirtualCardGrid', () => {
     expect(wrap.style.gridTemplateColumns).toBe('repeat(6, minmax(0, 1fr))');
   });
 
+  it('uses a fixed column count when given, whatever the width', () => {
+    const { container } = renderGrid({ columns: 3, wrapClassName: 'probe-wrap' });
+    const wrap = container.querySelector('.probe-wrap') as HTMLElement;
+    expect(wrap.style.gridTemplateColumns).toBe('repeat(3, minmax(0, 1fr))');
+  });
+
   // A caller that wraps the grid in an ARIA table needs its rows to stay owned
   // by that table across the layout wrappers this component inserts.
   it('marks its layout wrappers as presentational on request', () => {
