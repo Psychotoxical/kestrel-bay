@@ -31,6 +31,7 @@ import { useTrackListCoverArtEnabled } from '@/cover/useTrackListCoverArtSetting
 import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { navigateToAlbumDetail } from '@/lib/navigation/albumDetailNavigation';
 import { usePlaylistTracklistScrollReset } from '@/features/playlist/hooks/usePlaylistTracklistScrollReset';
+import { useTouchListReorder } from '@/lib/dnd/useTouchListReorder';
 
 const PL_CENTERED = new Set(['favorite', 'rating', 'duration', 'playCount', 'bpm']);
 
@@ -96,6 +97,11 @@ interface Props {
   // Empty state
   setSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
   tracksReadOnly?: boolean;
+
+  /** Touch shell "Change order" mode: rows show a grip and are dragged by it. */
+  touchReorder?: boolean;
+  /** Moves the song at `from` into the gap before index `gap` (as the desktop drop). */
+  onTouchReorder?: (from: number, gap: number) => void;
 }
 
 export default function PlaylistTracklist({
@@ -108,7 +114,7 @@ export default function PlaylistTracklist({
   contextMenuSongId, setContextMenuSongId, dropTargetIdx,
   ratings, starredSongs, handleRate, handleToggleStar,
   handleRowMouseDown, handleRowMouseEnter, removeSong,
-  setSearchOpen, tracksReadOnly = false,
+  setSearchOpen, tracksReadOnly = false, touchReorder = false, onTouchReorder,
 }: Props) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -243,6 +249,29 @@ export default function PlaylistTracklist({
   }), []);
 
   const listWrapRef = useRef<HTMLDivElement | null>(null);
+
+  // Touch "Change order": the grip lifts a row at once and it follows the finger; the drop
+  // line marks the gap it lands in. Only offered in the server order without a filter, so a
+  // row's display index is its playlist index.
+  const touchDrop = useTouchListReorder({
+    listRef: listWrapRef,
+    enabled: IS_MOBILE_SHELL && touchReorder,
+    rowSelector: '[data-playlist-touch-row]',
+    indexAttr: 'data-playlist-touch-row',
+    ignoreSelector: '.mobile-track__main',
+    handleSelector: '.mobile-track__grip',
+    liftDelayMs: 0,
+    liftedClass: 'mobile-track--lifted',
+    getScroller: () => document.getElementById(APP_MAIN_SCROLL_VIEWPORT_ID),
+    onDrop: (from, target) => onTouchReorder?.(from, target.before ? target.idx : target.idx + 1),
+  });
+  useEffect(() => {
+    if (!touchDrop) return;
+    const cls = touchDrop.before ? 'mobile-track--drop-before' : 'mobile-track--drop-after';
+    touchDrop.row.classList.add(cls);
+    return () => touchDrop.row.classList.remove(cls);
+  }, [touchDrop]);
+
   const [scrollMargin, setScrollMargin] = useState(0);
   const viewportH = useElementClientHeightById(APP_MAIN_SCROLL_VIEWPORT_ID);
 
@@ -556,6 +585,7 @@ export default function PlaylistTracklist({
               isActive={currentTrack?.id === song.id}
               showEq={currentTrack?.id === song.id && isPlaying}
               cb={cb}
+              reordering={touchReorder}
             />
           ) : (
           <PlaylistRow

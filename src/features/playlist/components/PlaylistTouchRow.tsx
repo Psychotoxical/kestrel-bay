@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MoreHorizontal } from 'lucide-react';
+import { GripVertical, MoreHorizontal } from 'lucide-react';
 import type { SubsonicSong } from '@/lib/api/subsonicTypes';
 import { formatTrackTime } from '@/lib/format/formatDuration';
 import { OptionalBrowseTrackRowCoverThumb } from '@/cover/TrackRowCoverThumb';
@@ -16,6 +16,8 @@ interface Props {
   isActive: boolean;
   showEq: boolean;
   cb: PlaylistRowCallbacks;
+  /** "Change order" mode: a grip replaces the menu, taps and long presses do nothing. */
+  reordering?: boolean;
 }
 
 /**
@@ -24,7 +26,7 @@ interface Props {
  * user's track-list covers setting is on. A long press starts a multi-selection,
  * during which a tap picks the row.
  */
-function PlaylistTouchRow({ song, index, realIdx, isActive, showEq, cb }: Props) {
+function PlaylistTouchRow({ song, index, realIdx, isActive, showEq, cb, reordering = false }: Props) {
   const { t } = useTranslation();
   const selection = useMobileTrackSelection(songToTrack(song));
   return (
@@ -33,7 +35,7 @@ function PlaylistTouchRow({ song, index, realIdx, isActive, showEq, cb }: Props)
       data-playlist-touch-row={index}
       onContextMenu={e => {
         e.preventDefault();
-        selection.start();
+        if (!reordering) selection.start();
       }}
     >
       <button
@@ -41,7 +43,7 @@ function PlaylistTouchRow({ song, index, realIdx, isActive, showEq, cb }: Props)
         className="mobile-track__main"
         aria-current={isActive ? 'true' : undefined}
         aria-pressed={selection.selecting ? selection.selected : undefined}
-        onClick={selection.selecting ? selection.toggle : () => cb.play(index)}
+        onClick={reordering ? undefined : selection.selecting ? selection.toggle : () => cb.play(index)}
       >
         {selection.selecting && <MobileTrackCheck selected={selection.selected} />}
         <span className="mobile-track__num">
@@ -56,19 +58,29 @@ function PlaylistTouchRow({ song, index, realIdx, isActive, showEq, cb }: Props)
         </span>
         <span className="mobile-track__time">{formatTrackTime(song.duration ?? 0)}</span>
       </button>
-      <button
-        type="button"
-        className="mobile-track__more"
-        aria-label={`${t('player.moreOptions')}: ${song.title}`}
-        aria-haspopup="menu"
-        onClick={e => {
-          prepareTransientUiOpen();
-          const r = e.currentTarget.getBoundingClientRect();
-          cb.context(song, realIdx, e, { x: r.right, y: r.bottom });
-        }}
-      >
-        <MoreHorizontal size={20} aria-hidden="true" />
-      </button>
+      {reordering ? (
+        <button
+          type="button"
+          className="mobile-track__more mobile-track__grip"
+          aria-label={t('playlists.reorderMove', { title: song.title })}
+        >
+          <GripVertical size={22} aria-hidden="true" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="mobile-track__more"
+          aria-label={`${t('player.moreOptions')}: ${song.title}`}
+          aria-haspopup="menu"
+          onClick={e => {
+            prepareTransientUiOpen();
+            const r = e.currentTarget.getBoundingClientRect();
+            cb.context(song, realIdx, e, { x: r.right, y: r.bottom });
+          }}
+        >
+          <MoreHorizontal size={20} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

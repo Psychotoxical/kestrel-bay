@@ -54,6 +54,7 @@ import { useResolvedTracklistBpm } from '@/lib/hooks/useResolvedTracklistBpm';
 import { usePlaylistDetailScrollRestore } from '@/features/playlist/hooks/usePlaylistDetailScrollRestore';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import PlaylistSongSearchSheet from '@/features/playlist/components/PlaylistSongSearchSheet';
+import { moveBlockToGap } from '@/lib/util/listReorder';
 
 // ── Column configuration ──────────────────────────────────────────────────────
 const PL_COLUMNS: readonly ColDef[] = [
@@ -370,6 +371,33 @@ export default function PlaylistDetail() {
 
   usePlaylistDetailScrollRestore(!loading && playlist !== null);
 
+  // ── Touch "Change order" mode ─────────────────────────────────
+  // Only in the server order without a filter, where a row's position is its playlist index.
+  const [touchReorderOn, setTouchReorderOn] = useState(false);
+  const touchReorder = IS_MOBILE_SHELL && touchReorderOn && !tracksReadOnly
+    && sortKey === 'natural' && filterText.trim() === '';
+  useEffect(() => {
+    if (!touchReorder) return;
+    const root = document.documentElement;
+    root.setAttribute('data-mobile-reordering', '');
+    return () => root.removeAttribute('data-mobile-reordering');
+  }, [touchReorder]);
+  const startTouchReorder = () => {
+    setFilterText('');
+    setSortKey('natural');
+    setSortDir('asc');
+    setTouchReorderOn(true);
+  };
+  // Saved after every move, as the desktop drop does.
+  const moveSongTouch = (from: number, gap: number) => {
+    setSongs(prev => {
+      const next = moveBlockToGap(prev, [from], gap);
+      if (!next) return prev;
+      void savePlaylist(next);
+      return next;
+    });
+  };
+
   // ── Render ────────────────────────────────────────────────────
   if (loading) {
     return (
@@ -464,6 +492,8 @@ export default function PlaylistDetail() {
           setSortDir={setSortDir}
           setSortClickCount={setSortClickCount}
           canReorder={!tracksReadOnly}
+          touchReordering={touchReorder}
+          onToggleTouchReorder={touchReorder ? () => setTouchReorderOn(false) : startTouchReorder}
         />
       )}
 
@@ -514,7 +544,18 @@ export default function PlaylistDetail() {
         removeSong={removeSong}
         setSearchOpen={setSearchOpen}
         tracksReadOnly={tracksReadOnly}
+        touchReorder={touchReorder}
+        onTouchReorder={moveSongTouch}
       />
+
+      {touchReorder && (
+        <div className="mobile-selection-header mobile-glass" role="toolbar" aria-label={t('playlists.reorderMode')}>
+          <span className="mobile-selection-header__count">{t('playlists.reorderMode')}</span>
+          <button type="button" className="mobile-pill-btn" onClick={() => setTouchReorderOn(false)}>
+            {t('playlists.reorderDone')}
+          </button>
+        </div>
+      )}
 
       {/* ── Suggestions ── */}
       {!tracksReadOnly && <PlaylistSuggestions

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Info, Search, X } from 'lucide-react';
+import { GripVertical, Info, Search, X } from 'lucide-react';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import SortDropdown, { type SortOption } from '@/ui/SortDropdown';
 import type { PlaylistSortKey, PlaylistSortDir } from '@/features/playlist/utils/playlistDisplayedSongs';
 
@@ -49,6 +50,10 @@ interface Props {
   setSortClickCount: (n: number) => void;
   /** Whether drag reordering exists for this playlist at all (false for read-only ones). */
   canReorder?: boolean;
+  /** Touch shell: the "Change order" mode is on. */
+  touchReordering?: boolean;
+  /** Touch shell: switches the "Change order" mode (the grip button beside the sort). */
+  onToggleTouchReorder?: () => void;
 }
 
 export default function PlaylistFilterToolbar({
@@ -60,6 +65,8 @@ export default function PlaylistFilterToolbar({
   setSortDir,
   setSortClickCount,
   canReorder = false,
+  touchReordering = false,
+  onToggleTouchReorder,
 }: Props) {
   const { t } = useTranslation();
   // Same condition under which `getDisplayedSongs` returns a derived list and a
@@ -150,6 +157,17 @@ export default function PlaylistFilterToolbar({
           align="right"
         />
       </div>
+      {IS_MOBILE_SHELL && canReorder && onToggleTouchReorder && (
+        <button
+          type="button"
+          className={`mobile-round-btn${touchReordering ? ' is-active' : ''}`}
+          aria-label={t('playlists.reorderMode')}
+          aria-pressed={touchReordering}
+          onClick={onToggleTouchReorder}
+        >
+          <GripVertical size={20} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

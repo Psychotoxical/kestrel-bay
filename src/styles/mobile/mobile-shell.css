@@ -5675,3 +5675,33 @@ html[data-mobile-selecting] .mobile-tabbar {
   background: none;
   max-height: none;
 }
+
+/* ─── Playlist "Change order" (grip button beside the sort) ─── */
+.mobile-track__grip {
+  color: var(--text-primary);
+  touch-action: none;
+}
+
+.mobile-track.mobile-track--lifted {
+  position: relative;
+  z-index: 2;
+  transform: translateY(var(--lift-dy, 0px)) scale(1.02);
+  background: var(--bg-elevated, var(--bg-card));
+  border-radius: 12px;
+  border-bottom-color: transparent;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+}
+
+.mobile-track.mobile-track--drop-before {
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.mobile-track.mobile-track--drop-after {
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+/* More rows in view while ordering; the tracks do not play from here then. */
+html[data-mobile-reordering] .mobile-album__buttons,
+html[data-mobile-reordering] .playlist-reorder-hint {
+  display: none;
+}

@@ -26,6 +26,10 @@ export interface TouchListReorderOptions {
   indexAttr?: string;
   /** Touches that start inside these keep their own meaning (buttons in the row). */
   ignoreSelector: string;
+  /** When set, only touches that start inside this (a grip) pick a row up. */
+  handleSelector?: string;
+  /** Hold time before the row lifts; `LIFT_MS` when omitted (a grip can lift at once). */
+  liftDelayMs?: number;
   /** Class on the held row; the row moves with the `--lift-dy` CSS variable. */
   liftedClass: string;
   /** Element that scrolls under the finger; the list itself when omitted. */
@@ -146,12 +150,14 @@ export function useTouchListReorder(options: TouchListReorderOptions): TouchDrop
       if (e.touches.length !== 1) return;
       const el = e.target instanceof Element ? e.target : null;
       if (!el || el.closest(ignoreSelector)) return;
+      const handle = latest.current.handleSelector;
+      if (handle && !el.closest(handle)) return;
       const row = el.closest<HTMLElement>(rowSelector);
       if (!row || !list.contains(row)) return;
       const touch = e.touches[0];
       press = { x: touch.clientX, y: touch.clientY, row, idx: indexOf(row), scrollTop: scroller().scrollTop };
       lastY = touch.clientY;
-      timer = window.setTimeout(lift, LIFT_MS);
+      timer = window.setTimeout(lift, latest.current.liftDelayMs ?? LIFT_MS);
     };
 
     const onTouchMove = (e: TouchEvent) => {
