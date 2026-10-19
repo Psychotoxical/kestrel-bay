@@ -138,6 +138,24 @@ describe('carplayContent', () => {
     expect(list.sections[1].items.map(item => item.node)).toEqual(['random', 'favorites']);
   });
 
+  it('the album/artist button lists the artist as a row that opens their albums, then the album', async () => {
+    mocks.player = { currentTrack: { id: 't1', title: 'One', artist: 'Band', artistId: 'ar1', albumId: 'al1', serverId: 'srv' } };
+    mocks.resolveAlbum.mockResolvedValue({ album: {}, songs: [song('t1')] });
+    const list = await carPlayList('current');
+    expect(list.sections[0].items).toEqual([
+      expect.objectContaining({ node: 'artist|srv|ar1', title: 'Band', browse: true, cover: { kind: 'artist', id: 'ar1', serverId: 'srv' } }),
+    ]);
+    // The album's play all / shuffle / tracks follow.
+    expect(list.sections[1].items.map(item => item.node)[0]).toContain('playall');
+  });
+
+  it('without an artist id the button shows just the album', async () => {
+    mocks.player = { currentTrack: { id: 't1', title: 'One', artist: 'Band', albumId: 'al1', serverId: 'srv' } };
+    mocks.resolveAlbum.mockResolvedValue({ album: {}, songs: [song('t1')] });
+    const list = await carPlayList('current');
+    expect(list.sections[0].items[0].node).toContain('playall');
+  });
+
   it('an album lists play all, shuffle and its tracks; a track row plays the album from there', async () => {
     mocks.resolveAlbum.mockResolvedValue({ album: {}, songs: [song('t1'), song('t2'), song('t3')] });
     const list = await carPlayList('album|srv|al1');

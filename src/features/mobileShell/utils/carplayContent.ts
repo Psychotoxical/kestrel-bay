@@ -319,13 +319,24 @@ function queueList(): CarPlayList {
   return items.length > 0 ? { sections: [{ items }] } : empty();
 }
 
-/** The album of the playing track (now-playing screen's album/artist button). */
+/**
+ * The album of the playing track (now-playing screen's album/artist button): the artist
+ * first, as a row that opens their albums, then the album's own list.
+ */
 async function currentList(): Promise<CarPlayList> {
   const track = usePlayerStore.getState().currentTrack;
   if (!track?.albumId) return empty();
   const serverId = track.serverId ?? browseServerId() ?? '';
   const albumNode = node('album', serverId, track.albumId);
-  return albumList(albumNode, serverId, track.albumId);
+  const album = await albumList(albumNode, serverId, track.albumId);
+  if (!track.artistId || !track.artist) return album;
+  const artistRow: CarPlayItem = {
+    node: node('artist', serverId, track.artistId),
+    title: track.artist,
+    browse: true,
+    cover: { kind: 'artist', id: track.artistId, serverId },
+  };
+  return { ...album, sections: [{ items: [artistRow] }, ...album.sections] };
 }
 
 function tabsList(): CarPlayList {

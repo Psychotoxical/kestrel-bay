@@ -50,6 +50,8 @@ const SHUFFLE_ITEMS: isize = 1;
 const REPEAT_OFF: isize = 0;
 const REPEAT_ONE: isize = 1;
 const REPEAT_ALL: isize = 2;
+/// `MPRemoteCommandHandlerStatusSuccess` (MediaPlayer SDK, `MPRemoteCommand.h`).
+const COMMAND_SUCCESS: isize = 0;
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 
@@ -65,6 +67,8 @@ thread_local! {
     static STATE: RefCell<NowPlayingState> = RefCell::new(NowPlayingState::default());
     /// Observer for the now-playing template's up-next and album/artist buttons.
     static NOW_PLAYING_OBSERVER: RefCell<Option<Retained<NowPlayingObserver>>> = const { RefCell::new(None) };
+    /// The shuffle / repeat remote commands are enabled and have their target (done once).
+    static MODE_COMMANDS_READY: Cell<bool> = const { Cell::new(false) };
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -600,6 +604,36 @@ unsafe fn setup_now_playing() {
     update_now_playing_buttons();
 }
 
+/// CarPlay only shows the state of its shuffle and repeat buttons while the app provides the
+/// matching remote commands: enabled and with a target. Setting the current mode alone leaves
+/// the buttons looking off. A press from elsewhere (not CarPlay's own buttons, which call their
+/// handlers) is sent on as the same command.
+///
+/// # Safety
+/// Main thread; `center` is the shared `MPRemoteCommandCenter`.
+unsafe fn ensure_mode_commands(center: *mut AnyObject) {
+    if MODE_COMMANDS_READY.with(|ready| ready.replace(true)) {
+        return;
+    }
+    let shuffle_command: *mut AnyObject = msg_send![center, changeShuffleModeCommand];
+    let on_shuffle: RcBlock<dyn Fn(NonNull<AnyObject>) -> isize> =
+        RcBlock::new(|_event: NonNull<AnyObject>| {
+            send_command("shuffle");
+            COMMAND_SUCCESS
+        });
+    let _target: *mut AnyObject = msg_send![shuffle_command, addTargetWithHandler: &*on_shuffle];
+    let () = msg_send![shuffle_command, setEnabled: Bool::YES];
+
+    let repeat_command: *mut AnyObject = msg_send![center, changeRepeatModeCommand];
+    let on_repeat: RcBlock<dyn Fn(NonNull<AnyObject>) -> isize> =
+        RcBlock::new(|_event: NonNull<AnyObject>| {
+            send_command("repeat");
+            COMMAND_SUCCESS
+        });
+    let _target: *mut AnyObject = msg_send![repeat_command, addTargetWithHandler: &*on_repeat];
+    let () = msg_send![repeat_command, setEnabled: Bool::YES];
+}
+
 /// Rebuilds the shuffle / repeat / heart buttons for the current state.
 ///
 /// # Safety
@@ -636,6 +670,7 @@ unsafe fn update_now_playing_buttons() {
 
     // CarPlay draws the shuffle / repeat buttons from the remote command centre's modes.
     let center: *mut AnyObject = msg_send![class!(MPRemoteCommandCenter), sharedCommandCenter];
+    ensure_mode_commands(center);
     let shuffle_command: *mut AnyObject = msg_send![center, changeShuffleModeCommand];
     let shuffle_type = if state.shuffle {
         SHUFFLE_ITEMS
