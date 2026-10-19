@@ -7,6 +7,7 @@ export { default as MobileTabBar } from './components/MobileTabBar';
 export { default as MobileMiniPlayer } from './components/MobileMiniPlayer';
 export { default as MobileOrbitHelpSheet } from './components/MobileOrbitHelpSheet';
 export { default as MobileOrbitAccountSheet } from './components/MobileOrbitAccountSheet';
+export { default as MobileSongInfoSheet } from './components/MobileSongInfoSheet';
 export { default as MobileTopBar } from './components/MobileTopBar';
 export { default as MobileActionSheet } from './components/MobileActionSheet';
 export { default as MobileRadioBridge } from './components/MobileRadioBridge';

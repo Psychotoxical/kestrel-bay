@@ -5485,3 +5485,56 @@ html[data-mobile-app] .player-heatmap-legend {
 .analytics-touch__footnote strong {
   color: var(--text-secondary);
 }
+
+/* ─── Song Info as a sheet: hairline rows, label left, value right; a tap on title / artist / album copies. ─── */
+.mobile-sheet--song-info .mobile-sheet__body {
+  gap: 0;
+  padding: 0 20px calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+
+.song-info-table--touch {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.song-info-table--touch tr {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.song-info-table--touch tr:has(.song-info-divider) {
+  border-bottom: 0;
+}
+
+.song-info-table--touch td {
+  vertical-align: baseline;
+}
+
+.song-info-table--touch .song-info-label {
+  width: 34%;
+  padding: 11px 12px 11px 0;
+  font-size: 13px;
+  white-space: normal;
+}
+
+.song-info-table--touch .song-info-value {
+  padding: 11px 0;
+  font-size: 15px;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}
+
+.song-info-table--touch .song-info-value--no-select:active {
+  color: var(--accent);
+}
+
+.song-info-table--touch .song-info-divider {
+  padding: 8px 0;
+  border-bottom: 0;
+}
+
+.song-info-table--touch .song-info-path {
+  font-size: 12px;
+  word-break: normal;
+  overflow-wrap: anywhere;
+}

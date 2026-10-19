@@ -63,6 +63,7 @@ import {
   MobileMiniPlayer,
   MobileOrbitAccountSheet,
   MobileOrbitHelpSheet,
+  MobileSongInfoSheet,
   MobileIosBridge,
   MobileRadioBridge,
   MobileTabBar,
@@ -287,7 +288,7 @@ export function AppShell() {
             : <FullscreenPlayer onClose={toggleFullscreen} />
       )}
       <ContextMenu />
-      <SongInfoModal />
+      {IS_MOBILE_SHELL ? <MobileSongInfoSheet /> : <SongInfoModal />}
       <PlaybackAlternativeModal />
       <DownloadFolderModal />
       <GlobalConfirmModal />

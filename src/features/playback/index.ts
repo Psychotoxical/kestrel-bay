@@ -50,3 +50,6 @@ export { usePlaybackDelayPress } from './hooks/usePlaybackDelayPress';
 export { default as PlaybackDelayModal } from './components/PlaybackDelayModal';
 export { default as PlaybackScheduleBadge } from './components/PlaybackScheduleBadge';
 export { usePlaybackScheduleRemaining } from './utils/playbackScheduleFormat';
+/** Song Info content (data + rows), shared by the desktop modal and the touch shell's sheet. */
+export { useSongInfoData } from './hooks/useSongInfoData';
+export { default as SongInfoRows } from './components/SongInfoRows';
