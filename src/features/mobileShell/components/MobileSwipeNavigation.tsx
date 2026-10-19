@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useNavigationType } from 'react-router';
 import { activeMobileTab, isMobileTabRoot, MOBILE_TAB_ROOTS } from '@/features/mobileShell/utils/mobileTabs';
+import { useMobileScrollMemory } from '@/features/mobileShell/hooks/useMobileScrollMemory';
 
 /** Horizontal travel before the page starts following the finger. */
 const START_PX = 16;
@@ -27,6 +28,8 @@ export default function MobileSwipeNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const navigationType = useNavigationType();
+  // Back and forward (swipe or button) land where the page was scrolled.
+  useMobileScrollMemory();
   const maxIdxRef = useRef(historyIdx());
   const stateRef = useRef({ navigate, pathname: location.pathname });
   useEffect(() => {
