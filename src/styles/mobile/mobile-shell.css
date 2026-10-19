@@ -5550,3 +5550,25 @@ html[data-mobile-app] .player-heatmap-legend {
 
 
 
+
+/* ─── Font sizes of the bundled fonts, evened out for the touch shell ───
+   The touch text sizes are fixed pixel values tuned on Inter. The other fonts differ in
+   x-height and width (JetBrains Mono, Unbounded and OpenDyslexic run far larger), so each
+   gets a `font-size-adjust` that brings its apparent size to Inter's: the geometric mean of
+   the width and x-height ratios measured on a mixed German/English sample, enlargements
+   capped at 5%. iOS 17+ only; older versions keep the font's own size. The system font is
+   left alone. */
+html[data-mobile-app][data-font='outfit'] { font-size-adjust: 0.504; }
+html[data-mobile-app][data-font='dm-sans'] { font-size-adjust: 0.536; }
+html[data-mobile-app][data-font='nunito'] { font-size-adjust: 0.525; }
+html[data-mobile-app][data-font='rubik'] { font-size-adjust: 0.537; }
+html[data-mobile-app][data-font='space-grotesk'] { font-size-adjust: 0.525; }
+html[data-mobile-app][data-font='figtree'] { font-size-adjust: 0.525; }
+html[data-mobile-app][data-font='manrope'] { font-size-adjust: 0.557; }
+html[data-mobile-app][data-font='plus-jakarta-sans'] { font-size-adjust: 0.549; }
+html[data-mobile-app][data-font='lexend'] { font-size-adjust: 0.531; }
+html[data-mobile-app][data-font='geist'] { font-size-adjust: 0.555; }
+html[data-mobile-app][data-font='jetbrains-mono'] { font-size-adjust: 0.501; }
+html[data-mobile-app][data-font='golos-text'] { font-size-adjust: 0.539; }
+html[data-mobile-app][data-font='unbounded'] { font-size-adjust: 0.498; }
+html[data-mobile-app][data-font='opendyslexic'] { font-size-adjust: 0.46; }
