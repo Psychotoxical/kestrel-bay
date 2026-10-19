@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { MemoryRouter, useNavigate } from 'react-router';
@@ -8,13 +9,17 @@ vi.mock('@/lib/navigation/restoreMainViewportScroll', () => ({ restoreMainViewpo
 
 import { _resetMobileScrollMemoryForTest, useMobileScrollMemory } from './useMobileScrollMemory';
 
-let navigate: ReturnType<typeof useNavigate>;
+const nav: { go: ReturnType<typeof useNavigate> | null } = { go: null };
+const navigate = (to: string | number) => { void (nav.go as (t: string | number) => unknown)(to); };
 
-function Probe() {
+function Probe({ onNavigate }: { onNavigate: (go: ReturnType<typeof useNavigate>) => void }) {
   useMobileScrollMemory();
-  navigate = useNavigate();
+  const go = useNavigate();
+  useEffect(() => onNavigate(go), [go, onNavigate]);
   return null;
 }
+
+const keepNavigate = (go: ReturnType<typeof useNavigate>) => { nav.go = go; };
 
 function scrollViewport(el: HTMLElement, top: number) {
   Object.defineProperty(el, 'scrollTop', { configurable: true, value: top });
@@ -37,23 +42,23 @@ describe('useMobileScrollMemory', () => {
   afterEach(() => viewport.remove());
 
   it('going back restores where the artist page was scrolled', async () => {
-    render(<MemoryRouter initialEntries={['/artist/a1']}><Probe /></MemoryRouter>);
+    render(<MemoryRouter initialEntries={['/artist/a1']}><Probe onNavigate={keepNavigate} /></MemoryRouter>);
     scrollViewport(viewport, 840);
-    act(() => { void navigate('/album/al1'); });
+    act(() => { navigate('/album/al1'); });
     scrollViewport(viewport, 0);
     await flushFrame();
     expect(restore).not.toHaveBeenCalled();
 
-    act(() => { void navigate(-1); });
+    act(() => { navigate(-1); });
     await flushFrame();
     expect(restore).toHaveBeenCalledWith(840, expect.any(Function));
   });
 
   it('a new page opens at the top, and a page left at the top is not restored', async () => {
-    render(<MemoryRouter initialEntries={['/artist/a1']}><Probe /></MemoryRouter>);
-    act(() => { void navigate('/album/al1'); });
+    render(<MemoryRouter initialEntries={['/artist/a1']}><Probe onNavigate={keepNavigate} /></MemoryRouter>);
+    act(() => { navigate('/album/al1'); });
     await flushFrame();
-    act(() => { void navigate(-1); });
+    act(() => { navigate(-1); });
     await flushFrame();
     expect(restore).not.toHaveBeenCalled();
   });

@@ -6,6 +6,8 @@ import { formatTrackTime } from '@/lib/format/formatDuration';
 import { OptionalBrowseTrackRowCoverThumb } from '@/cover/TrackRowCoverThumb';
 import type { PlaylistRowCallbacks } from '@/features/playlist/components/PlaylistRow';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
+import { songToTrack } from '@/lib/media/songToTrack';
+import { MobileTrackCheck, useMobileTrackSelection } from '@/features/mobileShell';
 
 interface Props {
   song: SubsonicSong;
@@ -19,18 +21,29 @@ interface Props {
 /**
  * Playlist track row in the touch shell: tap plays, "…" opens the same menu as
  * the desktop right click (incl. remove from playlist). Cover only when the
- * user's track-list covers setting is on.
+ * user's track-list covers setting is on. A long press starts a multi-selection,
+ * during which a tap picks the row.
  */
 function PlaylistTouchRow({ song, index, realIdx, isActive, showEq, cb }: Props) {
   const { t } = useTranslation();
+  const selection = useMobileTrackSelection(songToTrack(song));
   return (
-    <div className={`mobile-track${isActive ? ' is-active' : ''}`} data-playlist-touch-row={index}>
+    <div
+      className={`mobile-track${isActive ? ' is-active' : ''}${selection.selected ? ' is-selected' : ''}`}
+      data-playlist-touch-row={index}
+      onContextMenu={e => {
+        e.preventDefault();
+        selection.start();
+      }}
+    >
       <button
         type="button"
         className="mobile-track__main"
         aria-current={isActive ? 'true' : undefined}
-        onClick={() => cb.play(index)}
+        aria-pressed={selection.selecting ? selection.selected : undefined}
+        onClick={selection.selecting ? selection.toggle : () => cb.play(index)}
       >
+        {selection.selecting && <MobileTrackCheck selected={selection.selected} />}
         <span className="mobile-track__num">
           {showEq
             ? <span className="mobile-playing-bars" aria-hidden="true"><span /><span /><span /></span>

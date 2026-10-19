@@ -10,7 +10,7 @@ import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { buildArtistDetailPath } from '@/lib/navigation/detailServerScope';
 import { sameQueueTrack, usePlayerStore } from '@/features/playback';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
-import { MobileBackButton, MobileDownloadButton, type MobileDownloadStatus } from '@/features/mobileShell';
+import { MobileBackButton, MobileDownloadButton, MobileTrackCheck, useMobileTrackSelection, type MobileDownloadStatus } from '@/features/mobileShell';
 import { meteredPinKey } from '@/features/offline';
 import AlbumCard from '@/features/album/components/AlbumCard';
 
@@ -42,6 +42,58 @@ function PlayingBars() {
     <span className="mobile-playing-bars" aria-hidden="true">
       <span /><span /><span />
     </span>
+  );
+}
+
+interface TrackRowProps {
+  song: SubsonicSong;
+  track: Track;
+  active: boolean;
+  isPlaying: boolean;
+  showArtist: boolean;
+  onPlay: () => void;
+  onMore: (e: React.MouseEvent<HTMLButtonElement>) => void;
+}
+
+/** One track: tap plays, long press starts a multi-selection, and while one runs a tap picks the row. */
+function AlbumTouchTrackRow({ song, track, active, isPlaying, showArtist, onPlay, onMore }: TrackRowProps) {
+  const { t } = useTranslation();
+  const selection = useMobileTrackSelection(track);
+  return (
+    <li
+      className={`mobile-track${active ? ' is-active' : ''}${selection.selected ? ' is-selected' : ''}`}
+      onContextMenu={e => {
+        e.preventDefault();
+        selection.start();
+      }}
+    >
+      <button
+        type="button"
+        className="mobile-track__main"
+        onClick={selection.selecting ? selection.toggle : onPlay}
+        aria-current={active ? 'true' : undefined}
+        aria-pressed={selection.selecting ? selection.selected : undefined}
+      >
+        {selection.selecting && <MobileTrackCheck selected={selection.selected} />}
+        <span className="mobile-track__num">
+          {active && isPlaying ? <PlayingBars /> : song.track ?? ''}
+        </span>
+        <span className="mobile-track__text">
+          <span className="mobile-track__title">{song.title}</span>
+          {showArtist && <span className="mobile-track__artist">{song.artist}</span>}
+        </span>
+        <span className="mobile-track__time">{formatTrackTime(song.duration ?? 0)}</span>
+      </button>
+      <button
+        type="button"
+        className="mobile-track__more"
+        aria-label={`${t('player.moreOptions')}: ${song.title}`}
+        aria-haspopup="menu"
+        onClick={onMore}
+      >
+        <MoreHorizontal size={20} aria-hidden="true" />
+      </button>
+    </li>
   );
 }
 
@@ -157,37 +209,18 @@ export default function AlbumDetailMobile({
             </h2>
           )}
           <ol className="mobile-tracklist">
-            {discSongs.map(song => {
-              const active = sameQueueTrack(currentTrack, song);
-              return (
-                <li key={ownedEntityKey(song)} className={`mobile-track${active ? ' is-active' : ''}`}>
-                  <button
-                    type="button"
-                    className="mobile-track__main"
-                    onClick={() => onPlaySong(song)}
-                    aria-current={active ? 'true' : undefined}
-                  >
-                    <span className="mobile-track__num">
-                      {active && isPlaying ? <PlayingBars /> : song.track ?? ''}
-                    </span>
-                    <span className="mobile-track__text">
-                      <span className="mobile-track__title">{song.title}</span>
-                      {hasVariousArtists && <span className="mobile-track__artist">{song.artist}</span>}
-                    </span>
-                    <span className="mobile-track__time">{formatTrackTime(song.duration ?? 0)}</span>
-                  </button>
-                  <button
-                    type="button"
-                    className="mobile-track__more"
-                    aria-label={`${t('player.moreOptions')}: ${song.title}`}
-                    aria-haspopup="menu"
-                    onClick={e => openMenu(e, songToTrack(song), 'album-song')}
-                  >
-                    <MoreHorizontal size={20} aria-hidden="true" />
-                  </button>
-                </li>
-              );
-            })}
+            {discSongs.map(song => (
+              <AlbumTouchTrackRow
+                key={ownedEntityKey(song)}
+                song={song}
+                track={{ ...songToTrack(song), serverId: song.serverId ?? serverId }}
+                active={sameQueueTrack(currentTrack, song)}
+                isPlaying={isPlaying}
+                showArtist={hasVariousArtists}
+                onPlay={() => onPlaySong(song)}
+                onMore={e => openMenu(e, songToTrack(song), 'album-song')}
+              />
+            ))}
           </ol>
         </section>
       ))}

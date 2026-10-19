@@ -15,3 +15,4 @@ export { default as MobileIosBridge } from './components/MobileIosBridge';
 export { default as MobileTouchContextMenu } from './components/MobileTouchContextMenu';
 export { default as MobileSwipeNavigation } from './components/MobileSwipeNavigation';
 export { default as MobilePlayer } from './components/MobilePlayer';
+export { default as MobileSelectionBar } from './components/MobileSelectionBar';

@@ -69,6 +69,7 @@ import {
   MobileTabBar,
   MobileTopBar,
   MobileSwipeNavigation,
+  MobileSelectionBar,
   MobileTouchContextMenu,
 } from '@/features/mobileShell/shell';
 import { useConnectionStatus } from '@/lib/hooks/useConnectionStatus';
@@ -345,6 +346,7 @@ export function AppShell() {
         <MobileActionSheet />
         <MobileTouchContextMenu />
         <MobileSwipeNavigation />
+        <MobileSelectionBar />
         {!isMobilePlayer && <MobileMiniPlayer />}
         {!isMobilePlayer && <MobileTabBar />}
         {globalOverlays}
