@@ -6,6 +6,9 @@ import { makeSubsonicSong } from '@/test/helpers/factories';
 import { useMobileSelectionStore } from '@/features/mobileShell/store/mobileSelectionStore';
 import ArtistTrackTouchRow from './ArtistTrackTouchRow';
 
+// The cover loads through the cover cache, which the test does not set up.
+vi.mock('@/features/artist/components/ArtistTopTrackCover', () => ({ default: () => null }));
+
 const songs = [makeSubsonicSong({ id: 't1', title: 'One' }), makeSubsonicSong({ id: 't2', title: 'Two' })];
 
 describe('ArtistTrackTouchRow selection', () => {
