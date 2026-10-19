@@ -5,6 +5,8 @@ import type { SubsonicAlbum, SubsonicSong } from '@/lib/api/subsonicTypes';
 import { formatTrackTime } from '@/lib/format/formatDuration';
 import ArtistTopTrackCover from '@/features/artist/components/ArtistTopTrackCover';
 import { topSongAlbumForCover } from '@/features/artist/components/topSongAlbumForCover';
+import { songToTrack } from '@/lib/media/songToTrack';
+import { MobileTrackCheck, useMobileTrackSelection } from '@/features/mobileShell';
 
 interface Props {
   song: SubsonicSong;
@@ -21,14 +23,20 @@ interface Props {
 
 /**
  * Artist track row in the touch shell, shared by the Top and All tabs so both
- * read the same: rank, album cover, title over album, duration, "…" menu.
+ * read the same: rank, album cover, title over album, duration, "…" menu. A long press
+ * starts a multi-selection, during which a tap picks the row.
  */
 function ArtistTrackTouchRow({ song, index, albums, isActive, showEq, onPlay, onMore, as: Tag = 'li' }: Props) {
   const { t } = useTranslation();
   const albumForCover = topSongAlbumForCover(song, albums);
+  const selection = useMobileTrackSelection(songToTrack(song));
   return (
     <Tag
-      className={`mobile-track${isActive ? ' is-active' : ''}`}
+      className={`mobile-track${isActive ? ' is-active' : ''}${selection.selected ? ' is-selected' : ''}`}
+      onContextMenu={(e: React.MouseEvent) => {
+        e.preventDefault();
+        selection.start();
+      }}
       // Virtualised rows each sit in their own wrapper, where `:last-child` would drop every border.
       data-artist-track-row={Tag === 'div' ? '' : undefined}
     >
@@ -36,8 +44,10 @@ function ArtistTrackTouchRow({ song, index, albums, isActive, showEq, onPlay, on
         type="button"
         className="mobile-track__main"
         aria-current={isActive ? 'true' : undefined}
-        onClick={() => onPlay(index)}
+        aria-pressed={selection.selecting ? selection.selected : undefined}
+        onClick={selection.selecting ? selection.toggle : () => onPlay(index)}
       >
+        {selection.selecting && <MobileTrackCheck selected={selection.selected} />}
         <span className="mobile-track__num">
           {showEq
             ? <span className="mobile-playing-bars" aria-hidden="true"><span /><span /><span /></span>
