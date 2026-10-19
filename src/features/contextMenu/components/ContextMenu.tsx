@@ -24,6 +24,10 @@ import ContextMenuItems from '@/features/contextMenu/components/ContextMenuItems
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 
+/** Touch shell, menu above its anchor: gap to the anchor and the lowest the menu may reach up to (status bar). */
+const MENU_ANCHOR_GAP = 8;
+const MENU_TOP_MIN = 64;
+
 function contextMenuSurfaceForType(type: string | null): OfflineSurface {
   switch (type) {
     case 'album':
@@ -81,8 +85,9 @@ export default function ContextMenu() {
   const menuRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // Adjusted coordinates to keep menu on screen
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  // Adjusted coordinates to keep menu on screen; `maxHeight` only when a menu
+  // opened above its anchor has to shrink (and scroll) to leave the anchor free.
+  const [coords, setCoords] = useState<{ x: number; y: number; maxHeight?: number }>({ x: 0, y: 0 });
   const [activeSubmenuId, setActiveSubmenuId] = useState<string | null>(null);
   const [keyboardRating, setKeyboardRating] = useState<{ kind: 'song' | 'album' | 'artist'; id: string; value: number } | null>(null);
   const [pendingSubmenuKeyboardFocus, setPendingSubmenuKeyboardFocus] = useState(false);
@@ -134,10 +139,21 @@ export default function ContextMenu() {
       let finalX = contextMenu.x;
       let finalY = contextMenu.y;
       if (finalX + rect.width > winW) finalX = winW - rect.width - 10;
+      if (IS_MOBILE_SHELL && contextMenu.placeAbove) {
+        // Ends just above the anchor so the button that opened it stays tappable.
+        const available = Math.max(0, contextMenu.y - MENU_ANCHOR_GAP - MENU_TOP_MIN);
+        const height = Math.min(rect.height, available);
+        setCoords({
+          x: finalX,
+          y: contextMenu.y - MENU_ANCHOR_GAP - height,
+          maxHeight: rect.height > available ? available : undefined,
+        });
+        return;
+      }
       if (finalY + rect.height > winH) finalY = winH - rect.height - 10;
       setCoords({ x: finalX, y: finalY });
     }
-  }, [contextMenu.isOpen, contextMenu.x, contextMenu.y, touchOpenSubmenuId]);
+  }, [contextMenu.isOpen, contextMenu.x, contextMenu.y, contextMenu.placeAbove, touchOpenSubmenuId]);
 
   // Close on any window resize. The menu is absolutely positioned at fixed
   // coordinates, so a resize would otherwise leave it stranded and drifting
@@ -249,7 +265,11 @@ export default function ContextMenu() {
       <div
         ref={menuRef}
         className="context-menu animate-fade-in"
-        style={{ left: coords.x, top: coords.y }}
+        style={{
+          left: coords.x,
+          top: coords.y,
+          ...(coords.maxHeight != null ? { maxHeight: coords.maxHeight, overflowY: 'auto' as const } : null),
+        }}
         tabIndex={-1}
         onKeyDown={onMenuKeyDown}
       >

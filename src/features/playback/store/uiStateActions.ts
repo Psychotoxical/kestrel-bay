@@ -61,7 +61,7 @@ export function createUiStateActions(set: SetState): Pick<
         },
       })),
 
-    openContextMenu: (x, y, item, type, queueIndex, playlistId, playlistSongIndex, shareKindOverride, pinToPlaybackServer, playlistSongRemove, timelineFromHereRefs) => {
+    openContextMenu: (x, y, item, type, queueIndex, playlistId, playlistSongIndex, shareKindOverride, pinToPlaybackServer, playlistSongRemove, timelineFromHereRefs, placeAbove) => {
       const pin = pinToPlaybackServer ?? type === 'queue-item';
       const open = () =>
         set({
@@ -78,6 +78,7 @@ export function createUiStateActions(set: SetState): Pick<
             shareKindOverride,
             pinToPlaybackServer: pin,
             timelineFromHereRefs,
+            placeAbove,
           },
         });
       if (pin && playbackServerDiffersFromActive()) {

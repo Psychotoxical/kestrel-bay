@@ -426,7 +426,7 @@ export default function MobilePlayer() {
                   if (!currentTrack) return;
                   prepareTransientUiOpen();
                   const r = e.currentTarget.getBoundingClientRect();
-                  openContextMenu(r.right, r.top, currentTrack, 'song', undefined, undefined, undefined, undefined, true);
+                  openContextMenu(r.right, r.top, currentTrack, 'song', undefined, undefined, undefined, undefined, true, undefined, undefined, true);
                 }}
               >
                 <MoreHorizontal size={22} aria-hidden="true" />

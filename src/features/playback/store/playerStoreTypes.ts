@@ -243,6 +243,8 @@ export interface PlayerState {
     pinToPlaybackServer?: boolean;
     /** Timeline order from the selected history row through the current Up Next list. */
     timelineFromHereRefs?: QueueItemRef[];
+    /** Touch shell: the menu opens above the anchor at `y` (the player's "…" button) and keeps it free. */
+    placeAbove?: boolean;
   };
   openContextMenu: (
     x: number,
@@ -256,6 +258,7 @@ export interface PlayerState {
     pinToPlaybackServer?: boolean,
     playlistSongRemove?: () => void | Promise<void>,
     timelineFromHereRefs?: QueueItemRef[],
+    placeAbove?: boolean,
   ) => void;
   closeContextMenu: () => void;
 
