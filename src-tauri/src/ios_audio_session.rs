@@ -11,6 +11,7 @@
 //! it does after a system resume: the track carries on where it was.
 
 use std::ptr::NonNull;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use block2::RcBlock;
 use objc2_avf_audio::{
@@ -30,7 +31,39 @@ const ROUTE_NEW_DEVICE_AVAILABLE: usize = 1;
 /// `AVAudioSessionRouteChangeReasonOldDeviceUnavailable`: headphones unplugged, Bluetooth gone.
 const ROUTE_OLD_DEVICE_UNAVAILABLE: usize = 2;
 
-pub(crate) fn activate_playback() {
+/// Whether the last activation went through. The app can be started in the background by
+/// CarPlay, where activating fails (`'!int'`: cannot interrupt others); playback then runs
+/// silently until something activates the session again.
+static SESSION_ACTIVE: AtomicBool = AtomicBool::new(false);
+
+/// Activates the session again, with pauses, until iOS lets it through, then reopens the
+/// output the way a system resume does (the engine may have opened it while inactive).
+/// Does nothing while the session is active.
+pub(crate) fn retry_activation(app: &AppHandle) {
+    if SESSION_ACTIVE.load(Ordering::Relaxed) || RETRY_RUNNING.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        for pause_s in [0u64, 1, 2, 4, 8, 15] {
+            if pause_s > 0 {
+                tokio::time::sleep(std::time::Duration::from_secs(pause_s)).await;
+            }
+            if SESSION_ACTIVE.load(Ordering::Relaxed) || activate_playback() {
+                crate::app_eprintln!("[audio] iOS audio session active again");
+                if crate::audio::debounce_allow_resume_reopen() {
+                    crate::audio::reopen_audio_after_system_resume(&app).await;
+                }
+                break;
+            }
+        }
+        RETRY_RUNNING.store(false, Ordering::Relaxed);
+    });
+}
+
+static RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
+
+pub(crate) fn activate_playback() -> bool {
     // SAFETY: AVAudioSession is a process-wide singleton; category and
     // activation calls are allowed from any thread.
     let result = unsafe {
@@ -43,9 +76,11 @@ pub(crate) fn activate_playback() {
             None => Err("playback category unavailable".to_string()),
         }
     };
-    if let Err(e) = result {
+    SESSION_ACTIVE.store(result.is_ok(), Ordering::Relaxed);
+    if let Err(e) = &result {
         crate::app_eprintln!("[audio] iOS audio session setup failed: {e}");
     }
+    result.is_ok()
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -58,6 +93,8 @@ struct InterruptionPayload {
 /// Forwards session interruptions and lost / new output routes to the web layer.
 /// The observers live as long as the app.
 pub(crate) fn observe_interruptions(app: &AppHandle) {
+    // The activation in `run()` may have failed before the app handle existed.
+    retry_activation(app);
     let center = NSNotificationCenter::defaultCenter();
 
     let interruption_app = app.clone();
@@ -101,6 +138,7 @@ pub(crate) fn observe_interruptions(app: &AppHandle) {
                 reason.map_or_else(|| "?".to_string(), |r| r.to_string()),
                 current_outputs()
             );
+            retry_activation(&route_app);
             match reason {
                 Some(ROUTE_OLD_DEVICE_UNAVAILABLE) => {
                     let _ = route_app.emit("ios-audio:route-lost", ());

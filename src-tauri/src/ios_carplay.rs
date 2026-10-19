@@ -154,6 +154,9 @@ define_class!(
         #[unsafe(method(templateApplicationScene:didConnectInterfaceController:))]
         fn did_connect(&self, _scene: &AnyObject, controller: &AnyObject) {
             crate::app_eprintln!("[carplay] connected");
+            if let Some(app) = APP.get() {
+                crate::ios_audio_session::retry_activation(app);
+            }
             let retained =
                 unsafe { Retained::retain(controller as *const AnyObject as *mut AnyObject) };
             INTERFACE_CONTROLLER.with(|slot| *slot.borrow_mut() = retained);
@@ -536,6 +539,7 @@ unsafe fn list_item(item: &Item) -> Retained<AnyObject> {
 /// # Safety
 /// Main thread.
 unsafe fn open_list(node: &str, title: &str) {
+    crate::app_eprintln!("[carplay] open {node}");
     let Some(controller) = INTERFACE_CONTROLLER.with(|slot| slot.borrow().clone()) else {
         return;
     };
@@ -577,6 +581,7 @@ unsafe fn play(node: &str) {
 }
 
 fn send_command(action: &'static str) {
+    crate::app_eprintln!("[carplay] command {action}");
     if let Some(app) = APP.get() {
         let _ = app.emit("carplay:command", CommandRequest { action });
     }
@@ -645,6 +650,12 @@ unsafe fn ensure_mode_commands(center: *mut AnyObject) {
 /// Main thread.
 unsafe fn update_now_playing_buttons() {
     let state = STATE.with(|slot| slot.borrow().clone());
+    crate::app_eprintln!(
+        "[carplay] state shuffle={} repeat={} starred={}",
+        state.shuffle,
+        state.repeat,
+        state.starred
+    );
     if BUTTONS_STARRED.with(|last| last.replace(Some(state.starred))) != Some(state.starred) {
         rebuild_now_playing_buttons(state.starred);
     }
