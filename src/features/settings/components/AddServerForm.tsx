@@ -20,6 +20,16 @@ import { resolveHostAddresses } from '@/lib/api/network';
 import { useAuthStore } from '@/store/authStore';
 import { isNavidromeServer } from '@/lib/server/subsonicServerIdentity';
 import { ServerStreamQualityEditor } from '@/features/settings/components/ServerStreamQualityEditor';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+
+/** Touch keyboards: no capital letter, correction or space after a dot in addresses and user names. */
+const TOUCH_PLAIN_FIELD = IS_MOBILE_SHELL
+  ? { autoCapitalize: 'none', autoCorrect: 'off', spellCheck: false } as const
+  : {};
+/** Addresses also get the URL keyboard (`.`, `/` and `.com` within reach, no auto-spacing). */
+const TOUCH_URL_FIELD = IS_MOBILE_SHELL
+  ? { ...TOUCH_PLAIN_FIELD, inputMode: 'url' } as const
+  : {};
 
 type FormState = {
   name: string;
@@ -337,6 +347,7 @@ export function AddServerForm({
           onBlur={() => { void runDnsHint(); }}
           placeholder={t('settings.serverUrlPlaceholder')}
           autoComplete="off"
+          {...TOUCH_URL_FIELD}
         />
       </div>
       <div className="form-group" style={{ marginBottom: '0.75rem' }}>
@@ -352,6 +363,7 @@ export function AddServerForm({
               : t('settings.serverAlternateUrlPlaceholderLocal')
           }
           autoComplete="off"
+          {...TOUCH_URL_FIELD}
         />
         {alternateUrlHint && (
           <div style={{ fontSize: 11, opacity: 0.7, marginTop: 4 }}>
@@ -389,6 +401,7 @@ export function AddServerForm({
             autoComplete="off"
             readOnly={blockPasswordReveal}
             style={blockPasswordReveal ? { cursor: 'default' } : undefined}
+            {...TOUCH_PLAIN_FIELD}
           />
         </div>
         <div className="form-group">
@@ -452,6 +465,7 @@ export function AddServerForm({
             onChange={handleMagicStringChange}
             placeholder={t('login.magicStringPlaceholder')}
             autoComplete="off"
+            {...TOUCH_PLAIN_FIELD}
           />
         </div>
       )}
