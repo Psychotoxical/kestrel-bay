@@ -36,6 +36,11 @@
 	<array>
 		<string>INPlayMediaIntent</string>
 	</array>
+	<!-- Without a media category Siri does not hand "play X" to the app: it answers from Apple Music. -->
+	<key>INSupportedMediaCategories</key>
+	<array>
+		<string>INMediaCategoryMusic</string>
+	</array>
 	<key>NSSiriUsageDescription</key>
 	<string>Psysonic uses Siri to play music from your library when you ask for it.</string>
 	<!-- Scene lifecycle, which CarPlay requires. tao (0.35) only attaches its window to a
