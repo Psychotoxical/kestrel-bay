@@ -29,7 +29,7 @@ vi.mock('@/store/mediaResolver', () => ({ resolveAlbum: mocks.resolveAlbum }));
 vi.mock('@/store/authStore', () => ({ useAuthStore: { getState: () => ({ activeServerId: 'srv' }) } }));
 vi.mock('./carplayContent', () => ({ carPlayPlay: mocks.carPlayPlay }));
 
-import { playSiriRequest, stripSpokenAppName } from './siriPlay';
+import { normalizeSpoken, playSiriRequest, spokenMatchScore, stripSpokenAppName } from './siriPlay';
 
 describe('stripSpokenAppName', () => {
   it('drops a trailing app name or its mishearing, in German and English', () => {
@@ -60,6 +60,7 @@ describe('playSiriRequest', () => {
     mocks.playlists = [];
     mocks.runLocalLiveSearch.mockResolvedValue(null);
     mocks.runNetworkLiveSearch.mockResolvedValue({ artists: [], albums: [], songs: [] });
+    mocks.resolveAlbum.mockResolvedValue(undefined);
   });
 
   it('a request without any name starts the random mix', async () => {
@@ -67,14 +68,51 @@ describe('playSiriRequest', () => {
     expect(mocks.carPlayPlay).toHaveBeenCalledWith('random');
   });
 
-  it('a song request plays the matching title, followed by the other hits', async () => {
+  it('a song request plays the matching title, alone when its album cannot be resolved', async () => {
     mocks.runLocalLiveSearch.mockResolvedValue({
       artists: [], albums: [], songs: [song('t1', 'Other'), song('t2', 'Chaos')],
     });
     expect(await playSiriRequest({ mediaName: 'chaos', mediaType: 1 })).toBe(true);
     const [first, queue] = mocks.playTrack.mock.calls[0];
     expect(first.id).toBe('t2');
-    expect(queue.map((t: { id: string }) => t.id)).toEqual(['t2', 't1']);
+    expect(queue.map((t: { id: string }) => t.id)).toEqual(['t2']);
+  });
+
+  it('a song plays on with its album, starting at that song, not with unrelated hits', async () => {
+    mocks.runLocalLiveSearch.mockResolvedValue({
+      artists: [], albums: [], songs: [{ ...song('x1', 'Chaos', 'ar9'), artist: 'Other' }, song('t2', 'Chaos')],
+    });
+    mocks.resolveAlbum.mockResolvedValue({ album: {}, songs: [song('t1', 'Intro'), song('t2', 'Chaos'), song('t3', 'Outro')] });
+    expect(await playSiriRequest({ mediaName: 'Band Chaos', mediaType: 1 })).toBe(true);
+    expect(mocks.resolveAlbum).toHaveBeenCalledWith('srv', 'al1');
+    const [first, queue] = mocks.playTrack.mock.calls[0];
+    expect(first.id).toBe('t2');
+    expect(queue.map((t: { id: string }) => t.id)).toEqual(['t1', 't2', 't3']);
+  });
+
+  it('artist and title in one name, artist misheard: picks the title by the closest artist', async () => {
+    mocks.runLocalLiveSearch.mockResolvedValue({
+      artists: [],
+      albums: [],
+      songs: [
+        { ...song('a', 'Streets of Fire'), artist: 'Fire Strike' },
+        { ...song('b', 'Motörhead'), artist: 'Motörhead' },
+        { ...song('c', 'Streets of Fire'), artist: 'Motorjesus' },
+      ],
+    });
+    expect(await playSiriRequest({ mediaName: 'Motörhead Streets of Fire', mediaType: 0 })).toBe(true);
+    expect(mocks.playTrack.mock.calls[0][0].id).toBe('c');
+  });
+
+  it('an album named like a song by the same artist starts the album at its first track', async () => {
+    mocks.runLocalLiveSearch.mockResolvedValue({
+      artists: [],
+      albums: [{ id: 'al1', name: 'Streets of Fire', artist: 'Motorjesus', serverId: 'srv' }],
+      songs: [{ ...song('t2', 'Streets of Fire'), artist: 'Motorjesus' }],
+    });
+    mocks.resolveAlbum.mockResolvedValue({ album: {}, songs: [song('t1', 'Intro'), song('t2', 'Streets of Fire')] });
+    expect(await playSiriRequest({ mediaName: 'Motorjesus Streets of Fire', mediaType: 0 })).toBe(true);
+    expect(mocks.playTrack.mock.calls[0][0].id).toBe('t1');
   });
 
   it('an album request resolves the album and plays all its tracks as that album', async () => {
@@ -120,5 +158,24 @@ describe('playSiriRequest', () => {
   it('reports false when nothing matches', async () => {
     expect(await playSiriRequest({ mediaName: 'Nothing here', mediaType: 0 })).toBe(false);
     expect(mocks.playTrack).not.toHaveBeenCalled();
+  });
+});
+
+describe('spokenMatchScore', () => {
+  it('ignores accents and case', () => {
+    expect(normalizeSpoken('Motörhead – Ace of Spades!')).toBe('motorhead ace of spades');
+  });
+
+  it('needs the title in what was said and ranks a close artist above an unrelated one', () => {
+    const q = 'Motörhead Streets of Fire';
+    expect(spokenMatchScore(q, 'Something Else', 'Motorjesus')).toBe(0);
+    expect(spokenMatchScore(q, 'Streets of Fire', 'Motorjesus'))
+      .toBeGreaterThan(spokenMatchScore(q, 'Streets of Fire', 'Place Vendome'));
+    expect(spokenMatchScore(q, 'Streets of Fire', 'Motörhead'))
+      .toBeGreaterThan(spokenMatchScore(q, 'Streets of Fire', 'Motorjesus'));
+  });
+
+  it('a whole-name match beats a partial one', () => {
+    expect(spokenMatchScore('Chaos', 'Chaos', 'Band')).toBeGreaterThan(spokenMatchScore('Band Chaos', 'Chaos', 'Other'));
   });
 });

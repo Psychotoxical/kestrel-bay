@@ -6,6 +6,7 @@ import {
 import { usePlaylistStore, resolvePlaylistTracks } from '@/features/playlist';
 import { runLocalLiveSearch, runNetworkLiveSearch } from '@/lib/library/liveSearchLocal';
 import { getLibraryBrowseScope } from '@/lib/library/libraryBrowseScope';
+import { libraryScopeListArtists } from '@/lib/api/library/scopeReads';
 import type { SearchResults, SubsonicSong } from '@/lib/api/subsonicTypes';
 import { songToTrack } from '@/lib/media/songToTrack';
 import { resolveAlbum } from '@/store/mediaResolver';
@@ -48,6 +49,61 @@ async function search(query: string): Promise<SearchResults> {
   return (await runNetworkLiveSearch(query).catch(() => null)) ?? { artists: [], albums: [], songs: [] };
 }
 
+/** Lower case, no accents or punctuation: "Motörhead" and "motorhead" compare equal. */
+export function normalizeSpoken(text: string | null | undefined): string {
+  return (text ?? '')
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+}
+
+/**
+ * How well one name (Siri's mishearing included) matches another: 2 = equal, 1 = same start
+ * of at least four letters ("Motörhead" for "Motorjesus"), 0 = unrelated.
+ */
+function nameCloseness(heard: string, actual: string | null | undefined): number {
+  const a = normalizeSpoken(heard).replace(/ /g, '');
+  const b = normalizeSpoken(actual).replace(/ /g, '');
+  if (!a || !b) return 0;
+  if (a === b) return 2;
+  let common = 0;
+  while (common < a.length && common < b.length && a[common] === b[common]) common += 1;
+  return common >= 4 ? 1 : 0;
+}
+
+/**
+ * Score of a hit for a spoken request like "<artist> <title>" or "<title> <artist>": the
+ * title (song or album name) must be part of what was said, the rest should sound like the
+ * hit's artist. Titles weigh more than artists; 0 = the title does not occur at all.
+ */
+export function spokenMatchScore(
+  query: string,
+  title: string | null | undefined,
+  artist: string | null | undefined,
+  artistHint?: string | null,
+): number {
+  const q = ` ${normalizeSpoken(query)} `;
+  const t = normalizeSpoken(title);
+  if (!t || !q.includes(` ${t} `)) return 0;
+  const exact = q.trim() === t;
+  const rest = q.replace(` ${t} `, ' ').trim();
+  const heardArtist = artistHint || rest;
+  const artistScore = heardArtist ? nameCloseness(heardArtist, artist) : 0;
+  return (exact ? 30 : 20) + artistScore * 5;
+}
+
+function best<T>(items: T[], score: (item: T) => number): { item?: T; score: number } {
+  let found: T | undefined;
+  let top = 0;
+  for (const item of items) {
+    const s = score(item);
+    if (s > top) { top = s; found = item; }
+  }
+  return { item: found, score: top };
+}
+
 function playSongs(songs: SubsonicSong[], shuffle: boolean): boolean {
   const tracks = songs.map(songToTrack);
   if (tracks.length === 0) return false;
@@ -56,14 +112,21 @@ function playSongs(songs: SubsonicSong[], shuffle: boolean): boolean {
   return true;
 }
 
-async function playAlbum(album: { id: string; serverId?: string }): Promise<boolean> {
+async function playAlbum(album: { id: string; serverId?: string }, startSongId?: string): Promise<boolean> {
   const serverId = album.serverId ?? useAuthStore.getState().activeServerId;
   if (!serverId) return false;
   const resolved = await resolveAlbum(serverId, album.id);
   const tracks = (resolved?.songs ?? []).map(song => ({ ...songToTrack(song), serverId: song.serverId ?? serverId }));
   if (tracks.length === 0) return false;
-  withQueueSource({ kind: 'album', id: album.id, serverId }, () => usePlayerStore.getState().playTrack(tracks[0], tracks));
+  const start = tracks.find(t => t.id === startSongId) ?? tracks[0];
+  withQueueSource({ kind: 'album', id: album.id, serverId }, () => usePlayerStore.getState().playTrack(start, tracks));
   return true;
+}
+
+/** A song, then the rest of its album (not unrelated search hits that share a word). */
+async function playSongInAlbum(song: SubsonicSong): Promise<boolean> {
+  if (song.albumId && await playAlbum({ id: song.albumId, serverId: song.serverId }, song.id)) return true;
+  return playSongs([song], false);
 }
 
 async function playPlaylist(name: string): Promise<boolean> {
@@ -80,7 +143,9 @@ async function playPlaylist(name: string): Promise<boolean> {
 /**
  * Plays what a Siri request asks for: a playlist, album, artist (a shuffle of their songs
  * among the hits) or song by name; an unspecific request ("play some music") starts the
- * random mix. Returns whether anything started.
+ * random mix. Siri often hands over artist and title as one name ("Motörhead Streets of
+ * Fire", misheard for Motorjesus), so hits are ranked by title and artist together. A song
+ * plays on with its album. Returns whether anything started.
  */
 export async function playSiriRequest(request: SiriPlayRequest): Promise<boolean> {
   const query = stripSpokenAppName(request.mediaName)
@@ -93,33 +158,64 @@ export async function playSiriRequest(request: SiriPlayRequest): Promise<boolean
   if (request.mediaType === MEDIA_PLAYLIST && await playPlaylist(query)) return true;
 
   const hits = await search(query);
+  const artistHint = request.mediaName ? stripSpokenAppName(request.artistName) : undefined;
   const artist = hits.artists.find(a => same(a.name, query));
-  const album = hits.albums.find(a => same(a.name, query));
-  const song = hits.songs.find(s => same(s.title, query));
+  const album = best(hits.albums, a => spokenMatchScore(query, a.name, a.artist, artistHint));
+  const song = best(hits.songs, s => spokenMatchScore(query, s.title, s.artist, artistHint));
   const artistSongs = (id: string) => hits.songs.filter(s => s.artistId === id);
 
-  const byType: Array<() => Promise<boolean> | boolean> = [];
   const asArtist = () => {
     const found = artist ?? hits.artists[0];
     return found ? playSongs(artistSongs(found.id), true) : false;
   };
   const asAlbum = () => {
-    const found = album ?? hits.albums[0];
+    const found = album.item ?? hits.albums[0];
     return found ? playAlbum(found) : false;
   };
   const asSong = () => {
-    const found = song ?? hits.songs[0];
-    return found ? playSongs([found, ...hits.songs.filter(s => s.id !== found.id)], false) : false;
+    const found = song.item ?? hits.songs[0];
+    return found ? playSongInAlbum(found) : false;
   };
+
+  const byType: Array<() => Promise<boolean> | boolean> = [];
   if (request.mediaType === MEDIA_ARTIST) byType.push(asArtist, asAlbum, asSong);
   else if (request.mediaType === MEDIA_ALBUM) byType.push(asAlbum, asSong, asArtist);
   else if (request.mediaType === MEDIA_SONG) byType.push(asSong, asAlbum, asArtist);
   else if (artist) byType.push(asArtist, asAlbum, asSong);
-  else if (album) byType.push(asAlbum, asSong, asArtist);
+  // Album over song on a tie: "<artist> <album>" with a title track starts the album at 1.
+  else if (album.score > 0 && album.score >= song.score) byType.push(asAlbum, asSong, asArtist);
   else byType.push(asSong, asAlbum, asArtist);
 
   for (const attempt of byType) {
     if (await attempt()) return true;
   }
   return false;
+}
+
+/** Siri learns at most this many artist names; the ones with most albums go first. */
+export const SIRI_VOCABULARY_LIMIT = 1000;
+
+/**
+ * Artist names from the local library for Siri's speech recognition (`siri:vocabulary`),
+ * so it hears the user's own artists ("Motorjesus") instead of names it already knows.
+ */
+export async function siriArtistVocabulary(): Promise<string[]> {
+  const serverId = useAuthStore.getState().activeServerId;
+  if (!serverId) return [];
+  const artists = await libraryScopeListArtists(serverId, {
+    scopes: getLibraryBrowseScope().pairs,
+    sort: 'name',
+    limit: 10_000,
+  }).catch(() => []);
+  const seen = new Set<string>();
+  return [...artists]
+    .sort((a, b) => (b.albumCount ?? 0) - (a.albumCount ?? 0))
+    .map(a => a.name.trim())
+    .filter(name => {
+      const key = name.toLowerCase();
+      if (!name || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, SIRI_VOCABULARY_LIMIT);
 }

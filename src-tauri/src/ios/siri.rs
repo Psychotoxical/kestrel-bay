@@ -22,6 +22,8 @@ use tauri::{AppHandle, Emitter, Listener};
 
 /// `INPlayMediaIntentResponseCodeSuccess` (Intents SDK, `INPlayMediaIntentResponse.h`).
 const RESPONSE_SUCCESS: isize = 4;
+/// `INVocabularyStringTypeMediaMusicArtistName` (Intents SDK, `INVocabulary.h`).
+const VOCABULARY_MUSIC_ARTIST: isize = 701;
 
 static APP: OnceLock<AppHandle> = OnceLock::new();
 static WEB_READY: AtomicBool = AtomicBool::new(false);
@@ -124,6 +126,18 @@ pub(crate) fn listen(app: &AppHandle) {
     if APP.set(app.clone()).is_err() {
         return;
     }
+    // The library's artist names, so Siri hears "Motorjesus" instead of a name it knows.
+    let vocabulary = app.clone();
+    app.listen_any("siri:vocabulary", move |event| {
+        let Ok(names) = serde_json::from_str::<Vec<String>>(event.payload()) else {
+            return;
+        };
+        let _ = vocabulary.run_on_main_thread(move || {
+            // SAFETY: main thread; INVocabulary is the shared per-app vocabulary.
+            unsafe { set_artist_vocabulary(&names) };
+        });
+    });
+
     let ready = app.clone();
     app.listen_any("siri:ready", move |_| {
         WEB_READY.store(true, Ordering::SeqCst);
@@ -200,4 +214,24 @@ pub(crate) fn install() {
     if !added.as_bool() {
         crate::app_eprintln!("[siri] AppDelegate already answers application:handlerForIntent:");
     }
+}
+
+/// Hands the artist names to Siri's speech recognition for this app.
+///
+/// # Safety
+/// Main thread.
+unsafe fn set_artist_vocabulary(names: &[String]) {
+    let array: Allocated<AnyObject> = msg_send![class!(NSMutableArray), alloc];
+    let array: Retained<AnyObject> = msg_send![array, init];
+    for name in names {
+        let text = NSString::from_str(name);
+        let () = msg_send![&*array, addObject: &*text];
+    }
+    let set: *mut AnyObject = msg_send![class!(NSOrderedSet), orderedSetWithArray: &*array];
+    let vocabulary: *mut AnyObject = msg_send![class!(INVocabulary), sharedVocabulary];
+    if set.is_null() || vocabulary.is_null() {
+        return;
+    }
+    let () = msg_send![vocabulary, setVocabularyStrings: set, ofType: VOCABULARY_MUSIC_ARTIST];
+    crate::app_eprintln!("[siri] vocabulary: {} artist names", names.len());
 }

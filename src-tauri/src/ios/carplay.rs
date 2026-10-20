@@ -155,7 +155,7 @@ define_class!(
         fn did_connect(&self, _scene: &AnyObject, controller: &AnyObject) {
             crate::app_eprintln!("[carplay] connected");
             if let Some(app) = APP.get() {
-                crate::ios::audio_session::retry_activation(app);
+                crate::ios::audio_session::car_connected(app);
             }
             let retained =
                 unsafe { Retained::retain(controller as *const AnyObject as *mut AnyObject) };
@@ -628,7 +628,7 @@ unsafe fn ensure_mode_commands(center: *mut AnyObject) {
     let shuffle_command: *mut AnyObject = msg_send![center, changeShuffleModeCommand];
     let on_shuffle: RcBlock<dyn Fn(NonNull<AnyObject>) -> isize> =
         RcBlock::new(|_event: NonNull<AnyObject>| {
-            send_command("shuffle");
+            press_mode("shuffle");
             COMMAND_SUCCESS
         });
     let _target: *mut AnyObject = msg_send![shuffle_command, addTargetWithHandler: &*on_shuffle];
@@ -637,7 +637,7 @@ unsafe fn ensure_mode_commands(center: *mut AnyObject) {
     let repeat_command: *mut AnyObject = msg_send![center, changeRepeatModeCommand];
     let on_repeat: RcBlock<dyn Fn(NonNull<AnyObject>) -> isize> =
         RcBlock::new(|_event: NonNull<AnyObject>| {
-            send_command("repeat");
+            press_mode("repeat");
             COMMAND_SUCCESS
         });
     let _target: *mut AnyObject = msg_send![repeat_command, addTargetWithHandler: &*on_repeat];
@@ -660,23 +660,64 @@ unsafe fn update_now_playing_buttons() {
         rebuild_now_playing_buttons(state.starred);
     }
 
-    // CarPlay draws the shuffle / repeat buttons from the remote command centre's modes.
+    apply_modes(state.shuffle, &state.repeat);
+}
+
+/// CarPlay draws the shuffle / repeat buttons from the remote command centre's modes.
+///
+/// # Safety
+/// Main thread.
+unsafe fn apply_modes(shuffle: bool, repeat: &str) {
     let center: *mut AnyObject = msg_send![class!(MPRemoteCommandCenter), sharedCommandCenter];
     ensure_mode_commands(center);
     let shuffle_command: *mut AnyObject = msg_send![center, changeShuffleModeCommand];
-    let shuffle_type = if state.shuffle {
-        SHUFFLE_ITEMS
-    } else {
-        SHUFFLE_OFF
-    };
+    let shuffle_type = if shuffle { SHUFFLE_ITEMS } else { SHUFFLE_OFF };
     let () = msg_send![shuffle_command, setCurrentShuffleType: shuffle_type];
     let repeat_command: *mut AnyObject = msg_send![center, changeRepeatModeCommand];
-    let repeat_type = match state.repeat.as_str() {
+    let repeat_type = match repeat {
         "one" => REPEAT_ONE,
         "all" => REPEAT_ALL,
         _ => REPEAT_OFF,
     };
     let () = msg_send![repeat_command, setCurrentRepeatType: repeat_type];
+}
+
+/// The mode a repeat press leads to; the player cycles off → all → one → off.
+fn next_repeat(repeat: &str) -> &'static str {
+    match repeat {
+        "off" | "" => "all",
+        "all" => "one",
+        _ => "off",
+    }
+}
+
+/// A press on the shuffle or repeat button. CarPlay flips the button at once and then reads
+/// the remote command centre, which still held the old mode until the web layer answered:
+/// the button flashed on, off, on. Show the expected mode right away; the web layer's state
+/// confirms it, and if it leaves the mode alone (an Orbit guest, say) the real one returns.
+///
+/// Main thread (CarPlay button and remote-command handlers).
+fn press_mode(action: &'static str) {
+    let state = STATE.with(|slot| slot.borrow().clone());
+    // SAFETY: the handlers run on the main thread.
+    unsafe {
+        match action {
+            "shuffle" => apply_modes(!state.shuffle, &state.repeat),
+            _ => apply_modes(state.shuffle, next_repeat(&state.repeat)),
+        }
+    }
+    send_command(action);
+    if let Some(app) = APP.get() {
+        let app = app.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(std::time::Duration::from_millis(1500));
+            let _ = app.run_on_main_thread(|| {
+                let state = STATE.with(|slot| slot.borrow().clone());
+                // SAFETY: main thread.
+                unsafe { apply_modes(state.shuffle, &state.repeat) };
+            });
+        });
+    }
 }
 
 /// The shuffle / repeat / heart buttons themselves; only the heart changes with the state.
@@ -688,13 +729,13 @@ unsafe fn rebuild_now_playing_buttons(starred: bool) {
     let buttons = mutable_array();
 
     let on_shuffle: RcBlock<dyn Fn(NonNull<AnyObject>)> =
-        RcBlock::new(|_button: NonNull<AnyObject>| send_command("shuffle"));
+        RcBlock::new(|_button: NonNull<AnyObject>| press_mode("shuffle"));
     let shuffle: Allocated<AnyObject> = msg_send![class!(CPNowPlayingShuffleButton), alloc];
     let shuffle: Retained<AnyObject> = msg_send![shuffle, initWithHandler: &*on_shuffle];
     let () = msg_send![&*buttons, addObject: &*shuffle];
 
     let on_repeat: RcBlock<dyn Fn(NonNull<AnyObject>)> =
-        RcBlock::new(|_button: NonNull<AnyObject>| send_command("repeat"));
+        RcBlock::new(|_button: NonNull<AnyObject>| press_mode("repeat"));
     let repeat: Allocated<AnyObject> = msg_send![class!(CPNowPlayingRepeatButton), alloc];
     let repeat: Retained<AnyObject> = msg_send![repeat, initWithHandler: &*on_repeat];
     let () = msg_send![&*buttons, addObject: &*repeat];

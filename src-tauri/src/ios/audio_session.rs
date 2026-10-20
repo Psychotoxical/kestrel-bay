@@ -63,6 +63,31 @@ pub(crate) fn retry_activation(app: &AppHandle) {
 
 static RETRY_RUNNING: AtomicBool = AtomicBool::new(false);
 
+/// CarPlay connected. Reconnecting while the app runs does not always post a route change
+/// (seen 20.10.: CarPlay back, no notification, tracks played into silence), so the output
+/// is not left to the route-change handler: once the route has settled, activate the
+/// session and reopen the output on whatever route is current now.
+pub(crate) fn car_connected(app: &AppHandle) {
+    let app = app.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(1500)).await;
+        let active = activate_playback();
+        crate::app_eprintln!(
+            "[audio] CarPlay connected: session active={} outputs={}",
+            active,
+            current_outputs()
+        );
+        if !active {
+            // Started in the background by CarPlay: keep trying, it reopens once through.
+            retry_activation(&app);
+            return;
+        }
+        if crate::audio::debounce_allow_resume_reopen() {
+            crate::audio::reopen_audio_after_system_resume(&app).await;
+        }
+    });
+}
+
 pub(crate) fn activate_playback() -> bool {
     // SAFETY: AVAudioSession is a process-wide singleton; category and
     // activation calls are allowed from any thread.
