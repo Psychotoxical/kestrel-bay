@@ -36,15 +36,13 @@ class PsysonicMediaService : Service() {
     private var instance: PsysonicMediaService? = null
 
     /**
-     * After a long pause: leave the foreground and stop. The notification stays, now
-     * swipeable; its play button starts the service again (allowed from a notification).
+     * After a long pause: leave the foreground, remove the notification and stop. A media
+     * notification cannot be swiped away while its session lives (Android 13+), so it goes.
+     * The session stays: a headset button or the app resumes and the service comes back.
      */
     fun release() {
       val service = instance ?: return
-      ServiceCompat.stopForeground(service, ServiceCompat.STOP_FOREGROUND_DETACH)
-      // The detached notification keeps the service's "cannot clear" flag; post it anew.
-      service.getSystemService(NotificationManager::class.java)
-        .notify(NOTIFICATION_ID, build(service))
+      ServiceCompat.stopForeground(service, ServiceCompat.STOP_FOREGROUND_REMOVE)
       service.stopSelf()
     }
 
