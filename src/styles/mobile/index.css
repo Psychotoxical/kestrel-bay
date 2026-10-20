@@ -1,2 +1,4 @@
 /* Touch shell (iOS/Android app build). Imported last so it wins ties with the desktop sheets. */
 @import './mobile-shell.css';
+/* Android app only, after the shared touch styles so it can adjust them. */
+@import './mobile-android.css';

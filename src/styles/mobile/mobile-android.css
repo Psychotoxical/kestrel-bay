@@ -1,0 +1,10 @@
+/* ⚠️ Android territory. Touch shell styles for the Android app only: every selector
+   needs `[data-mobile-os='android']`, which only the Android build sets (see
+   `prepareTouchDocument`). iOS and the desktop never match. See MOBILE.md. */
+
+html[data-mobile-os='android'] {
+  /* iOS lets the bars dip into the home indicator's strip. On Android that strip holds
+     the system's back / home / recents buttons (or the gesture handle), so the bars
+     stay fully above it. */
+  --mobile-bottom-edge: calc(env(safe-area-inset-bottom, 0px) + 8px);
+}

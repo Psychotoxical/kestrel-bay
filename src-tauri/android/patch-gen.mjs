@@ -2,12 +2,13 @@
 // generated Gradle project under `src-tauri/gen/android` is not in git, so whatever the
 // Android app needs beyond Tauri's template is added here, idempotently.
 //
-// Today: the Kotlin half of `rustls-platform-verifier` (reqwest checks certificates
-// through Android's trust store). The crate ships it as a local Maven repository; its
-// path comes from `cargo metadata`, so the version always matches Cargo.lock.
+// - our MainActivity (`MainActivity.kt` here) over the template one;
+// - the Kotlin half of `rustls-platform-verifier` (reqwest checks certificates
+//   through Android's trust store). The crate ships it as a local Maven repository; its
+//   path comes from `cargo metadata`, so the version always matches Cargo.lock.
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,6 +27,12 @@ const metadata = JSON.parse(
 const pkg = metadata.packages.find(p => p.name === 'rustls-platform-verifier-android');
 if (!pkg) throw new Error('rustls-platform-verifier-android not in the Android dependency graph');
 const mavenDir = join(dirname(pkg.manifest_path), 'maven').replaceAll('\\', '/');
+
+// Our MainActivity replaces the template's (back button at the root keeps the music playing).
+copyFileSync(
+  join(srcTauri, 'android', 'MainActivity.kt'),
+  join(srcTauri, 'gen', 'android', 'app', 'src', 'main', 'java', 'dev', 'psysonic', 'player', 'MainActivity.kt'),
+);
 
 // Release builds shrink with R8, which cannot see the JNI calls into the verifier.
 // The template already feeds every `*.pro` under app/ to R8.
