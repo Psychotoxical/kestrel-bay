@@ -135,14 +135,21 @@ export default function MobileSearchOverlay({ onClose }: { onClose: () => void }
   const enqueue = usePlayerStore(s => s.enqueue);
   const activeServerId = useAuthStore(s => s.activeServerId);
 
-  const query = useLiveSearchScopeStore(s => s.query);
-  const setQuery = useLiveSearchScopeStore(s => s.setQuery);
-  const scope = useLiveSearchScopeStore(s => s.scope);
+  const storeQuery = useLiveSearchScopeStore(s => s.query);
+  const setStoreQuery = useLiveSearchScopeStore(s => s.setQuery);
+  const storeScope = useLiveSearchScopeStore(s => s.scope);
+  // Touch shell: the overlay covers the whole page, so a page-scoped search (which filters
+  // the page under the field and shows no list) would show nothing at all. Here the overlay
+  // keeps its own text and always runs the full search: artists, albums and songs.
+  const [ownQuery, setOwnQuery] = useState('');
+  const query = IS_MOBILE_SHELL ? ownQuery : storeQuery;
+  const setQuery: typeof setStoreQuery = IS_MOBILE_SHELL ? q => setOwnQuery(q) : setStoreQuery;
+  const scope = IS_MOBILE_SHELL ? null : storeScope;
   const setScope = useLiveSearchScopeStore(s => s.setScope);
   const clearScope = useLiveSearchScopeStore(s => s.clearScope);
   const undoLiveSearch = useLiveSearchScopeStore(s => s.undo);
   const scopeBackspaceRef = useRef(createLiveSearchScopeBackspaceState());
-  const ghostScope = resolveLiveSearchScopeGhost(location.pathname, scope);
+  const ghostScope = IS_MOBILE_SHELL ? null : resolveLiveSearchScopeGhost(location.pathname, scope);
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>(loadRecent);
