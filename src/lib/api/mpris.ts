@@ -4,6 +4,8 @@
  * error so the callers' `.catch()` fire-and-forget semantics stay unchanged.
  */
 import { commands } from '@/generated/bindings';
+import { androidMediaSetMetadata, androidMediaSetPlayback } from '@/features/mobileShell/android/androidMedia';
+import { IS_ANDROID } from '@/lib/util/platform';
 
 export async function mprisSetMetadata(args: {
   title: string | null;
@@ -12,6 +14,8 @@ export async function mprisSetMetadata(args: {
   coverUrl?: string | null;
   durationSecs: number | null;
 }): Promise<void> {
+  // Android: lock screen and media notification (no souvlaki backend there).
+  if (IS_ANDROID) androidMediaSetMetadata(args);
   const res = await commands.mprisSetMetadata(
     args.title,
     args.artist,
@@ -26,6 +30,7 @@ export async function mprisSetPlayback(args: {
   playing: boolean;
   positionSecs: number | null;
 }): Promise<void> {
+  if (IS_ANDROID) androidMediaSetPlayback(args);
   const res = await commands.mprisSetPlayback(args.playing, args.positionSecs);
   if (res.status === 'error') throw new Error(res.error);
 }

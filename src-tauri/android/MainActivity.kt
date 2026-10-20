@@ -3,12 +3,18 @@
 package dev.psysonic.player
 
 import android.os.Bundle
+import android.webkit.WebView
 import androidx.activity.enableEdgeToEdge
 
 class MainActivity : TauriActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+  }
+
+  // Lock screen, notification and headset buttons (see PsysonicMedia).
+  override fun onWebViewCreate(webView: WebView) {
+    PsysonicMedia.attach(this, webView)
   }
 
   // Wry steps the web view back through its history and calls this once there is nothing

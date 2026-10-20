@@ -18,8 +18,9 @@ mobile apps with the next merge, so desktop, iOS and Android stay in step.
 | Area | iOS only | Android only | Shared by both apps |
 |---|---|---|---|
 | Native (Rust) | `src-tauri/src/ios/` | `src-tauri/src/android/` | everything else in `src-tauri/` behind `cfg(mobile)` |
-| Touch UI (React) | `src/features/mobileShell/ios/` | `src/features/mobileShell/android/` | the rest of `src/features/mobileShell/` and code behind `IS_MOBILE_SHELL` |
-| Build config | `src-tauri/tauri.ios.conf.json`, `src-tauri/Info.ios.plist` | `src-tauri/tauri.android.conf.json`, `src-tauri/android/` (patches the generated Gradle project) | `src-tauri/tauri.conf.json` |
+| Native (Kotlin) | | `src-tauri/android/*.kt` (activity, media session, playback service) | |
+| Touch UI (React) | `src/features/mobileShell/ios/` | `src/features/mobileShell/android/`, `src/styles/mobile/mobile-android.css` | the rest of `src/features/mobileShell/` and code behind `IS_MOBILE_SHELL` |
+| Build config | `src-tauri/tauri.ios.conf.json`, `src-tauri/Info.ios.plist` | `src-tauri/tauri.android.conf.json`, `src-tauri/android/patch-gen.mjs` (patches the generated Gradle project) | `src-tauri/tauri.conf.json` |
 | CI | `.github/workflows/ios.yml` | `.github/workflows/android.yml` | |
 
 Rules of thumb:

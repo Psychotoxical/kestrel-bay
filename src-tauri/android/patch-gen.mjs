@@ -1,64 +1,101 @@
 // ⚠️ Android territory. Run after `tauri android init` (CI and local builds): the
 // generated Gradle project under `src-tauri/gen/android` is not in git, so whatever the
-// Android app needs beyond Tauri's template is added here, idempotently.
+// Android app needs beyond Tauri's template is added here. Every step is idempotent.
 //
-// - our MainActivity (`MainActivity.kt` here) over the template one;
-// - the Kotlin half of `rustls-platform-verifier` (reqwest checks certificates
-//   through Android's trust store). The crate ships it as a local Maven repository; its
-//   path comes from `cargo metadata`, so the version always matches Cargo.lock.
+// - every `*.kt` in this folder into the app's package (our MainActivity replaces the
+//   template's; PsysonicMedia + PsysonicMediaService: lock screen and background play);
+// - the manifest entries those need (foreground service, permissions);
+// - Gradle dependencies: `androidx.media` (MediaSession, media notification) and the
+//   Kotlin half of `rustls-platform-verifier` (reqwest checks certificates through
+//   Android's trust store). The verifier ships it as a local Maven repository; its path
+//   comes from `cargo metadata`, so the version always matches Cargo.lock.
 
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const srcTauri = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const gradleFile = join(srcTauri, 'gen', 'android', 'app', 'build.gradle.kts');
-const MARKER = '// psysonic: rustls-platform-verifier';
+const here = dirname(fileURLToPath(import.meta.url));
+const srcTauri = resolve(here, '..');
+const appDir = join(srcTauri, 'gen', 'android', 'app');
+const gradleFile = join(appDir, 'build.gradle.kts');
+const manifestFile = join(appDir, 'src', 'main', 'AndroidManifest.xml');
+const packageDir = join(appDir, 'src', 'main', 'java', 'dev', 'psysonic', 'player');
 
-const metadata = JSON.parse(
-  execFileSync(
-    'cargo',
-    ['metadata', '--format-version', '1', '--filter-platform', 'aarch64-linux-android',
-      '--manifest-path', join(srcTauri, 'Cargo.toml')],
-    { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 },
-  ),
-);
-const pkg = metadata.packages.find(p => p.name === 'rustls-platform-verifier-android');
-if (!pkg) throw new Error('rustls-platform-verifier-android not in the Android dependency graph');
-const mavenDir = join(dirname(pkg.manifest_path), 'maven').replaceAll('\\', '/');
+const ANDROIDX_MEDIA = 'androidx.media:media:1.7.0';
 
-// Our MainActivity replaces the template's (back button at the root keeps the music playing).
-copyFileSync(
-  join(srcTauri, 'android', 'MainActivity.kt'),
-  join(srcTauri, 'gen', 'android', 'app', 'src', 'main', 'java', 'dev', 'psysonic', 'player', 'MainActivity.kt'),
-);
+// ── Kotlin sources
+for (const file of readdirSync(here).filter(f => f.endsWith('.kt'))) {
+  copyFileSync(join(here, file), join(packageDir, file));
+}
 
-// Release builds shrink with R8, which cannot see the JNI calls into the verifier.
-// The template already feeds every `*.pro` under app/ to R8.
+// ── Manifest
+const manifestMarker = '<!-- psysonic: media service -->';
+let manifest = readFileSync(manifestFile, 'utf8');
+if (!manifest.includes(manifestMarker)) {
+  const permissions = [
+    'android.permission.FOREGROUND_SERVICE',
+    'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+    'android.permission.WAKE_LOCK',
+  ].map(p => `    <uses-permission android:name="${p}" />`).join('\n');
+  const service = `        ${manifestMarker}
+        <service
+            android:name=".PsysonicMediaService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />`;
+  // `[ \t]`, not `\s`: in a CRLF file `^` also matches after the `\r`.
+  const internet = /^([ \t]*<uses-permission android:name="android\.permission\.INTERNET" \/>\r?\n)/m;
+  const appClose = /^([ \t]*<\/application>)/m;
+  if (!internet.test(manifest) || !appClose.test(manifest)) {
+    throw new Error('AndroidManifest.xml does not look like the Tauri template');
+  }
+  manifest = manifest
+    .replace(internet, `$1${permissions}\n`)
+    .replace(appClose, `${service}\n$1`);
+  writeFileSync(manifestFile, manifest);
+  console.log('[patch-gen] manifest: media service + permissions');
+}
+
+// ── R8 (release builds) cannot see JNI calls into the verifier. The template already
+// feeds every `*.pro` under app/ to R8.
 writeFileSync(
-  join(srcTauri, 'gen', 'android', 'app', 'rustls-platform-verifier.pro'),
+  join(appDir, 'rustls-platform-verifier.pro'),
   '-keep, includedescriptorclasses class org.rustls.platformverifier.** { *; }\n',
 );
 
+// ── Gradle
 let gradle = readFileSync(gradleFile, 'utf8');
-if (gradle.includes(MARKER)) {
-  console.log('[patch-gen] already patched');
-  process.exit(0);
-}
+const depsOpen = /^dependencies \{\r?\n/m;
+if (!depsOpen.test(gradle)) throw new Error('no top-level dependencies block in build.gradle.kts');
 
-const repoBlock = `${MARKER}
+const verifierMarker = '// psysonic: rustls-platform-verifier';
+if (!gradle.includes(verifierMarker)) {
+  const metadata = JSON.parse(
+    execFileSync(
+      'cargo',
+      ['metadata', '--format-version', '1', '--filter-platform', 'aarch64-linux-android',
+        '--manifest-path', join(srcTauri, 'Cargo.toml')],
+      { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 },
+    ),
+  );
+  const pkg = metadata.packages.find(p => p.name === 'rustls-platform-verifier-android');
+  if (!pkg) throw new Error('rustls-platform-verifier-android not in the Android dependency graph');
+  const mavenDir = join(dirname(pkg.manifest_path), 'maven').replaceAll('\\', '/');
+  gradle = gradle.replace(depsOpen, `${verifierMarker}
 repositories {
     maven {
         url = uri("${mavenDir}")
     }
 }
 
-dependencies {`;
-const depLine = `    implementation("rustls:rustls-platform-verifier:${pkg.version}")\n`;
+dependencies {
+    implementation("rustls:rustls-platform-verifier:${pkg.version}")
+`);
+  console.log(`[patch-gen] gradle: rustls-platform-verifier ${pkg.version} from ${mavenDir}`);
+}
 
-const depsOpen = /^dependencies \{\r?\n/m;
-if (!depsOpen.test(gradle)) throw new Error('no top-level dependencies block in build.gradle.kts');
-gradle = gradle.replace(depsOpen, `${repoBlock}\n${depLine}`);
+if (!gradle.includes(ANDROIDX_MEDIA)) {
+  gradle = gradle.replace(depsOpen, `dependencies {\n    implementation("${ANDROIDX_MEDIA}")\n`);
+  console.log(`[patch-gen] gradle: ${ANDROIDX_MEDIA}`);
+}
 writeFileSync(gradleFile, gradle);
-console.log(`[patch-gen] added rustls-platform-verifier ${pkg.version} from ${mavenDir}`);
