@@ -825,7 +825,40 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
 
 .app-shell[data-mobile-app] .hero-overlay {
   border-radius: 24px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.35) 0%, transparent 55%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.45));
+}
+
+/* Featured album: the backdrop blurred behind the whole cover, which sits sharp above the bar. */
+.app-shell[data-mobile-app] .hero-bg-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 24px;
+}
+
+.app-shell[data-mobile-app] .hero-bg-clip .hero-bg-image {
+  filter: blur(26px) saturate(1.2);
+  transform: scale(1.3);
+}
+
+.app-shell[data-mobile-app] .hero-cover-mobile {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 118px;
+  height: 118px;
+  margin-left: -59px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+}
+
+.app-shell[data-mobile-app] .hero-cover-mobile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .app-shell[data-mobile-app] .hero-content {

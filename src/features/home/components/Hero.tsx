@@ -35,6 +35,8 @@ const HERO_ALBUM_COUNT = 8;
 const HERO_RANDOM_POOL = 32;
 /** Hero foreground cover (`.hero-cover` 220×220). */
 const HERO_FG_CSS_PX = 220;
+/** Touch shell: the sharp cover above the glass bar. */
+const HERO_MOBILE_COVER_CSS_PX = 118;
 /** Hero blurred backdrop (full banner height). */
 const HERO_BG_CSS_PX = 360;
 
@@ -426,12 +428,29 @@ export default function Hero({ albums: albumsProp }: HeroProps = {}) {
       }}
       style={{ cursor: 'pointer' }}
     >
-      {showHeroBackdrop && <HeroBg url={heroBackdrop.url} position={heroBackdrop.position} />}
+      {showHeroBackdrop && (IS_MOBILE_SHELL
+        // Touch: the backdrop is blurred, so it is clipped to the card (the card itself
+        // must not clip, the dots sit below it).
+        ? <div className="hero-bg-clip" aria-hidden="true"><HeroBg url={heroBackdrop.url} position={heroBackdrop.position} /></div>
+        : <HeroBg url={heroBackdrop.url} position={heroBackdrop.position} />)}
       {showHeroBackdrop && <div className="hero-overlay" aria-hidden="true" />}
+
+      {/* Touch: the whole cover, sharp, above the glass bar. */}
+      {IS_MOBILE_SHELL && heroCoverRef && (
+        <div className="hero-cover-mobile animate-fade-in" key={`cover-${albumOwnerKey}`}>
+          <CoverArtImage
+            coverRef={heroCoverRef}
+            displayCssPx={HERO_MOBILE_COVER_CSS_PX}
+            surface="dense"
+            ensurePriority="high"
+            alt={`${album.name} Cover`}
+          />
+        </div>
+      )}
 
       {/* key causes re-mount → animate-fade-in triggers on each album change */}
       <div className="hero-content" key={albumOwnerKey}>
-        {heroCoverRef && !isMobile && (
+        {heroCoverRef && !isMobile && !IS_MOBILE_SHELL && (
           <CoverArtImage
             coverRef={heroCoverRef}
             displayCssPx={HERO_FG_CSS_PX}
