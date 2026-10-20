@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useCarPlayBridge } from '@/features/mobileShell/hooks/useCarPlayBridge';
-import { useIosAudioInterruptions } from '@/features/mobileShell/hooks/useIosAudioInterruptions';
-import { useSiriBridge } from '@/features/mobileShell/hooks/useSiriBridge';
-import { syncLandscape } from '@/features/mobileShell/utils/iosOrientation';
+import { useCarPlayBridge } from '@/features/mobileShell/ios/useCarPlayBridge';
+import { useIosAudioInterruptions } from '@/features/mobileShell/ios/useIosAudioInterruptions';
+import { useSiriBridge } from '@/features/mobileShell/ios/useSiriBridge';
+import { syncLandscape } from '@/features/mobileShell/ios/iosOrientation';
 import { watchMeteredNetwork } from '@/lib/network/meteredNetwork';
-import { startLocalPlaybackPathRebase } from '@/features/mobileShell/utils/rebaseLocalPlaybackPaths';
+import { startLocalPlaybackPathRebase } from '@/features/mobileShell/ios/rebaseLocalPlaybackPaths';
 import { pinFullAppVolume } from '@/features/mobileShell/utils/fullAppVolume';
 
 /**

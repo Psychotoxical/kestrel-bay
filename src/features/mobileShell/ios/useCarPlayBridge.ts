@@ -7,7 +7,7 @@ import {
   carPlayPlay,
   carPlayState,
   type CarPlayState,
-} from '@/features/mobileShell/utils/carplayContent';
+} from '@/features/mobileShell/ios/carplayContent';
 
 interface ListRequest {
   requestId: number;
@@ -36,7 +36,7 @@ async function answerList({ requestId, node }: ListRequest): Promise<void> {
 }
 
 /**
- * iOS CarPlay: the native scene (`ios_carplay.rs`) shows Apple's templates and asks
+ * iOS CarPlay: the native scene (`src-tauri/src/ios/carplay.rs`) shows Apple's templates and asks
  * this layer for every list (`carplay:list`), play (`carplay:play`) and now-playing
  * button (`carplay:command`). Covers missing on disk follow the list
  * (`carplay:list-images`); the buttons' state is pushed as it changes

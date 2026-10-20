@@ -8,7 +8,7 @@ interface MeteredNetworkState {
 
 /**
  * Touch shell (iOS): whether the connection is metered, as the app shell's path
- * monitor reports it (`ios_network.rs`). Stays `false` where nothing reports it
+ * monitor reports it (`src-tauri/src/ios/network.rs`). Stays `false` where nothing reports it
  * (desktop, Android for now), so nothing there waits for Wi-Fi.
  */
 export const useMeteredNetworkStore = create<MeteredNetworkState>()(() => ({ metered: false }));

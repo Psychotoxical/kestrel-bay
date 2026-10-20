@@ -10,6 +10,7 @@ export default defineConfig({
   define: {
     ...base.define,
     __PSY_MOBILE_SHELL__: 'true',
+    __PSY_MOBILE_PLATFORM__: '"ios"',
   },
   test: {
     ...base.test,

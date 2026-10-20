@@ -5,6 +5,7 @@ export default defineConfig({
   // Mirrors vite.config.mts; tests render the desktop shell.
   define: {
     __PSY_MOBILE_SHELL__: 'false',
+    __PSY_MOBILE_PLATFORM__: '""',
   },
   resolve: {
     alias: {

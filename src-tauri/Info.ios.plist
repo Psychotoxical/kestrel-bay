@@ -30,7 +30,7 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
-	<!-- Siri: "play X" is handled in the app (src/ios_siri.rs); the app delegate is only asked
+	<!-- Siri: "play X" is handled in the app (src/ios/siri.rs); the app delegate is only asked
 	     for intents listed here. -->
 	<key>INIntentsSupported</key>
 	<array>
@@ -77,7 +77,7 @@
 					<string>TaoSceneDelegate</string>
 				</dict>
 			</array>
-			<!-- CarPlay: own scene delegate (src/ios_carplay.rs), answered in src/ios_scene.rs. -->
+			<!-- CarPlay: own scene delegate (src/ios/carplay.rs), answered in src/ios/scene.rs. -->
 			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
 			<array>
 				<dict>

@@ -1,25 +1,15 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(target_os = "android")]
+mod android;
 mod benchmark;
 mod canonical_migration;
 pub mod cli;
 mod cover_cache;
 pub(crate) mod desktop_palette;
 #[cfg(target_os = "ios")]
-mod ios_audio_session;
-#[cfg(target_os = "ios")]
-mod ios_backup;
-#[cfg(target_os = "ios")]
-mod ios_carplay;
-#[cfg(target_os = "ios")]
-mod ios_network;
-#[cfg(target_os = "ios")]
-mod ios_orientation;
-#[cfg(target_os = "ios")]
-mod ios_scene;
-#[cfg(target_os = "ios")]
-mod ios_siri;
+mod ios;
 mod lib_commands;
 pub(crate) mod library_analysis_backfill;
 mod library_identity_maintenance;
@@ -101,7 +91,7 @@ fn set_app_user_model_id() {
 /// tests, so a specta RC break can never block a release `cargo build` — the
 /// committed `bindings.ts` is plain TypeScript for `tsc`. Grow `collect_commands!`
 /// crate-by-crate (see the specta-contract plan).
-#[cfg(any(debug_assertions, test))]
+#[cfg(any(all(debug_assertions, desktop), test))]
 fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
     tauri_specta::Builder::<tauri::Wry>::new()
         // Map Rust `i64`/`u64`/`usize`/… to TS `number` globally. This is
@@ -421,7 +411,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
 /// TS exporter config. Kept as a single seam so the exporter options (header /
 /// per-type BigInt-style handling for i64 DTOs) are configured in one place as
 /// commands are added crate-by-crate.
-#[cfg(any(debug_assertions, test))]
+#[cfg(any(all(debug_assertions, desktop), test))]
 fn bindings_exporter() -> specta_typescript::Typescript {
     specta_typescript::Typescript::default()
 }
@@ -432,7 +422,7 @@ fn bindings_exporter() -> specta_typescript::Typescript {
 /// `git diff --check` rejects — so without this every command documented in more than
 /// one paragraph would fail the repository hygiene check on a generated file nobody
 /// edits by hand.
-#[cfg(any(debug_assertions, test))]
+#[cfg(any(all(debug_assertions, desktop), test))]
 fn export_bindings_to(path: &str) {
     specta_builder()
         .export(bindings_exporter(), path)
@@ -453,19 +443,22 @@ fn export_bindings_to(path: &str) {
 
 /// Regenerate the committed bindings on a debug launch (matches the dev workflow;
 /// the CI freshness gate runs the equivalent export in a test — see `specta_export`).
-#[cfg(debug_assertions)]
+#[cfg(all(debug_assertions, desktop))]
 fn export_specta_bindings() {
     export_bindings_to("../src/generated/bindings.ts");
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    #[cfg(debug_assertions)]
+    // Dev builds on a phone cannot write into the source tree.
+    #[cfg(all(debug_assertions, desktop))]
     export_specta_bindings();
 
     // Before the audio engine opens its output, so playback survives the lock screen.
     #[cfg(target_os = "ios")]
-    ios_audio_session::activate_playback();
+    ios::audio_session::activate_playback();
+    #[cfg(target_os = "android")]
+    android::context::init();
 
     // Windows: bind this process to an explicit AppUserModelID before any window
     // or the SMTC media controls are created, so the OS can resolve the app
@@ -549,7 +542,7 @@ pub fn run() {
                 let _ = window.set_title("Psysonic (Dev)");
             }
 
-            #[cfg(debug_assertions)]
+            #[cfg(all(debug_assertions, desktop))]
             startup::theme_watch::setup(app);
 
             // Follow the desktop's palette file, when this machine publishes one.
@@ -561,12 +554,12 @@ pub fn run() {
             // player-only landscape lock.
             #[cfg(target_os = "ios")]
             {
-                ios_audio_session::observe_interruptions(app.handle());
-                ios_orientation::listen(app.handle());
-                ios_carplay::listen(app.handle());
-                ios_siri::listen(app.handle());
-                ios_network::observe(app.handle());
-                ios_backup::exclude_media_dir(app.handle());
+                ios::audio_session::observe_interruptions(app.handle());
+                ios::orientation::listen(app.handle());
+                ios::carplay::listen(app.handle());
+                ios::siri::listen(app.handle());
+                ios::network::observe(app.handle());
+                ios::backup::exclude_media_dir(app.handle());
             }
 
             // ── Custom title bar on Linux ─────────────────────────────────
@@ -999,8 +992,8 @@ pub fn run() {
     // Between build (tao declares its app delegate) and run (UIApplicationMain).
     #[cfg(target_os = "ios")]
     {
-        ios_scene::install();
-        ios_siri::install();
+        ios::scene::install();
+        ios::siri::install();
     }
     app.run(|_, _| {});
 }

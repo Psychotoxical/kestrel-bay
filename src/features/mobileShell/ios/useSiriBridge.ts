@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
-import { playSiriRequest, type SiriPlayRequest } from '@/features/mobileShell/utils/siriPlay';
+import { playSiriRequest, type SiriPlayRequest } from '@/features/mobileShell/ios/siriPlay';
 
 /**
- * iOS Siri: the native side (`ios_siri.rs`) hands over what Siri understood
+ * iOS Siri: the native side (`src-tauri/src/ios/siri.rs`) hands over what Siri understood
  * (`siri:play`); this plays it. Once listening it reports `siri:ready`, so a request that
  * arrived during a cold start is sent again.
  */

@@ -53,7 +53,7 @@ pub(crate) fn install() {
 }
 
 /// The phone scene runs on tao's delegate as before, CarPlay on its own
-/// (`ios_carplay`); any other role gets the system's default configuration.
+/// (`ios::carplay`); any other role gets the system's default configuration.
 ///
 /// # Safety
 /// Called by UIKit on the main thread with a live scene session.
@@ -66,7 +66,7 @@ unsafe extern "C-unwind" fn configuration_for_connecting_scene_session(
 ) -> *mut AnyObject {
     let role: *mut NSString = msg_send![session, role];
     let is_carplay: Bool =
-        msg_send![role, isEqualToString: &*NSString::from_str(crate::ios_carplay::ROLE_CARPLAY)];
+        msg_send![role, isEqualToString: &*NSString::from_str(crate::ios::carplay::ROLE_CARPLAY)];
     if is_carplay.as_bool() {
         let config: *mut AnyObject = msg_send![
             class!(UISceneConfiguration),
@@ -74,7 +74,7 @@ unsafe extern "C-unwind" fn configuration_for_connecting_scene_session(
             sessionRole: role
         ];
         let () = msg_send![config, setSceneClass: class!(CPTemplateApplicationScene)];
-        let () = msg_send![config, setDelegateClass: crate::ios_carplay::delegate_class()];
+        let () = msg_send![config, setDelegateClass: crate::ios::carplay::delegate_class()];
         return config;
     }
     let is_application: Bool =

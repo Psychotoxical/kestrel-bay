@@ -155,7 +155,7 @@ define_class!(
         fn did_connect(&self, _scene: &AnyObject, controller: &AnyObject) {
             crate::app_eprintln!("[carplay] connected");
             if let Some(app) = APP.get() {
-                crate::ios_audio_session::retry_activation(app);
+                crate::ios::audio_session::retry_activation(app);
             }
             let retained =
                 unsafe { Retained::retain(controller as *const AnyObject as *mut AnyObject) };

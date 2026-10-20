@@ -5,7 +5,7 @@ import { resetAllStores } from '@/test/helpers/storeReset';
 import { makeTrack, seedQueue } from '@/test/helpers/factories';
 import { registerDefaultCoverInvokeHandlers } from '@/test/mocks/tauri';
 import MobileIosBridge from './MobileIosBridge';
-import MobilePlayer from './MobilePlayer';
+import MobilePlayer from '../components/MobilePlayer';
 
 const landscapeCalls = () => vi.mocked(emit).mock.calls
   .filter(([event]) => event === 'ios:allow-landscape')

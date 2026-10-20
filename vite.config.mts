@@ -11,6 +11,10 @@ const host = process.env.TAURI_DEV_HOST;
 const mobileShell = process.env.TAURI_ENV_PLATFORM === "ios"
   || process.env.TAURI_ENV_PLATFORM === "android"
   || process.env.PSY_MOBILE_SHELL === "1";
+/** Which phone the touch shell is built for: "ios", "android", or "" on the desktop. */
+const mobilePlatform = process.env.TAURI_ENV_PLATFORM === "ios" || process.env.TAURI_ENV_PLATFORM === "android"
+  ? process.env.TAURI_ENV_PLATFORM
+  : (process.env.PSY_MOBILE_PLATFORM ?? (mobileShell ? "ios" : ""));
 
 const require = createRequire(import.meta.url);
 const kuromojiPackageDirectory = path.dirname(require.resolve("kuromoji/package.json"));
@@ -101,6 +105,7 @@ export default defineConfig({
   envPrefix: ["VITE_", "TAURI_ENV_*"],
   define: {
     __PSY_MOBILE_SHELL__: JSON.stringify(mobileShell),
+    __PSY_MOBILE_PLATFORM__: JSON.stringify(mobilePlatform),
   },
   build: {
     // licenses.json + auth persist payload exceed 1 MB; expected for a desktop app.

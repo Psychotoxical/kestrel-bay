@@ -57,7 +57,7 @@ import { useNowPlayingPrewarm } from '@/features/nowPlaying';
 import { useOfflineAutoNav } from '@/features/offline';
 import { useOfflineLibraryFilterSuspend } from '@/features/offline';
 import { AppShellQueueResizerSeam } from '@/app/AppShellQueueResizerSeam';
-import { IS_LINUX, IS_MACOS, IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { IS_ANDROID, IS_IOS, IS_LINUX, IS_MACOS, IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
   MobileActionSheet,
   MobileMiniPlayer,
@@ -65,6 +65,7 @@ import {
   MobileOrbitHelpSheet,
   MobileSongInfoSheet,
   MobileIosBridge,
+  MobileAndroidBridge,
   MobileRadioBridge,
   MobileTabBar,
   MobileTopBar,
@@ -342,7 +343,8 @@ export function AppShell() {
           </div>
         </main>
         <MobileRadioBridge />
-        <MobileIosBridge />
+        {IS_IOS && <MobileIosBridge />}
+        {IS_ANDROID && <MobileAndroidBridge />}
         <MobileActionSheet />
         <MobileTouchContextMenu />
         <MobileSwipeNavigation />

@@ -30,7 +30,7 @@ import { formatTrackTime } from '@/lib/format/formatDuration';
 import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';
-import { allowLandscape } from '@/features/mobileShell/utils/iosOrientation';
+import { allowLandscape } from '@/features/mobileShell/ios/iosOrientation';
 import { isOrbitGuestFollowingHost, useOrbitStore } from '@/features/orbit';
 import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet';
 import MobileAudioOptionsSheet from '@/features/mobileShell/components/MobileAudioOptionsSheet';

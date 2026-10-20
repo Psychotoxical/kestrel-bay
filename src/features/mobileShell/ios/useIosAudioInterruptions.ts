@@ -38,7 +38,7 @@ async function reopenOutput(): Promise<void> {
 /**
  * iOS: a call, Siri or an alarm interrupts the audio session, and unplugged
  * headphones or a lost Bluetooth device drop its route. iOS stops the output but
- * not the player, so the native side (`ios_audio_session.rs`) reports both. The
+ * not the player, so the native side (`src-tauri/src/ios/audio_session.rs`) reports both. The
  * player pauses with them; when the interruption ends the output is reopened and
  * the player resumes what was playing before, only when iOS allows it
  * (`shouldResume`), like Apple Music. A lost route pauses for good. If iOS never

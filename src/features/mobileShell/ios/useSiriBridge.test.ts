@@ -5,7 +5,7 @@ import { emitTauriEvent, tauriMockListenerCount } from '@/test/mocks/tauri';
 import { useSiriBridge } from './useSiriBridge';
 
 const siri = vi.hoisted(() => ({ playSiriRequest: vi.fn(async () => true) }));
-vi.mock('@/features/mobileShell/utils/siriPlay', () => siri);
+vi.mock('@/features/mobileShell/ios/siriPlay', () => siri);
 
 const emitMock = vi.mocked(emit);
 

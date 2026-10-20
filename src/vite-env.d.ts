@@ -3,6 +3,7 @@
 declare global {
   /** Build-time flag from `vite.config.mts` (and `false` in `vitest.config.ts`). */
   const __PSY_MOBILE_SHELL__: boolean;
+  const __PSY_MOBILE_PLATFORM__: string;
 
   interface ImportMetaEnv {
     readonly VITE_PSYSONIC_FLATPAK?: string;

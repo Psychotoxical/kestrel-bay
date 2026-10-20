@@ -174,7 +174,7 @@ unsafe extern "C-unwind" fn handler_for_intent(
 }
 
 /// Teaches tao's `AppDelegate` the handler question. Call after the Tauri app is built
-/// (tao declares the delegate then) and before it runs, next to `ios_scene::install`.
+/// (tao declares the delegate then) and before it runs, next to `ios::scene::install`.
 pub(crate) fn install() {
     let Some(delegate) = AnyClass::get(c"AppDelegate") else {
         crate::app_eprintln!("[siri] AppDelegate not declared; Siri requests are not handled");

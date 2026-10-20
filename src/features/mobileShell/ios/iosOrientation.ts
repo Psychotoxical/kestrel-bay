@@ -4,7 +4,7 @@ let landscapeAllowed = false;
 
 /**
  * iPhone: only the full-screen player may turn sideways. The native side
- * (`src-tauri/src/ios_orientation.rs`) listens for `ios:allow-landscape` and
+ * (`src-tauri/src/ios/orientation.rs`) listens for `ios:allow-landscape` and
  * allows landscape or turns the interface back upright; the iPad ignores it.
  */
 export function allowLandscape(allowed: boolean): void {

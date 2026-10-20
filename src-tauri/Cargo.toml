@@ -102,6 +102,14 @@ objc2 = "0.6"
 objc2-foundation = { version = "0.3", default-features = false, features = ["std", "block2", "NSDictionary", "NSError", "NSNotification", "NSOperation", "NSString", "NSURL", "NSValue"] }
 block2 = "0.6"
 
+[target.'cfg(target_os = "android")'.dependencies]
+# The activity context for cpal's AAudio backend (see src/android/context.rs); same tao as tauri.
+ndk-context = "0.1"
+tao = "0.35"
+# reqwest checks certificates through Android's own verifier; it needs the activity too.
+jni = { version = "0.22", default-features = false }
+rustls-platform-verifier = "0.7"
+
 [target.'cfg(target_os = "linux")'.dependencies]
 zbus = { version = "5.16", default-features = false, features = ["blocking-api", "async-io"] }
 # Match wry/tauri’s WebKitGTK stack — used only to turn off kinetic wheel scrolling.

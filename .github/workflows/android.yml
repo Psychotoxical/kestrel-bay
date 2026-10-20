@@ -1,0 +1,149 @@
+name: Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "check = compile this branch for Android; apk = build an installable test APK (debug-signed) and attach it to the run"
+        type: choice
+        options: [check, apk]
+        default: check
+
+concurrency:
+  group: psysonic-android-${{ inputs.mode }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: never
+
+jobs:
+  check:
+    if: inputs.mode == 'check'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Placeholder frontend
+        run: |
+          mkdir -p dist
+          echo '<!doctype html><title>check</title>' > dist/index.html
+
+      - name: NDK toolchain for C dependencies
+        run: |
+          ndk="$ANDROID_NDK_LATEST_HOME"
+          bin="$ndk/toolchains/llvm/prebuilt/linux-x86_64/bin"
+          {
+            echo "NDK_HOME=$ndk"
+            echo "ANDROID_NDK_HOME=$ndk"
+            echo "CC_aarch64_linux_android=$bin/aarch64-linux-android28-clang"
+            echo "CXX_aarch64_linux_android=$bin/aarch64-linux-android28-clang++"
+            echo "AR_aarch64_linux_android=$bin/llvm-ar"
+            echo "CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER=$bin/aarch64-linux-android28-clang"
+          } >> "$GITHUB_ENV"
+
+      - name: cargo check for Android
+        working-directory: src-tauri
+        run: |
+          set +e
+          # Debug and release both: Psysonic has code that only exists without debug_assertions.
+          cargo check --workspace --target aarch64-linux-android --keep-going --message-format short 2>&1 | tee "$GITHUB_WORKSPACE/android-check.log"
+          dev=${PIPESTATUS[0]}
+          cargo check --release --workspace --target aarch64-linux-android --keep-going --message-format short 2>&1 | tee -a "$GITHUB_WORKSPACE/android-check.log"
+          release=${PIPESTATUS[0]}
+          echo "cargo exit code: dev=$dev release=$release" | tee -a "$GITHUB_WORKSPACE/android-check.log"
+
+      - name: Summary
+        run: |
+          log=android-check.log
+          {
+            echo "## psysonic-mobile on aarch64-linux-android"
+            echo
+            tail -n 1 "$log"
+            echo
+            echo "### Errors"
+            grep -E "^[^ ]+\.rs:[0-9]+:[0-9]+: error" "$log" || true
+            echo
+            echo "### Warnings per file"
+            grep -E "^[^ ]+\.rs:[0-9]+:[0-9]+: warning" "$log" | cut -d: -f1 | sort | uniq -c | sort -rn || true
+            echo
+            echo "### Crates that could not compile"
+            grep -E "could not compile" "$log" | sort -u || true
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: psysonic-android-check-log
+          path: android-check.log
+
+  apk:
+    if: inputs.mode == 'apk'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: NDK location
+        run: |
+          echo "NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_NDK_HOME=$ANDROID_NDK_LATEST_HOME" >> "$GITHUB_ENV"
+
+      - run: npm ci
+
+      - run: npx tauri android init --ci
+
+      # What the Android app needs beyond Tauri's Gradle template (see the script).
+      - run: node src-tauri/android/patch-gen.mjs
+
+      - run: npx tauri icon src-tauri/icons/ios-app-icon.png
+
+      # Debug-signed for now: installs side by side on test phones. The release key
+      # for Google Play and Obtainium comes later (plan #20).
+      - name: Build Android APK
+        env:
+          # Touch shell; TAURI_ENV_PLATFORM=android selects it too, this keeps it explicit.
+          PSY_MOBILE_SHELL: '1'
+        run: npx tauri android build --ci --debug --apk --target aarch64
+
+      - name: Collect the APK
+        run: |
+          apk=$(find src-tauri/gen/android -name '*.apk' -path '*debug*' | head -n 1)
+          if [ -z "$apk" ]; then echo "::error::No APK found"; exit 1; fi
+          mkdir -p out
+          cp "$apk" "out/psysonic-${{ github.run_number }}-debug.apk"
+          ls -la out
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: psysonic-android-apk
+          path: out/*.apk
+          retention-days: 14

@@ -9,3 +9,7 @@ export const IS_WINDOWS = navigator.platform.toLowerCase().includes('win');
  * and player bar. A build-time constant, so desktop bundles drop the mobile code.
  */
 export const IS_MOBILE_SHELL: boolean = __PSY_MOBILE_SHELL__ === true;
+/** The iPhone/iPad app build. iOS-only code (`features/mobileShell/ios/`) runs only here. */
+export const IS_IOS: boolean = IS_MOBILE_SHELL && __PSY_MOBILE_PLATFORM__ === 'ios';
+/** The Android app build. Android-only code (`features/mobileShell/android/`) runs only here. */
+export const IS_ANDROID: boolean = IS_MOBILE_SHELL && __PSY_MOBILE_PLATFORM__ === 'android';
