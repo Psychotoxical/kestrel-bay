@@ -520,12 +520,16 @@ pub async fn library_get_tracks_by_album(
 /// build `media/library/…` paths before a full sync has ingested the rows.
 // NOT specta-collected: takes a serde_json::Value arg — specta rc.25 can't export it. Stays hand-written on generate_handler!.
 #[tauri::command]
-pub fn library_upsert_songs_from_api(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_upsert_songs_from_api(
+    app: AppHandle,
     server_id: String,
     songs: Vec<serde_json::Value>,
 ) -> Result<u32, String> {
-    upsert_songs_from_api(&runtime.store, &server_id, songs)
+    library_spawn_blocking(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        upsert_songs_from_api(&runtime.store, &server_id, songs)
+    })
+    .await
 }
 
 #[tauri::command]
@@ -1320,57 +1324,73 @@ pub async fn library_sync_cancel(
 
 // NOT specta-collected: takes a serde_json::Value arg — specta rc.25 can't export it. Stays hand-written on generate_handler!.
 #[tauri::command]
-pub fn library_patch_track(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_patch_track(
+    app: AppHandle,
     server_id: String,
     track_id: String,
     patch: Value,
 ) -> Result<(), String> {
-    apply_track_patch(&runtime, &server_id, &track_id, &patch)
+    library_spawn_blocking(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        apply_track_patch(&runtime, &server_id, &track_id, &patch)
+    })
+    .await
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn library_put_artifact(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_put_artifact(
+    app: AppHandle,
     server_id: String,
     track_id: String,
     artifact: ArtifactInputDto,
 ) -> Result<(), String> {
-    // E4: typed repo owns the upsert + the §5.12 512 KB size cap.
-    crate::repos::ArtifactRepository::new(&runtime.store).put(
-        &server_id,
-        &track_id,
-        &artifact,
-        now_unix_ms(),
-    )
+    library_spawn_blocking(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        // E4: typed repo owns the upsert + the §5.12 512 KB size cap.
+        crate::repos::ArtifactRepository::new(&runtime.store).put(
+            &server_id,
+            &track_id,
+            &artifact,
+            now_unix_ms(),
+        )
+    })
+    .await
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn library_put_fact(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_put_fact(
+    app: AppHandle,
     server_id: String,
     track_id: String,
     fact: FactInputDto,
 ) -> Result<(), String> {
-    // E4: typed repo owns the upsert + the §5.12 user-override rule
-    // (a `user` bpm fact also writes the hot `track.bpm` column).
-    crate::repos::FactRepository::new(&runtime.store).put(
-        &server_id,
-        &track_id,
-        &fact,
-        now_unix_ms(),
-    )
+    library_spawn_blocking(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        // E4: typed repo owns the upsert + the §5.12 user-override rule
+        // (a `user` bpm fact also writes the hot `track.bpm` column).
+        crate::repos::FactRepository::new(&runtime.store).put(
+            &server_id,
+            &track_id,
+            &fact,
+            now_unix_ms(),
+        )
+    })
+    .await
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn library_record_play_session(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_record_play_session(
+    app: AppHandle,
     input: PlaySessionInputDto,
 ) -> Result<(), String> {
-    PlaySessionRepository::new(&runtime.store).insert(&input)
+    library_spawn_blocking(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        PlaySessionRepository::new(&runtime.store).insert(&input)
+    })
+    .await
 }
 
 #[tauri::command]

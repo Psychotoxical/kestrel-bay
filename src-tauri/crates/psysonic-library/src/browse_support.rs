@@ -2,7 +2,7 @@
 
 use rusqlite::{params, OptionalExtension};
 use serde_json::{Map, Value};
-use tauri::State;
+use tauri::{AppHandle, Manager, State};
 
 use crate::album_compilation_filter::pick_album_group_artist_id;
 use crate::dto::CatalogYearBoundsDto;
@@ -34,23 +34,31 @@ pub struct StarredArtistReconcileItem {
 /// (no INSERT / stub rows). Clears local stars absent from `starred_albums`.
 #[tauri::command]
 #[specta::specta]
-pub fn library_reconcile_album_stars(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_reconcile_album_stars(
+    app: AppHandle,
     server_id: String,
     starred_albums: Vec<StarredAlbumReconcileItem>,
 ) -> Result<(), String> {
-    reconcile_album_stars(&runtime, &server_id, &starred_albums)
+    on_library_worker(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        reconcile_album_stars(&runtime, &server_id, &starred_albums)
+    })
+    .await
 }
 
 /// Align `artist.starred_at` with server favorites without creating artist stubs.
 #[tauri::command]
 #[specta::specta]
-pub fn library_reconcile_artist_stars(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_reconcile_artist_stars(
+    app: AppHandle,
     server_id: String,
     starred_artists: Vec<StarredArtistReconcileItem>,
 ) -> Result<(), String> {
-    reconcile_artist_stars(&runtime, &server_id, &starred_artists)
+    on_library_worker(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        reconcile_artist_stars(&runtime, &server_id, &starred_artists)
+    })
+    .await
 }
 
 /// Read album-level favorite timestamp (`album.starred_at`), not track stars.
@@ -316,13 +324,30 @@ fn sync_album_raw_json_starred(
 
 // NOT specta-collected: serde_json::Value patch arg (same as library_patch_track).
 #[tauri::command]
-pub fn library_patch_album(
-    runtime: State<'_, LibraryRuntime>,
+pub async fn library_patch_album(
+    app: AppHandle,
     server_id: String,
     album_id: String,
     patch: Value,
 ) -> Result<(), String> {
-    apply_album_patch(&runtime, &server_id, &album_id, &patch)
+    on_library_worker(move || {
+        let runtime = app.state::<LibraryRuntime>();
+        apply_album_patch(&runtime, &server_id, &album_id, &patch)
+    })
+    .await
+}
+
+/// Database writes leave Tauri's main thread: a sync command waits there for the writer
+/// lock, and a long maintenance write (identity rebuild after an interrupted sync) froze
+/// the whole UI, startup included, until it finished.
+async fn on_library_worker<F, R>(f: F) -> Result<R, String>
+where
+    F: FnOnce() -> Result<R, String> + Send + 'static,
+    R: Send + 'static,
+{
+    tauri::async_runtime::spawn_blocking(f)
+        .await
+        .map_err(|e| format!("library blocking worker failed: {e}"))?
 }
 
 pub(crate) fn reconcile_album_stars(
