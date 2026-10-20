@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "check = compile this branch for iOS; testflight = build the app and upload it; crashlogs = fetch TestFlight crash reports; symbols = build like testflight without uploading and resolve `offsets`"
+        description: "check = compile this branch for iOS; testflight = build the app and upload it; crashlogs = fetch TestFlight crash reports; feedback = fetch TestFlight screenshot feedback; symbols = build like testflight without uploading and resolve `offsets`"
         type: choice
-        options: [check, testflight, crashlogs, symbols]
+        options: [check, testflight, crashlogs, feedback, symbols]
         default: check
       offsets:
         description: "symbols: comma-separated offsets from a crash or resource report (`Psysonic + N`)"
@@ -251,3 +251,79 @@ jobs:
         with:
           name: testflight-crashlogs
           path: crashlogs
+
+  feedback:
+    if: inputs.mode == 'feedback'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Public repository: the log names only dates and devices, comments and screenshots stay
+      # in the short-lived artifact, and tester e-mail addresses are never written.
+      - name: Fetch TestFlight screenshot feedback
+        env:
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+          APPLE_API_KEY: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          BUNDLE_ID: dev.psysonic.player
+        run: |
+          cat > fetch.mjs <<'JS'
+          import crypto from 'node:crypto';
+          import fs from 'node:fs';
+
+          const { APPLE_API_ISSUER: iss, APPLE_API_KEY: kid, APPLE_API_KEY_P8: p8, BUNDLE_ID } = process.env;
+          const b64 = (v) => Buffer.from(typeof v === 'string' ? v : JSON.stringify(v)).toString('base64url');
+          const now = Math.floor(Date.now() / 1000);
+          const unsigned = `${b64({ alg: 'ES256', kid, typ: 'JWT' })}.${b64({ iss, iat: now, exp: now + 1200, aud: 'appstoreconnect-v1' })}`;
+          const signature = crypto.sign('sha256', Buffer.from(unsigned), { key: p8, dsaEncoding: 'ieee-p1363' }).toString('base64url');
+          const token = `${unsigned}.${signature}`;
+
+          const api = async (path) => {
+            const response = await fetch(`https://api.appstoreconnect.apple.com${path}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (!response.ok) throw new Error(`${path}: HTTP ${response.status} ${await response.text()}`);
+            return response.json();
+          };
+
+          const apps = await api(`/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
+          if (!apps.data.length) throw new Error(`no app with bundle id ${BUNDLE_ID}`);
+          const submissions = await api(`/v1/apps/${apps.data[0].id}/betaFeedbackScreenshotSubmissions?limit=50`);
+          const sorted = [...submissions.data].sort((a, b) =>
+            String(b.attributes.createdDate).localeCompare(String(a.attributes.createdDate)));
+          console.log(`${sorted.length} screenshot submission(s)`);
+
+          fs.mkdirSync('feedback', { recursive: true });
+          const summary = [];
+          for (const submission of sorted) {
+            const { email, screenshots = [], ...a } = submission.attributes;
+            const stamp = String(a.createdDate).replace(/[:.]/g, '-');
+            let build = null;
+            try {
+              const b = await api(`/v1/betaFeedbackScreenshotSubmissions/${submission.id}/build?fields[builds]=version`);
+              build = b.data?.attributes?.version ?? null;
+            } catch (error) {
+              console.log(`build lookup failed for ${submission.id}: ${error.message.split('\n')[0]}`);
+            }
+            console.log(`${a.createdDate}  build ${build ?? '?'}  ${a.deviceModel ?? '?'}  iOS ${a.osVersion ?? '?'}  ${screenshots.length} image(s)`);
+            const files = [];
+            for (const [i, shot] of screenshots.entries()) {
+              const response = await fetch(shot.url);
+              if (!response.ok) { console.log(`image ${i + 1}: HTTP ${response.status}`); continue; }
+              const type = response.headers.get('content-type') ?? '';
+              const ext = type.includes('png') ? 'png' : 'jpg';
+              const file = `${stamp}-${i + 1}.${ext}`;
+              fs.writeFileSync(`feedback/${file}`, Buffer.from(await response.arrayBuffer()));
+              files.push(file);
+            }
+            fs.writeFileSync(`feedback/${stamp}-meta.json`, JSON.stringify({ id: submission.id, build, ...a, files }, null, 2));
+            summary.push(`## ${a.createdDate} · build ${build ?? '?'} · ${a.deviceModel ?? '?'} · iOS ${a.osVersion ?? '?'}\n\n${a.comment || '(no comment)'}\n\n${files.map(f => `- ${f}`).join('\n')}\n`);
+          }
+          fs.writeFileSync('feedback/summary.md', summary.join('\n'));
+          JS
+          node fetch.mjs
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: testflight-feedback
+          path: feedback
+          retention-days: 1
