@@ -24,6 +24,7 @@ import { albumCoverRefForSong } from '@/cover/ref';
 import { showToast } from '@/lib/dom/toast';
 import { orbitGuestSuggestsQueueAdds } from '@/store/orbitRuntime';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { rememberSearchReturn } from '@/features/mobileShell/utils/searchReturn';
 import { useOrbitSongRowBehavior } from '@/features/orbit';
 import { albumArtistDisplayName } from '@/features/album';
 import { useShareSearch } from '@/features/search/hooks/useShareSearch';
@@ -127,7 +128,11 @@ function MobileSearchArtistThumb({ artist }: { artist: Pick<SubsonicArtist, 'id'
   );
 }
 
-export default function MobileSearchOverlay({ onClose }: { onClose: () => void }) {
+export default function MobileSearchOverlay({ onClose, initialQuery }: {
+  onClose: () => void;
+  /** Touch shell: reopened by a back step from a result, with the query it had. */
+  initialQuery?: string;
+}) {
   const { t } = useTranslation();
   const { orbitActive, addTrackToOrbit } = useOrbitSongRowBehavior();
   const navigate = useNavigate();
@@ -141,7 +146,7 @@ export default function MobileSearchOverlay({ onClose }: { onClose: () => void }
   // Touch shell: the overlay covers the whole page, so a page-scoped search (which filters
   // the page under the field and shows no list) would show nothing at all. Here the overlay
   // keeps its own text and always runs the full search: artists, albums and songs.
-  const [ownQuery, setOwnQuery] = useState('');
+  const [ownQuery, setOwnQuery] = useState(initialQuery ?? '');
   const query = IS_MOBILE_SHELL ? ownQuery : storeQuery;
   const setQuery: typeof setStoreQuery = IS_MOBILE_SHELL ? q => setOwnQuery(q) : setStoreQuery;
   const scope = IS_MOBILE_SHELL ? null : storeScope;
@@ -191,6 +196,8 @@ export default function MobileSearchOverlay({ onClose }: { onClose: () => void }
 
   const goTo = (path: string) => {
     commit(query);
+    // Touch shell: a back step onto this page reopens the search with this query.
+    if (IS_MOBILE_SHELL) rememberSearchReturn(query, location.key);
     navigatePathWithAlbumReturnTo(navigate, location, path);
     onClose();
   };
