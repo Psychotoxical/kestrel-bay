@@ -28,7 +28,7 @@ Rules of thumb:
   (`target_os = "ios"` / `"android"` in Rust, `IS_IOS` / `IS_ANDROID` in the UI). A change there
   cannot reach the other app or the desktop.
 - **Shared touch code** runs in both apps. A change there must work on iOS **and** Android:
-  CI builds both on every push.
+  after pushing such a change, run the `check` mode of both `ios.yml` and `android.yml`.
 - **Desktop code** must not change because of the mobile apps. Mobile differences sit behind
   `IS_MOBILE_SHELL` (UI) or `cfg(mobile)` (Rust).
 - **Same features on both phones.** What one app gets, the other gets too, unless the
@@ -40,3 +40,6 @@ Rules of thumb:
 - Android: `android.yml` (`check`, `apk`), runs on Linux in CI; local builds need the Android
   SDK, NDK, CMake with Ninja and JDK 17. After `npx tauri android init`, run
   `node src-tauri/android/patch-gen.mjs` before building.
+- Both workflows start by hand only (`gh workflow run <file> --ref psysonic-mobile -f mode=…`).
+  GitHub offers that only for workflow files that also exist on this repository's `main`, so
+  `main` keeps a copy of each; the run itself uses the version on `psysonic-mobile`.
