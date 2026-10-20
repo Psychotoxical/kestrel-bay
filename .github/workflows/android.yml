@@ -132,6 +132,10 @@ jobs:
         env:
           # Touch shell; TAURI_ENV_PLATFORM=android selects it too, this keeps it explicit.
           PSY_MOBILE_SHELL: '1'
+          # Optimised Rust inside the debug-signed APK: unoptimised, the first library
+          # sync holds the database for over ten minutes on a phone and pages never load.
+          CARGO_PROFILE_DEV_OPT_LEVEL: '3'
+          CARGO_PROFILE_DEV_DEBUG: line-tables-only
         run: npx tauri android build --ci --debug --apk --target aarch64
 
       - name: Collect the APK

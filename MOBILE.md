@@ -39,7 +39,9 @@ Rules of thumb:
 - iOS: `ios.yml` (`check`, `testflight`, `crashlogs`, `feedback`, `symbols`), runs on macOS in CI.
 - Android: `android.yml` (`check`, `apk`), runs on Linux in CI; local builds need the Android
   SDK, NDK, CMake with Ninja and JDK 17. After `npx tauri android init`, run
-  `node src-tauri/android/patch-gen.mjs` before building.
+  `node src-tauri/android/patch-gen.mjs` before building. Build test APKs with
+  `CARGO_PROFILE_DEV_OPT_LEVEL=3 CARGO_PROFILE_DEV_DEBUG=line-tables-only`: unoptimised Rust is
+  too slow on a phone (the first library sync blocks every page).
 - Both workflows start by hand only (`gh workflow run <file> --ref psysonic-mobile -f mode=…`).
   GitHub offers that only for workflow files that also exist on this repository's `main`, so
   `main` keeps a copy of each; the run itself uses the version on `psysonic-mobile`.
