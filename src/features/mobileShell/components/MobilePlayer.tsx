@@ -30,7 +30,7 @@ import { formatTrackTime } from '@/lib/format/formatDuration';
 import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';
-import { allowLandscape } from '@/features/mobileShell/ios/iosOrientation';
+import { allowLandscape } from '@/features/mobileShell/utils/landscape';
 import { isOrbitGuestFollowingHost, useOrbitStore } from '@/features/orbit';
 import MobileQueueSheet from '@/features/mobileShell/components/MobileQueueSheet';
 import MobileAudioOptionsSheet from '@/features/mobileShell/components/MobileAudioOptionsSheet';
@@ -156,7 +156,7 @@ export default function MobilePlayer() {
   const navigate = useNavigate();
   const navigatePlaybackLibrary = usePlaybackLibraryNavigate();
   const currentTrack = usePlayerStore(s => s.currentTrack);
-  // iPhone: the player is the one screen that may turn sideways.
+  // Phones: the player is the one screen that may turn sideways.
   useEffect(() => {
     allowLandscape(true);
     return () => allowLandscape(false);

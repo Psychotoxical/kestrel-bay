@@ -2,6 +2,7 @@
 // (the generated project under `src-tauri/gen/android` is not in git).
 package dev.psysonic.player
 
+import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.ConnectivityManager
 import android.net.Network
@@ -18,6 +19,7 @@ class MainActivity : TauriActivity() {
     // Psysonic's default themes are dark; the web view corrects this once a theme loads.
     applySystemBars(dark = true)
     super.onCreate(savedInstanceState)
+    allowLandscape(false)
     // Last in the back chain: wry's callback (added later, so asked first) steps the web view
     // back through its history and hands on once there is nothing left. Closing the activity
     // would end the process and the music; a music player goes to the background instead.
@@ -77,9 +79,28 @@ class MainActivity : TauriActivity() {
       activity.runOnUiThread { activity.applySystemBars(dark) }
     }
 
+    /** See `allowLandscape` and `mobileShell/utils/landscape.ts`. */
+    @JavascriptInterface
+    fun allowLandscape(allowed: Boolean) {
+      activity.runOnUiThread { activity.allowLandscape(allowed) }
+    }
+
     @JavascriptInterface
     fun isMetered(): Boolean =
       activity.getSystemService(ConnectivityManager::class.java)?.isActiveNetworkMetered ?: false
+  }
+
+  /**
+   * Phones stay upright except in the full-screen player, as on the iPhone; tablets turn
+   * freely, as the iPad does. Landscape follows the sensor unless the user locked rotation.
+   */
+  fun allowLandscape(allowed: Boolean) {
+    if (resources.configuration.smallestScreenWidthDp >= 600) return
+    requestedOrientation = if (allowed) {
+      ActivityInfo.SCREEN_ORIENTATION_USER
+    } else {
+      ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
   }
 
   // Wry pauses the web view with the activity (screen off, app in the background); a

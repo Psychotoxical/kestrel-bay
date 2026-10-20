@@ -11,6 +11,8 @@ interface AndroidShellHost {
   setDarkBackground(dark: boolean): void;
   /** See `androidNetwork.ts`. */
   isMetered?(): boolean;
+  /** See `mobileShell/utils/landscape.ts`. */
+  allowLandscape?(allowed: boolean): void;
 }
 
 declare global {
