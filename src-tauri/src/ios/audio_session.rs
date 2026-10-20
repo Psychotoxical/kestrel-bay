@@ -137,6 +137,12 @@ pub(crate) fn observe_interruptions(app: &AppHandle) {
             let began = number_for(note, type_key) == Some(INTERRUPTION_BEGAN);
             let should_resume = number_for(note, option_key)
                 .is_some_and(|options| options & OPTION_SHOULD_RESUME != 0);
+            crate::app_eprintln!(
+                "[audio] iOS interruption {} should_resume={} outputs={}",
+                if began { "began" } else { "ended" },
+                should_resume,
+                current_outputs()
+            );
             if !began {
                 // The session has to be active again before the player resumes.
                 activate_playback();
