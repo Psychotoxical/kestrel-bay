@@ -492,6 +492,7 @@ export const settings = {
   themeStoreSubmitLink: 'Otwórz repozytorium motywów',
   themeStoreNetworkNotice: 'Sklep motywów wczytuje katalog i podglądy z GitHuba. Żadne dane osobowe nie są wysyłane.',
   themeStoreStatsNotice: 'Daty ostatnich zmian są odświeżane raz dziennie (około 04:17 UTC, czyli 05:17/06:17 czasu polskiego).',
+  themeStoreMobileNotice: 'Motywy są tworzone z myślą o aplikacji na komputer. Większość dobrze wygląda także tutaj, ale nie każdy idealnie pasuje do widoku na telefonie.',
   themeStoreSearchPlaceholder: 'Szukaj motywów…',
   themeStoreSpotlightTitle: 'Losowy motyw chwili',
   themeStoreSpotlightShuffle: 'Pokaż inny',

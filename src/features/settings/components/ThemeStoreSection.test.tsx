@@ -89,6 +89,13 @@ describe('ThemeStoreSection — pagination & refresh', () => {
     Element.prototype.scrollIntoView = vi.fn();
   });
 
+  it('shows no phone hint on the desktop', async () => {
+    fetchRegistryMock.mockResolvedValue({ registry: makeRegistry(3), stale: false });
+    renderWithProviders(<ThemeStoreSection />);
+    await screen.findAllByText('Theme 01');
+    expect(screen.queryByText(/Themes are made for the desktop app/)).not.toBeInTheDocument();
+  });
+
   it('shows only one page of themes and a pager when the catalogue is large', async () => {
     fetchRegistryMock.mockResolvedValue({ registry: makeRegistry(30), stale: false });
     const { container } = renderWithProviders(<ThemeStoreSection />);

@@ -35,4 +35,10 @@ describe('ThemeStoreSection (touch shell)', () => {
     const install = [...row.querySelectorAll<HTMLButtonElement>('button')].find(b => /Install/.test(b.textContent ?? ''))!;
     expect(install.style.fontSize).toBe('14px');
   });
+
+  it('tells phone users that the themes are made for the desktop app', async () => {
+    vi.mocked(fetchRegistry).mockResolvedValue({ registry: REGISTRY, stale: false });
+    renderWithProviders(<ThemeStoreSection />);
+    expect(await screen.findByText(/Themes are made for the desktop app/)).toBeInTheDocument();
+  });
 });

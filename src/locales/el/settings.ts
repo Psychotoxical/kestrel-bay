@@ -492,6 +492,7 @@ export const settings = {
   themeStoreSubmitLink: 'Άνοιγμα του αποθετηρίου θεμάτων',
   themeStoreNetworkNotice: 'Το κατάστημα φορτώνει τον κατάλογο και τις προεπισκοπήσεις από το GitHub. Δεν στέλνονται προσωπικές πληροφορίες.',
   themeStoreStatsNotice: 'Κοντινότερες αλλαγμένες ημερομηνίες ανανεώνονται μία φορά την ημέρα (γύρω στις 04:17 UTC).',
+  themeStoreMobileNotice: 'Τα θέματα έχουν σχεδιαστεί για την εφαρμογή υπολογιστή. Τα περισσότερα φαίνονται καλά και εδώ, αλλά δεν ταιριάζουν όλα τέλεια στην προβολή κινητού.',
   themeStoreSearchPlaceholder: 'Αναζήτηση θεμάτων…',
   themeStoreSpotlightTitle: 'Τυχαίο θέμα της στιγμής',
   themeStoreSpotlightShuffle: 'Εμφάνιση άλλου',

@@ -486,6 +486,7 @@ export const settings = {
   themeStoreSubmitLink: 'テーマリポジトリを開く',
   themeStoreNetworkNotice: 'テーマストアはカタログとプレビューを GitHub から読み込みます。個人データは送信されません。',
   themeStoreStatsNotice: '最終変更日は 1 日 1 回更新されます (04:17 UTC 前後)。',
+  themeStoreMobileNotice: 'テーマはデスクトップアプリ向けに作られています。多くはここでもきれいに表示されますが、すべてがスマートフォンの表示にぴったり合うとは限りません。',
   themeStoreSearchPlaceholder: 'テーマを検索…',
   themeStoreSpotlightTitle: 'いま注目のランダムテーマ',
   themeStoreSpotlightShuffle: '別のテーマを見る',

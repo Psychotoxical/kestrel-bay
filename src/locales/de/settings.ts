@@ -448,6 +448,7 @@ export const settings = {
   themeStoreSubmitLink: 'Themes-Repository öffnen',
   themeStoreNetworkNotice: 'Der Theme-Store lädt Katalog und Vorschauen von GitHub. Es werden keine persönlichen Daten gesendet.',
   themeStoreStatsNotice: 'Die „Zuletzt geändert“-Daten werden einmal täglich aktualisiert (gegen 04:17 UTC).',
+  themeStoreMobileNotice: 'Die Themes wurden für die Desktop-App gestaltet. Die meisten sehen auch hier gut aus, aber nicht jedes passt perfekt zur Handy-Ansicht.',
   themeStoreSearchPlaceholder: 'Themes suchen…',
   themeStoreSpotlightTitle: 'Zufalls-Theme des Augenblicks',
   themeStoreSpotlightShuffle: 'Anderes zeigen',

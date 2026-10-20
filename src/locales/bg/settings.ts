@@ -492,6 +492,7 @@ export const settings = {
   themeStoreSubmitLink: 'Отвори хранилището с теми',
   themeStoreNetworkNotice: 'Магазинът за теми зарежда каталога и преглед от GitHub. Не се изпращат лични данни.',
   themeStoreStatsNotice: 'Датите на последна промяна се обновяват веднъж дневно (около 04:17 UTC).',
+  themeStoreMobileNotice: 'Темите са създадени за настолното приложение. Повечето изглеждат добре и тук, но не всяка тема пасва идеално на телефонния изглед.',
   themeStoreSearchPlaceholder: 'Търси теми…',
   themeStoreSpotlightTitle: 'Случайна тема на момента',
   themeStoreSpotlightShuffle: 'Покажи друга',

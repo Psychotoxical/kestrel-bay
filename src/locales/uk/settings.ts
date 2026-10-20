@@ -492,6 +492,7 @@ export const settings = {
   themeStoreSubmitLink: 'Відкрити репозиторій тем',
   themeStoreNetworkNotice: 'Магазин тем завантажує каталог та прев’ю з GitHub без передачі особистих даних.',
   themeStoreStatsNotice: 'Дати останніх змін оновлюються раз на добу.',
+  themeStoreMobileNotice: 'Теми створено для настільного застосунку. Більшість добре виглядають і тут, але не кожна ідеально пасує до вигляду на телефоні.',
   themeStoreSearchPlaceholder: 'Пошук тем…',
   themeStoreSpotlightTitle: 'Випадкова тема моменту',
   themeStoreSpotlightShuffle: 'Показати іншу',

@@ -426,6 +426,7 @@ export const settings = {
   themeStoreSubmitLink: '打开主题仓库',
   themeStoreNetworkNotice: '主题商店从 GitHub 加载目录和预览。不会发送任何个人数据。',
   themeStoreStatsNotice: '最后更新时间每天更新一次（约 04:17 UTC）。',
+  themeStoreMobileNotice: '主题是为桌面应用设计的。大多数在这里也很好看，但并非每个主题都能完美适配手机界面。',
   themeStoreSearchPlaceholder: '搜索主题…',
   themeStoreSpotlightTitle: '随机推荐主题',
   themeStoreSpotlightShuffle: '换一个',

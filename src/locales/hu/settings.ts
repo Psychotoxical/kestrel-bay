@@ -492,6 +492,7 @@ export const settings = {
   themeStoreSubmitLink: 'Témák tárolójának megnyitása',
   themeStoreNetworkNotice: 'A Témabolt a katalógusát és előnézeteit a GitHubról tölti be. Személyes adat nem kerül elküldésre.',
   themeStoreStatsNotice: 'A legutóbbi módosítás dátumai naponta egyszer frissülnek (kb. 04:17 UTC-kor).',
+  themeStoreMobileNotice: 'A témák az asztali alkalmazáshoz készültek. A legtöbb itt is jól mutat, de nem mindegyik illeszkedik tökéletesen a telefonos nézethez.',
   themeStoreSearchPlaceholder: 'Témák keresése…',
   themeStoreSpotlightTitle: 'A pillanat véletlen témája',
   themeStoreSpotlightShuffle: 'Mutass másikat',

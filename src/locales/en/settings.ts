@@ -492,6 +492,7 @@ export const settings = {
   themeStoreSubmitLink: 'Open the themes repository',
   themeStoreNetworkNotice: 'The Theme Store loads its catalogue and previews from GitHub. No personal data is sent.',
   themeStoreStatsNotice: 'Last-changed dates refresh once a day (around 04:17 UTC).',
+  themeStoreMobileNotice: 'Themes are made for the desktop app. Most of them look good here too, but not every theme fits the phone layout perfectly.',
   themeStoreSearchPlaceholder: 'Search themes…',
   themeStoreSpotlightTitle: 'Random theme of the moment',
   themeStoreSpotlightShuffle: 'Show another',

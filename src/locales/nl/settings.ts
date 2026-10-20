@@ -427,6 +427,7 @@ export const settings = {
   themeStoreSubmitLink: 'Themarepository openen',
   themeStoreNetworkNotice: 'De Theme Store laadt de catalogus en previews van GitHub. Er worden geen persoonlijke gegevens verzonden.',
   themeStoreStatsNotice: 'De laatst-gewijzigd-datums worden eenmaal per dag bijgewerkt (rond 04:17 UTC).',
+  themeStoreMobileNotice: "Thema's zijn gemaakt voor de desktop-app. De meeste zien er hier ook goed uit, maar niet elk thema past perfect bij de telefoonweergave.",
   themeStoreSearchPlaceholder: "Thema's zoeken…",
   themeStoreSpotlightTitle: 'Willekeurig thema van het moment',
   themeStoreSpotlightShuffle: 'Toon een ander',

@@ -235,6 +235,12 @@ export function ThemeStoreSection() {
   return (
     <div className="settings-card">
       {/* Submit-your-own-theme hint */}
+      {IS_MOBILE_SHELL && (
+        <div className="settings-hint settings-hint-info" style={{ marginBottom: '1rem' }}>
+          {t('settings.themeStoreMobileNotice')}
+        </div>
+      )}
+
       <div className="settings-hint settings-hint-info" style={{ marginBottom: '1rem' }}>
         {t('settings.themeStoreSubmitText')}{' '}
         <button

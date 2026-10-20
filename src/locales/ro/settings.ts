@@ -450,6 +450,7 @@ export const settings = {
   themeStoreSubmitLink: 'Deschide depozitul de teme',
   themeStoreNetworkNotice: 'Theme Store încarcă catalogul și previzualizările de la GitHub. Nu se trimit date personale.',
   themeStoreStatsNotice: 'Datele privind ultima modificare se actualizează o dată pe zi (în jurul orei 04:17 UTC).',
+  themeStoreMobileNotice: 'Temele sunt create pentru aplicația desktop. Majoritatea arată bine și aici, dar nu toate se potrivesc perfect cu afișarea pe telefon.',
   themeStoreSearchPlaceholder: 'Caută teme…',
   themeStoreSpotlightTitle: 'Temă aleatorie a momentului',
   themeStoreSpotlightShuffle: 'Arată alta',

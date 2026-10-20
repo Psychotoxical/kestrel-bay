@@ -502,6 +502,7 @@ export const settings = {
   themeStoreSubmitLink: 'Открыть репозиторий тем',
   themeStoreNetworkNotice: 'Магазин тем загружает каталог и превью с GitHub. Личные данные не отправляются.',
   themeStoreStatsNotice: 'Даты последнего изменения обновляются раз в день (около 04:17 UTC).',
+  themeStoreMobileNotice: 'Темы созданы для настольного приложения. Большинство хорошо смотрятся и здесь, но не каждая идеально подходит для телефонного вида.',
   themeStoreSearchPlaceholder: 'Поиск тем…',
   themeStoreSpotlightTitle: 'Случайная тема момента',
   themeStoreSpotlightShuffle: 'Показать другую',

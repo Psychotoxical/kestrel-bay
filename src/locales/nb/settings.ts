@@ -430,6 +430,7 @@ export const settings = {
   themeStoreSubmitLink: 'Åpne tema-repoet',
   themeStoreNetworkNotice: 'Theme Store laster katalogen og forhåndsvisninger fra GitHub. Ingen personopplysninger sendes.',
   themeStoreStatsNotice: 'Sist endret-datoene oppdateres én gang om dagen (rundt 04:17 UTC).',
+  themeStoreMobileNotice: 'Temaene er laget for skrivebordsappen. De fleste ser bra ut her også, men ikke alle passer perfekt til mobilvisningen.',
   themeStoreSearchPlaceholder: 'Søk i temaer…',
   themeStoreSpotlightTitle: 'Tilfeldig tema for øyeblikket',
   themeStoreSpotlightShuffle: 'Vis et annet',

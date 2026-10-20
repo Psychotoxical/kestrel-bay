@@ -446,6 +446,7 @@ export const settings = {
   themeStoreSubmitLink: 'Abrir el repositorio de temas',
   themeStoreNetworkNotice: 'La tienda de temas carga el catálogo y las vistas previas desde GitHub. No se envían datos personales.',
   themeStoreStatsNotice: 'Las fechas de última modificación se actualizan una vez al día (sobre las 04:17 UTC).',
+  themeStoreMobileNotice: 'Los temas están diseñados para la aplicación de escritorio. La mayoría también se ven bien aquí, pero no todos encajan perfectamente en la vista del móvil.',
   themeStoreSearchPlaceholder: 'Buscar temas…',
   themeStoreSpotlightTitle: 'Tema aleatorio del momento',
   themeStoreSpotlightShuffle: 'Mostrar otro',
