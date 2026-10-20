@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ⚠️ Android territory. Psysonic's P (public/p-small.svg) as the status bar icon of the
-     playback notification; Android draws it white. Copied into res/drawable by patch-gen.mjs. -->
+     playback notification; Android draws it white. Copied into the generated res/ by patch-gen.mjs. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"

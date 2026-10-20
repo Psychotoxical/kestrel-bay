@@ -40,13 +40,23 @@ export function stripSpokenAppName(name: string | null | undefined): string | un
   return cleaned || undefined;
 }
 
-/** Local index first, the server's search when the index has nothing. */
-async function search(query: string): Promise<SearchResults> {
+const hasHits = (r: SearchResults | null): r is SearchResults =>
+  !!r && (r.songs.length > 0 || r.albums.length > 0 || r.artists.length > 0);
+
+/**
+ * Local index first, the server's search when the index has nothing that fits. The local
+ * search suggests while typing: any word counts and it returns ten songs, so a spoken title
+ * ("Waiting On Love") can drown among hits for one of its words ("Love Machine"). The
+ * server's search wants every word, so it is asked whenever no local hit `fits`.
+ */
+async function search(query: string, fits: (hits: SearchResults) => boolean): Promise<SearchResults> {
   const serverId = useAuthStore.getState().activeServerId;
   const local = await runLocalLiveSearch(serverId, query, { epoch: Date.now(), isStale: () => false, suppressLog: true }, getLibraryBrowseScope())
     .catch(() => null);
-  if (local && (local.songs.length > 0 || local.albums.length > 0 || local.artists.length > 0)) return local;
-  return (await runNetworkLiveSearch(query).catch(() => null)) ?? { artists: [], albums: [], songs: [] };
+  if (hasHits(local) && fits(local)) return local;
+  const network = await runNetworkLiveSearch(query).catch(() => null);
+  if (hasHits(network) && (fits(network) || !hasHits(local))) return network;
+  return local ?? network ?? { artists: [], albums: [], songs: [] };
 }
 
 /** Lower case, no accents or punctuation: "Motörhead" and "motorhead" compare equal. */
@@ -157,8 +167,11 @@ export async function playSiriRequest(request: SiriPlayRequest): Promise<boolean
   }
   if (request.mediaType === MEDIA_PLAYLIST && await playPlaylist(query)) return true;
 
-  const hits = await search(query);
   const artistHint = request.mediaName ? stripSpokenAppName(request.artistName) : undefined;
+  const hits = await search(query, found =>
+    found.artists.some(a => same(a.name, query))
+    || found.albums.some(a => spokenMatchScore(query, a.name, a.artist, artistHint) > 0)
+    || found.songs.some(s => spokenMatchScore(query, s.title, s.artist, artistHint) > 0));
   const artist = hits.artists.find(a => same(a.name, query));
   const album = best(hits.albums, a => spokenMatchScore(query, a.name, a.artist, artistHint));
   const song = best(hits.songs, s => spokenMatchScore(query, s.title, s.artist, artistHint));

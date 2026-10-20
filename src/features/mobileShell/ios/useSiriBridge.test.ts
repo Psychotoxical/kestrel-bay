@@ -8,7 +8,7 @@ const siri = vi.hoisted(() => ({
   playSiriRequest: vi.fn(async () => true),
   siriArtistVocabulary: vi.fn(async () => ['Motorjesus', 'Insomnium']),
 }));
-vi.mock('@/features/mobileShell/ios/siriPlay', () => siri);
+vi.mock('@/features/mobileShell/car/siriPlay', () => siri);
 
 const emitMock = vi.mocked(emit);
 

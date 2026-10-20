@@ -7,7 +7,7 @@ import {
   carPlayPlay,
   carPlayState,
   type CarPlayState,
-} from '@/features/mobileShell/ios/carplayContent';
+} from '@/features/mobileShell/car/carplayContent';
 
 interface ListRequest {
   requestId: number;

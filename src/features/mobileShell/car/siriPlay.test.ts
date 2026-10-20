@@ -104,6 +104,31 @@ describe('playSiriRequest', () => {
     expect(mocks.playTrack.mock.calls[0][0].id).toBe('c');
   });
 
+  it('a title lost among local hits for one of its words is looked up on the server', async () => {
+    mocks.runLocalLiveSearch.mockResolvedValue({
+      artists: [], albums: [], songs: [{ ...song('l1', 'Love Machine'), artist: 'Reckless Love' }],
+    });
+    mocks.runNetworkLiveSearch.mockResolvedValue({
+      artists: [], albums: [], songs: [{ ...song('n1', 'Waiting On Love'), artist: 'FM' }],
+    });
+    expect(await playSiriRequest({ mediaName: 'Waiting On Love', mediaType: 0 })).toBe(true);
+    expect(mocks.playTrack.mock.calls[0][0].id).toBe('n1');
+  });
+
+  it('a local hit that fits the title needs no server search', async () => {
+    mocks.runLocalLiveSearch.mockResolvedValue({ artists: [], albums: [], songs: [song('t1', 'Chaos')] });
+    expect(await playSiriRequest({ mediaName: 'Chaos', mediaType: 0 })).toBe(true);
+    expect(mocks.runNetworkLiveSearch).not.toHaveBeenCalled();
+    expect(mocks.playTrack.mock.calls[0][0].id).toBe('t1');
+  });
+
+  it('nothing fits anywhere: the local hits still play rather than nothing', async () => {
+    mocks.runLocalLiveSearch.mockResolvedValue({ artists: [], albums: [], songs: [song('l1', 'Something')] });
+    expect(await playSiriRequest({ mediaName: 'Unknown Words', mediaType: 0 })).toBe(true);
+    expect(mocks.runNetworkLiveSearch).toHaveBeenCalled();
+    expect(mocks.playTrack.mock.calls[0][0].id).toBe('l1');
+  });
+
   it('an album named like a song by the same artist starts the album at its first track', async () => {
     mocks.runLocalLiveSearch.mockResolvedValue({
       artists: [],

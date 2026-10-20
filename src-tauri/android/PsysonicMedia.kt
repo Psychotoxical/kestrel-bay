@@ -13,6 +13,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
+import android.support.v4.media.MediaBrowserCompat
+import android.support.v4.media.MediaDescriptionCompat
 import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -21,6 +23,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
+import android.provider.MediaStore
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
@@ -65,6 +68,69 @@ object PsysonicMedia {
 
   fun sessionToken(): MediaSessionCompat.Token? = session?.sessionToken
 
+  /** Android Auto may start before the app: the session exists from the first ask on. */
+  fun sessionTokenFor(ctx: Context): MediaSessionCompat.Token {
+    if (appContext == null) appContext = ctx.applicationContext
+    return ensureSession(ctx.applicationContext).sessionToken
+  }
+
+  fun webReady(): Boolean = webView != null
+
+  // ── Android Auto lists: asked of the web view (androidAuto.ts), answered by carListResult.
+  private var nextCarRequest = 1
+  private val carRequests = HashMap<Int, (List<MediaBrowserCompat.MediaItem>) -> Unit>()
+
+  fun requestCarList(node: String, reply: (List<MediaBrowserCompat.MediaItem>) -> Unit) {
+    val view = webView ?: return reply(emptyList())
+    val id = nextCarRequest++
+    carRequests[id] = reply
+    view.evaluateJavascript(
+      "window.__psyAutoList && window.__psyAutoList($id, ${JSONObject.quote(node)})",
+      null,
+    )
+    // No answer (web view busy or gone): an empty list beats a car screen that spins.
+    main.postDelayed({ carRequests.remove(id)?.invoke(emptyList()) }, 10_000)
+  }
+
+  private fun carListResult(id: Int, json: String) {
+    val reply = carRequests.remove(id) ?: return
+    val items = ArrayList<MediaBrowserCompat.MediaItem>()
+    val sections = JSONObject(json).optJSONArray("sections")
+    for (s in 0 until (sections?.length() ?: 0)) {
+      val section = sections!!.getJSONObject(s)
+      val header = section.optString("header").ifEmpty { null }
+      val rows = section.optJSONArray("items") ?: continue
+      for (r in 0 until rows.length()) {
+        val row = rows.getJSONObject(r)
+        val description = MediaDescriptionCompat.Builder()
+          .setMediaId(row.getString("node"))
+          .setTitle(row.optString("title"))
+          .setSubtitle(row.optString("subtitle").ifEmpty { null })
+        row.optString("image").ifEmpty { null }?.let { path -> carIcon(path)?.let(description::setIconBitmap) }
+        header?.let { description.setExtras(android.os.Bundle().apply { putString(GROUP_TITLE, it) }) }
+        val flags = if (row.optBoolean("browse")) {
+          MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
+        } else {
+          MediaBrowserCompat.MediaItem.FLAG_PLAYABLE
+        }
+        items += MediaBrowserCompat.MediaItem(description.build(), flags)
+      }
+    }
+    reply(items)
+  }
+
+  /** Android Auto groups rows under this header (`MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_GROUP_TITLE`). */
+  private const val GROUP_TITLE = "android.media.browse.CONTENT_STYLE_GROUP_TITLE_HINT"
+
+  /** A cover from the app's cache, scaled down for a car list row. */
+  private fun carIcon(path: String): Bitmap? = runCatching {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(path, bounds)
+    var sample = 1
+    while (bounds.outWidth / (sample * 2) >= 256) sample *= 2
+    BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })
+  }.getOrNull()
+
   /**
    * The activity went to the background (screen off, another app). Wry pauses the web view
    * with it, which stops the page's timers: the queue would stop at the end of a track that
@@ -72,8 +138,27 @@ object PsysonicMedia {
    */
   fun onActivityPaused() {
     activityPaused = true
-    if (playing) webView?.onResume()
+    if (keepWebAwake()) webView?.onResume()
   }
+
+  /**
+   * Android Auto is browsing (PsysonicAutoService is bound). The phone shows the car screen,
+   * so Psysonic sits in the background with its web view paused, and a list that needs the
+   * page's timers (an album, a playlist) would never answer. While the car is there the web
+   * view stays running, as it does while music plays.
+   */
+  private var carConnected = false
+
+  fun onCarConnected(connected: Boolean) {
+    main.post {
+      carConnected = connected
+      if (activityPaused) {
+        if (keepWebAwake()) webView?.onResume() else webView?.onPause()
+      }
+    }
+  }
+
+  private fun keepWebAwake() = playing || carConnected
 
   fun onActivityResumed() {
     activityPaused = false
@@ -98,10 +183,42 @@ object PsysonicMedia {
         override fun onSkipToPrevious() = command("prev")
         override fun onStop() = command("pause")
         override fun onSeekTo(pos: Long) = command("seek", pos / 1000.0)
+        // Android Auto: a list row, or "Play … on Psysonic" by voice.
+        override fun onPlayFromMediaId(mediaId: String?, extras: android.os.Bundle?) {
+          mediaId?.let { node -> js("window.__psyAutoPlay && window.__psyAutoPlay(${JSONObject.quote(node)})") }
+        }
+        // "Play … on Psysonic": the spoken text, plus what the assistant made of it (a song,
+        // album, artist or playlist and its fields), handed on like a Siri request.
+        override fun onPlayFromSearch(query: String?, extras: android.os.Bundle?) {
+          val request = JSONObject()
+            .put("query", query ?: "")
+            .put("focus", extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS) ?: "")
+            .put("title", extras?.getString(MediaStore.EXTRA_MEDIA_TITLE) ?: "")
+            .put("artist", extras?.getString(MediaStore.EXTRA_MEDIA_ARTIST) ?: "")
+            .put("album", extras?.getString(MediaStore.EXTRA_MEDIA_ALBUM) ?: "")
+            .put("playlist", extras?.getString(MediaStore.EXTRA_MEDIA_PLAYLIST) ?: "")
+          js("window.__psyAutoSearch && window.__psyAutoSearch($request)")
+        }
       })
+      // Android Auto only offers the app once the session states what it can do.
+      s.setPlaybackState(
+        PlaybackStateCompat.Builder().setActions(ACTIONS)
+          .setState(PlaybackStateCompat.STATE_NONE, 0, 0f).build(),
+      )
       s.isActive = true
       session = s
     }
+
+  private const val ACTIONS =
+    PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or
+      PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+      PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or PlaybackStateCompat.ACTION_SEEK_TO or
+      PlaybackStateCompat.ACTION_STOP or PlaybackStateCompat.ACTION_PLAY_FROM_MEDIA_ID or
+      PlaybackStateCompat.ACTION_PLAY_FROM_SEARCH
+
+  private fun js(script: String) {
+    main.post { webView?.evaluateJavascript(script, null) }
+  }
 
   private fun setMetadata(json: String) {
     val ctx = appContext ?: return
@@ -130,19 +247,14 @@ object PsysonicMedia {
     val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
     s.setPlaybackState(
       PlaybackStateCompat.Builder()
-        .setActions(
-          PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or
-            PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-            PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or PlaybackStateCompat.ACTION_SEEK_TO or
-            PlaybackStateCompat.ACTION_STOP,
-        )
+        .setActions(ACTIONS)
         .setState(state, positionMs.coerceAtLeast(0), if (isPlaying) 1f else 0f, SystemClock.elapsedRealtime())
         .build(),
     )
     if (isPlaying == playing && PsysonicMediaService.running) return
     playing = isPlaying
     if (activityPaused) {
-      if (isPlaying) webView?.onResume() else webView?.onPause()
+      if (keepWebAwake()) webView?.onResume() else webView?.onPause()
     }
     if (isPlaying) {
       main.removeCallbacks(releaseAfterPause)
@@ -231,6 +343,11 @@ object PsysonicMedia {
     @JavascriptInterface
     fun setPlayback(isPlaying: Boolean, positionSecs: Double) {
       main.post { runCatching { PsysonicMedia.setPlayback(isPlaying, (positionSecs * 1000).toLong()) } }
+    }
+
+    @JavascriptInterface
+    fun carListResult(id: Int, json: String) {
+      main.post { runCatching { PsysonicMedia.carListResult(id, json) } }
     }
   }
 }

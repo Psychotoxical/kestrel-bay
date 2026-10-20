@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ⚠️ Android territory. Tells Android Auto that Psysonic is a media app
+     (PsysonicAutoService). Copied into the generated res/ by patch-gen.mjs. -->
+<automotiveApp>
+    <uses name="media" />
+</automotiveApp>

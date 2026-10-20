@@ -3,8 +3,9 @@
 // Android app needs beyond Tauri's template is added here. Every step is idempotent.
 //
 // - every `*.kt` in this folder into the app's package (our MainActivity replaces the
-//   template's; PsysonicMedia + PsysonicMediaService: lock screen and background play);
-// - the manifest entries those need (foreground service, permissions);
+//   template's; PsysonicMedia + PsysonicMediaService: lock screen and background play;
+//   PsysonicAutoService: Android Auto), and everything under `res/` into the app's res/;
+// - the manifest entries those need (services, Android Auto, permissions);
 // - Gradle dependencies: `androidx.media` (MediaSession, media notification) and the
 //   Kotlin half of `rustls-platform-verifier` (reqwest checks certificates through
 //   Android's trust store). The verifier ships it as a local Maven repository; its path
@@ -29,11 +30,14 @@ for (const file of readdirSync(here).filter(f => f.endsWith('.kt'))) {
   copyFileSync(join(here, file), join(packageDir, file));
 }
 
-// ── Drawables (`ic_*.xml` vector icons, e.g. the notification's status bar icon)
-const drawableDir = join(appDir, 'src', 'main', 'res', 'drawable');
-mkdirSync(drawableDir, { recursive: true });
-for (const file of readdirSync(here).filter(f => /^ic_.*\.xml$/.test(f))) {
-  copyFileSync(join(here, file), join(drawableDir, file));
+// ── Resources: everything under ./res (drawables, xml) into the app's res/
+const resSource = join(here, 'res');
+const resTarget = join(appDir, 'src', 'main', 'res');
+for (const folder of readdirSync(resSource)) {
+  mkdirSync(join(resTarget, folder), { recursive: true });
+  for (const file of readdirSync(join(resSource, folder))) {
+    copyFileSync(join(resSource, folder, file), join(resTarget, folder, file));
+  }
 }
 
 // ── Manifest: each permission and the service only once
@@ -65,6 +69,22 @@ if (!manifest.includes(serviceMarker)) {
             android:foregroundServiceType="mediaPlayback" />
 $1`);
   console.log('[patch-gen] manifest: media service');
+}
+const autoMarker = '<!-- psysonic: android auto -->';
+if (!manifest.includes(autoMarker)) {
+  manifest = manifest.replace(appClose, `        ${autoMarker}
+        <service
+            android:name=".PsysonicAutoService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+$1`);
+  console.log('[patch-gen] manifest: android auto');
 }
 writeFileSync(manifestFile, manifest);
 

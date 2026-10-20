@@ -10,7 +10,7 @@ const content = vi.hoisted(() => ({
   carPlayCommand: vi.fn(),
   carPlayState: vi.fn(() => ({ shuffle: false, repeat: 'off', starred: false, hasTrack: true, upNextTitle: 'Up next', albumTitle: 'Record' })),
 }));
-vi.mock('@/features/mobileShell/ios/carplayContent', () => content);
+vi.mock('@/features/mobileShell/car/carplayContent', () => content);
 
 const emitMock = vi.mocked(emit);
 

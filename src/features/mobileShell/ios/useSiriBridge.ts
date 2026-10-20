@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
-import { playSiriRequest, siriArtistVocabulary, type SiriPlayRequest } from '@/features/mobileShell/ios/siriPlay';
+import { playSiriRequest, siriArtistVocabulary, type SiriPlayRequest } from '@/features/mobileShell/car/siriPlay';
 
 /**
  * iOS Siri: the native side (`src-tauri/src/ios/siri.rs`) hands over what Siri understood
