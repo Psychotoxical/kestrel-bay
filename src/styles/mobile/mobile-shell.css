@@ -1157,7 +1157,9 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   display: flex;
   flex-direction: column;
   border-radius: 28px 28px 0 0;
-  background: var(--bg-sidebar);
+  /* Glass themes give the sidebar a see-through colour; the opaque app colour underneath
+     keeps the page behind the sheet from showing through. */
+  background: linear-gradient(var(--bg-sidebar), var(--bg-sidebar)), var(--bg-app);
   color: var(--text-primary);
   padding-bottom: env(safe-area-inset-bottom, 0px);
   box-sizing: border-box;
