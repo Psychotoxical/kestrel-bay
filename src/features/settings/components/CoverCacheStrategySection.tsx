@@ -17,6 +17,7 @@ import { clearDiskSrcCacheForServer } from '@/cover/diskSrcCache';
 import { serverListDisplayLabel } from '@/lib/server/serverDisplayName';
 import { serverIndexKeyForProfile } from '@/lib/server/serverIndexKey';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { useMobileActionSheetStore } from '@/features/mobileShell/store/mobileActionSheetStore';
 import { showToast } from '@/lib/dom/toast';
 import { formatBytes } from '@/lib/format/formatBytes';
 import { clearImageCache, getImageCacheSize } from '@/cover';
@@ -212,9 +213,9 @@ export default function CoverCacheStrategySection() {
     }
   };
 
-  const handleClearConfirm = async () => {
-    if (!clearTarget) return;
-    if (clearTarget.kind === 'image') {
+  const handleClearConfirm = async (target: ClearTarget | null = clearTarget) => {
+    if (!target) return;
+    if (target.kind === 'image') {
       setClearingKey('image');
       try {
         await clearImageCache();
@@ -225,12 +226,12 @@ export default function CoverCacheStrategySection() {
       }
       return;
     }
-    setClearingKey(clearTarget.indexKey);
+    setClearingKey(target.indexKey);
     try {
-      await coverCacheClearServer(clearTarget.indexKey);
-      clearDiskSrcCacheForServer(clearTarget.indexKey);
-      await refreshRow(clearTarget.serverId, clearTarget.indexKey);
-      if (clearTarget.serverId === activeServerId) {
+      await coverCacheClearServer(target.indexKey);
+      clearDiskSrcCacheForServer(target.indexKey);
+      await refreshRow(target.serverId, target.indexKey);
+      if (target.serverId === activeServerId) {
         wakeLibraryCoverBackfill();
       }
       showToast(t('settings.coverCacheStrategyClearSuccess'), 4000, 'success');
@@ -241,6 +242,117 @@ export default function CoverCacheStrategySection() {
       setClearTarget(null);
     }
   };
+
+  const touchCacheValue = (row: ServerRowState | undefined, strategy: CoverCacheStrategy) => {
+    if (!row) return '…';
+    if (strategy !== 'aggressive' || row.total <= 0) return formatBytes(row.bytes);
+    const percent = Math.max(0, Math.min(100, Math.round((row.done / row.total) * 100)));
+    return `${formatBytes(row.bytes)} · ${percent} %`;
+  };
+
+  if (IS_MOBILE_SHELL) {
+    const askClear = async (target: ClearTarget) => {
+      const image = target.kind === 'image';
+      const choice = await useMobileActionSheetStore.getState().request({
+        title: image ? t('settings.cacheClearBtn') : t('settings.coverCacheStrategyClearTitle'),
+        message: image
+          ? t('settings.cacheClearWarning')
+          : t('settings.coverCacheStrategyClearDesc', { server: target.label }),
+        actions: [
+          { id: 'clear', label: image ? t('settings.cacheClearConfirm') : t('settings.coverCacheStrategyClearConfirm'), danger: true },
+          { id: 'cancel', label: image ? t('settings.cacheClearCancel') : t('settings.coverCacheStrategyClearCancel') },
+        ],
+      });
+      if (choice !== 'clear') return;
+      await handleClearConfirm(target);
+    };
+
+    return (
+      <SettingsSubSection title={t('settings.coverCacheStrategyTitle')} icon={<Image size={16} />}>
+        <div className="touch-cache">
+          {servers.map(server => {
+            const strategy = getStrategyForServer(server.id);
+            const key = serverIndexKeyForProfile(server);
+            const label = serverListDisplayLabel(server, servers);
+            return (
+              <div key={server.id} className="touch-cache__block">
+                <div className="touch-cache__title">{label}</div>
+                <div className="mobile-list-group">
+                  <div className="mobile-list-row touch-cache__stack">
+                    <div className="touch-cache__seg" role="radiogroup" aria-label={t('settings.coverCacheStrategyLabel')}>
+                      {COVER_CACHE_STRATEGIES.map(s => (
+                        <button
+                          key={s}
+                          type="button"
+                          role="radio"
+                          aria-checked={strategy === s}
+                          onClick={() => handleStrategyChange(server.id, s)}
+                        >
+                          {strategyLabel(s)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="mobile-list-row">
+                    <span className="mobile-list-row__label">{t('settings.touchCacheSize')}</span>
+                    <span className="mobile-list-row__detail">{touchCacheValue(rowState[key], strategy)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="mobile-list-row touch-cache__danger"
+                    disabled={clearingKey === key}
+                    onClick={() => void askClear({ kind: 'disk', serverId: server.id, indexKey: key, label })}
+                  >
+                    {t('settings.coverCacheStrategyClearAction')}
+                  </button>
+                </div>
+                <p className="touch-cache__footer">
+                  {strategy === 'aggressive'
+                    ? t('settings.coverCacheStrategyAggressiveDesc')
+                    : t('settings.coverCacheStrategyLazyDesc')}
+                </p>
+              </div>
+            );
+          })}
+          {removedServerKeys.map(key => (
+            <div key={`removed-${key}`} className="touch-cache__block">
+              <div className="touch-cache__title">{key} ({t('settings.coverCacheStrategyServerRemoved')})</div>
+              <div className="mobile-list-group">
+                <button
+                  type="button"
+                  className="mobile-list-row touch-cache__danger"
+                  disabled={clearingKey === key}
+                  onClick={() => void askClear({ kind: 'disk', serverId: key, indexKey: key, label: key })}
+                >
+                  {t('settings.coverCacheStrategyClearAction')}
+                </button>
+              </div>
+            </div>
+          ))}
+          {/* The web view's own image store is nearly always empty on a phone; shown only when it holds something. */}
+          {imageCacheBytes !== null && imageCacheBytes > 0 && (
+            <div className="touch-cache__block">
+              <div className="touch-cache__title">{t('settings.imageCacheSubTitle')}</div>
+              <div className="mobile-list-group">
+                <div className="mobile-list-row">
+                  <span className="mobile-list-row__label">{t('settings.touchCacheSize')}</span>
+                  <span className="mobile-list-row__detail">{formatBytes(imageCacheBytes)}</span>
+                </div>
+                <button
+                  type="button"
+                  className="mobile-list-row touch-cache__danger"
+                  disabled={clearingKey === 'image'}
+                  onClick={() => void askClear({ kind: 'image' })}
+                >
+                  {t('settings.cacheClearBtn')}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </SettingsSubSection>
+    );
+  }
 
   return (
     <SettingsSubSection title={t('settings.coverCacheStrategyTitle')} icon={<Image size={16} />}>

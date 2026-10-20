@@ -179,6 +179,8 @@ export const settings = {
   cacheUsedImages: 'Imagini:',
   cacheUsedOffline: 'Piese offline:',
   cacheUsedHot: 'Mărimea pe disc:',
+  touchCacheSize: 'Mărimea pe disc',
+  touchCacheTrackCount: 'Piese în memoria cache',
   hotCacheTrackCount: 'Piese în memoria cache:',
   cacheMaxLabel: 'Mărimea maximă',
   imageCacheScopeLabel: 'Domeniu',

@@ -180,6 +180,8 @@ export const settings = {
   cacheUsedImages: 'Изображения:',
   cacheUsedOffline: 'Офлайн песни:',
   cacheUsedHot: 'Размер на диска:',
+  touchCacheSize: 'Размер на диска',
+  touchCacheTrackCount: 'Песни в кеша',
   hotCacheTrackCount: 'Песни в кеша:',
   cacheMaxLabel: 'Макс. размер',
   imageCacheScopeLabel: 'Обхват',

@@ -180,6 +180,8 @@ export const settings = {
   cacheUsedImages: 'Képek:',
   cacheUsedOffline: 'Offline számok:',
   cacheUsedHot: 'Méret a lemezen:',
+  touchCacheSize: 'Méret a lemezen',
+  touchCacheTrackCount: 'Számok a gyorsítótárban',
   hotCacheTrackCount: 'Számok a gyorsítótárban:',
   cacheMaxLabel: 'Max. méret',
   imageCacheScopeLabel: 'Hatókör',

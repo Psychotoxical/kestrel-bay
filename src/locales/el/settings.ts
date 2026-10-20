@@ -180,6 +180,8 @@ export const settings = {
   cacheUsedImages: 'Εικόνες:',
   cacheUsedOffline: 'Κομμάτια εκτός σύνδεσης:',
   cacheUsedHot: 'Χώρος στο δίσκο:',
+  touchCacheSize: 'Χώρος στο δίσκο',
+  touchCacheTrackCount: 'Κομμάτια στη μνήμη cache',
   hotCacheTrackCount: 'Κομμάτια στη μνήμη cache:',
   cacheMaxLabel: 'Μέγιστος χώρος',
   imageCacheScopeLabel: 'Πεδίο δράσης',

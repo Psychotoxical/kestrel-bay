@@ -180,6 +180,8 @@ export const settings = {
 	cacheUsedImages: 'Bilder:',
   cacheUsedOffline: 'Frakoblede spor:',
   cacheUsedHot: 'Plass brukt:',
+  touchCacheSize: 'Plass brukt',
+  touchCacheTrackCount: 'Spor i buffer',
   hotCacheTrackCount: 'Spor i buffer:',
   cacheMaxLabel: 'Maks størrelse',															   
   imageCacheScopeLabel: 'Omfang',

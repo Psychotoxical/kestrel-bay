@@ -5750,3 +5750,82 @@ html[data-mobile-reordering] .playlist-reorder-hint {
   background: rgba(255, 255, 255, 0.16);
   color: #fff;
 }
+
+/* Storage settings in the touch shell: grouped lists in the style of iOS Settings. */
+.touch-cache {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.touch-cache__title {
+  margin: 0 16px 6px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.touch-cache__footer {
+  margin: 6px 16px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-muted);
+}
+
+.touch-cache .mobile-list-row__label {
+  flex: 1;
+  min-width: 0;
+}
+
+.touch-cache__stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding-block: 12px;
+}
+
+.touch-cache__stack-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.touch-cache__stack input[type='range'] {
+  width: 100%;
+}
+
+.touch-cache__seg {
+  display: flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.touch-cache__seg button {
+  flex: 1;
+  min-height: 36px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 15px;
+}
+
+.touch-cache__seg button[aria-checked='true'] {
+  background: var(--accent);
+  color: var(--text-on-accent, var(--bg-app));
+  font-weight: 600;
+}
+
+.touch-cache__danger {
+  justify-content: center;
+  color: var(--color-danger, #ff6b6b);
+  cursor: pointer;
+}
+
+.touch-cache__danger:disabled {
+  opacity: 0.5;
+}

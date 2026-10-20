@@ -180,6 +180,8 @@ export const settings = {
   cacheUsedImages: 'Grafiki:',
   cacheUsedOffline: 'Utwory offline:',
   cacheUsedHot: 'Rozmiar na dysku:',
+  touchCacheSize: 'Rozmiar na dysku',
+  touchCacheTrackCount: 'Utwory w pamięci podręcznej',
   hotCacheTrackCount: 'Utwory w pamięci podręcznej:',
   cacheMaxLabel: 'Rozmiar maksymalny',
   imageCacheScopeLabel: 'Zakres',

@@ -179,6 +179,8 @@ export const settings = {
   cacheUsedImages: 'Imágenes:',
   cacheUsedOffline: 'Pistas offline:',
   cacheUsedHot: 'Tamaño en disco:',
+  touchCacheSize: 'Tamaño en disco',
+  touchCacheTrackCount: 'Pistas en caché',
   hotCacheTrackCount: 'Pistas en caché:',
   cacheMaxLabel: 'Tamaño máx.',
   imageCacheScopeLabel: 'Alcance',

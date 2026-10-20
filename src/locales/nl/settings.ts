@@ -179,6 +179,8 @@ export const settings = {
   cacheUsedImages: 'Afbeeldingen:',
   cacheUsedOffline: 'Offline nummers:',
   cacheUsedHot: 'Schijfgebruik:',
+  touchCacheSize: 'Schijfgebruik',
+  touchCacheTrackCount: 'Nummers in cache',
   hotCacheTrackCount: 'Nummers in cache:',
   cacheMaxLabel: 'Max. grootte',
   imageCacheScopeLabel: 'Bereik',

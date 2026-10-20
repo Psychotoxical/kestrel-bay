@@ -179,6 +179,8 @@ export const settings = {
   cacheUsedImages: '图片：',
   cacheUsedOffline: '离线曲目：',
   cacheUsedHot: '占用空间：',
+  touchCacheSize: '占用空间',
+  touchCacheTrackCount: '缓存曲目数',
   hotCacheTrackCount: '缓存曲目数：',
   cacheMaxLabel: '最大容量',
   imageCacheScopeLabel: '范围',

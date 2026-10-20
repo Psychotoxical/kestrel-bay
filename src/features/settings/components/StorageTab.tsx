@@ -73,6 +73,17 @@ export function StorageTab() {
     }
   };
 
+  const setHotCacheEnabled = async (enabled: boolean) => {
+    if (!enabled) {
+      await clearHotCacheDisk(mediaDir);
+      setHotCacheBytes(0);
+      auth.setHotCacheEnabled(false);
+    } else {
+      auth.setHotCacheEnabled(true);
+      refreshHotCacheSize();
+    }
+  };
+
   return (
     <>
       <TouchOnly>
@@ -124,72 +135,133 @@ export function StorageTab() {
 
       <CoverCacheStrategySection />
 
-      <SettingsSubSection
-        title={t('settings.nextTrackBufferingTitle')}
-        icon={<Download size={16} />}
-      >
-        <div className="settings-card">
-          <SettingsGroup>
-            <SettingsToggle
-              label={t('settings.hotCacheTitle')}
-              desc={t('settings.hotCacheDisclaimer')}
-              ariaLabel={t('settings.hotCacheEnabled')}
-              id="hot-cache-enabled-toggle"
-              checked={auth.hotCacheEnabled}
-              onChange={async enabled => {
-                if (!enabled) {
-                  await clearHotCacheDisk(mediaDir);
-                  setHotCacheBytes(0);
-                  auth.setHotCacheEnabled(false);
-                } else {
-                  auth.setHotCacheEnabled(true);
-                  refreshHotCacheSize();
-                }
-              }}
-            />
+      <DesktopOnly>
+        <SettingsSubSection
+          title={t('settings.nextTrackBufferingTitle')}
+          icon={<Download size={16} />}
+        >
+          <div className="settings-card">
+            <SettingsGroup>
+              <SettingsToggle
+                label={t('settings.hotCacheTitle')}
+                desc={t('settings.hotCacheDisclaimer')}
+                ariaLabel={t('settings.hotCacheEnabled')}
+                id="hot-cache-enabled-toggle"
+                checked={auth.hotCacheEnabled}
+                onChange={setHotCacheEnabled}
+              />
 
-            {auth.hotCacheEnabled && (
-              <SettingsSubCard style={{ marginTop: '0.85rem' }}>
-                <SettingsField>
-                  <div style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    <div style={{ color: 'var(--text-secondary)' }}>
-                      <span style={{ color: 'var(--text-muted)', marginRight: 4 }}>{t('settings.cacheUsedHot')}</span>
-                      {hotCacheBytes !== null ? formatBytes(hotCacheBytes) : '…'}
+              {auth.hotCacheEnabled && (
+                <SettingsSubCard style={{ marginTop: '0.85rem' }}>
+                  <SettingsField>
+                    <div style={{ fontSize: 12, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <div style={{ color: 'var(--text-secondary)' }}>
+                        <span style={{ color: 'var(--text-muted)', marginRight: 4 }}>{t('settings.cacheUsedHot')}</span>
+                        {hotCacheBytes !== null ? formatBytes(hotCacheBytes) : '…'}
+                      </div>
+                      <div style={{ color: 'var(--text-secondary)' }}>
+                        <span style={{ color: 'var(--text-muted)', marginRight: 4 }}>{t('settings.hotCacheTrackCount')}</span>
+                        {hotCacheTrackCount}
+                      </div>
                     </div>
-                    <div style={{ color: 'var(--text-secondary)' }}>
-                      <span style={{ color: 'var(--text-muted)', marginRight: 4 }}>{t('settings.hotCacheTrackCount')}</span>
-                      {hotCacheTrackCount}
+                  </SettingsField>
+                  <SettingsField label={t('settings.hotCacheMaxMb')} row>
+                    <input type="range" min={32} max={20000} step={32} value={snapHotCacheMb(auth.hotCacheMaxMb)} onChange={e => auth.setHotCacheMaxMb(parseInt(e.target.value, 10))} id="hot-cache-max-mb-slider" />
+                    <SettingsValue>{snapHotCacheMb(auth.hotCacheMaxMb)} MB</SettingsValue>
+                  </SettingsField>
+                  <SettingsField label={t('settings.hotCacheDebounce')} row>
+                    <input type="range" min={0} max={600} step={1} value={Math.min(600, Math.max(0, auth.hotCacheDebounceSec))} onChange={e => auth.setHotCacheDebounceSec(parseInt(e.target.value, 10))} id="hot-cache-debounce-slider" />
+                    <SettingsValue>
+                      {Math.min(600, Math.max(0, auth.hotCacheDebounceSec)) === 0
+                        ? t('settings.hotCacheDebounceImmediate')
+                        : t('settings.hotCacheDebounceSeconds', { n: Math.min(600, Math.max(0, auth.hotCacheDebounceSec)) })}
+                    </SettingsValue>
+                  </SettingsField>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ fontSize: 13, alignSelf: 'flex-start' }}
+                    onClick={async () => {
+                      await clearHotCacheDisk(mediaDir);
+                      refreshHotCacheSize();
+                    }}
+                  >
+                    <Trash2 size={14} /> {t('settings.hotCacheClearBtn')}
+                  </button>
+                </SettingsSubCard>
+              )}
+            </SettingsGroup>
+          </div>
+        </SettingsSubSection>
+      </DesktopOnly>
+
+      <TouchOnly>
+        <SettingsSubSection
+          title={t('settings.nextTrackBufferingTitle')}
+          icon={<Download size={16} />}
+        >
+          <div className="touch-cache">
+            <div className="touch-cache__block">
+              <div className="mobile-list-group">
+                <label className="mobile-list-row" htmlFor="hot-cache-enabled-switch">
+                  <span className="mobile-list-row__label">{t('settings.hotCacheTitle')}</span>
+                  <span className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      id="hot-cache-enabled-switch"
+                      aria-label={t('settings.hotCacheEnabled')}
+                      checked={auth.hotCacheEnabled}
+                      onChange={e => void setHotCacheEnabled(e.target.checked)}
+                    />
+                    <span className="toggle-track" />
+                  </span>
+                </label>
+                {auth.hotCacheEnabled && (
+                  <>
+                    <div className="mobile-list-row">
+                      <span className="mobile-list-row__label">{t('settings.touchCacheSize')}</span>
+                      <span className="mobile-list-row__detail">{hotCacheBytes !== null ? formatBytes(hotCacheBytes) : '…'}</span>
                     </div>
-                  </div>
-                </SettingsField>
-                <SettingsField label={t('settings.hotCacheMaxMb')} row>
-                  <input type="range" min={32} max={20000} step={32} value={snapHotCacheMb(auth.hotCacheMaxMb)} onChange={e => auth.setHotCacheMaxMb(parseInt(e.target.value, 10))} id="hot-cache-max-mb-slider" />
-                  <SettingsValue>{snapHotCacheMb(auth.hotCacheMaxMb)} MB</SettingsValue>
-                </SettingsField>
-                <SettingsField label={t('settings.hotCacheDebounce')} row>
-                  <input type="range" min={0} max={600} step={1} value={Math.min(600, Math.max(0, auth.hotCacheDebounceSec))} onChange={e => auth.setHotCacheDebounceSec(parseInt(e.target.value, 10))} id="hot-cache-debounce-slider" />
-                  <SettingsValue>
-                    {Math.min(600, Math.max(0, auth.hotCacheDebounceSec)) === 0
-                      ? t('settings.hotCacheDebounceImmediate')
-                      : t('settings.hotCacheDebounceSeconds', { n: Math.min(600, Math.max(0, auth.hotCacheDebounceSec)) })}
-                  </SettingsValue>
-                </SettingsField>
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  style={{ fontSize: 13, alignSelf: 'flex-start' }}
-                  onClick={async () => {
-                    await clearHotCacheDisk(mediaDir);
-                    refreshHotCacheSize();
-                  }}
-                >
-                  <Trash2 size={14} /> {t('settings.hotCacheClearBtn')}
-                </button>
-              </SettingsSubCard>
-            )}
-          </SettingsGroup>
-        </div>
-      </SettingsSubSection>
+                    <div className="mobile-list-row">
+                      <span className="mobile-list-row__label">{t('settings.touchCacheTrackCount')}</span>
+                      <span className="mobile-list-row__detail">{hotCacheTrackCount}</span>
+                    </div>
+                    <div className="mobile-list-row touch-cache__stack">
+                      <div className="touch-cache__stack-top">
+                        <span>{t('settings.hotCacheMaxMb')}</span>
+                        <span className="mobile-list-row__detail">{snapHotCacheMb(auth.hotCacheMaxMb)} MB</span>
+                      </div>
+                      <input type="range" min={32} max={20000} step={32} value={snapHotCacheMb(auth.hotCacheMaxMb)} onChange={e => auth.setHotCacheMaxMb(parseInt(e.target.value, 10))} aria-label={t('settings.hotCacheMaxMb')} />
+                    </div>
+                    <div className="mobile-list-row touch-cache__stack">
+                      <div className="touch-cache__stack-top">
+                        <span>{t('settings.hotCacheDebounce')}</span>
+                        <span className="mobile-list-row__detail">
+                          {Math.min(600, Math.max(0, auth.hotCacheDebounceSec)) === 0
+                            ? t('settings.hotCacheDebounceImmediate')
+                            : t('settings.hotCacheDebounceSeconds', { n: Math.min(600, Math.max(0, auth.hotCacheDebounceSec)) })}
+                        </span>
+                      </div>
+                      <input type="range" min={0} max={600} step={1} value={Math.min(600, Math.max(0, auth.hotCacheDebounceSec))} onChange={e => auth.setHotCacheDebounceSec(parseInt(e.target.value, 10))} aria-label={t('settings.hotCacheDebounce')} />
+                    </div>
+                    <button
+                      type="button"
+                      className="mobile-list-row touch-cache__danger"
+                      onClick={async () => {
+                        await clearHotCacheDisk(mediaDir);
+                        refreshHotCacheSize();
+                      }}
+                    >
+                      {t('settings.hotCacheClearBtn')}
+                    </button>
+                  </>
+                )}
+              </div>
+              <p className="touch-cache__footer">{t('settings.hotCacheDisclaimer')}</p>
+            </div>
+          </div>
+        </SettingsSubSection>
+      </TouchOnly>
 
       <DesktopOnly>
         <SettingsSubSection
