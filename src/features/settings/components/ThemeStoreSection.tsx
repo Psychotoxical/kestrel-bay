@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Check, ChevronDown, ChevronLeft, ChevronRight, Download, RefreshCw, Trash2, WifiOff } from 'lucide-react';
 import { openExternalUrl as openUrl } from '@/lib/api/externalLink';
 import CoverLightbox from '@/ui/CoverLightbox';
+import MobileThemePreview from '@/features/mobileShell/components/MobileThemePreview';
 import { useThemeAnimationRisk } from '@/features/settings/hooks/useThemeAnimationRisk';
 import { AnimatedThemeBadge } from '@/features/settings/components/AnimatedThemeBadge';
 import { ThemeSpotlightCard } from '@/features/settings/components/ThemeSpotlightCard';
@@ -594,8 +595,9 @@ export function ThemeStoreSection() {
         </div>
       )}
 
-      {lightbox && (
-        <CoverLightbox src={lightbox.src} alt={lightbox.name} onClose={() => setLightbox(null)} />
+      {lightbox && (IS_MOBILE_SHELL
+        ? <MobileThemePreview src={lightbox.src} alt={lightbox.name} onClose={() => setLightbox(null)} />
+        : <CoverLightbox src={lightbox.src} alt={lightbox.name} onClose={() => setLightbox(null)} />
       )}
     </div>
   );

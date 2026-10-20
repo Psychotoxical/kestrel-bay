@@ -5707,3 +5707,46 @@ html[data-mobile-reordering] .mobile-album__buttons,
 html[data-mobile-reordering] .playlist-reorder-hint {
   display: none;
 }
+
+/* Theme preview: wide desktop shots lie on their side to fill the upright screen. */
+.mobile-theme-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 100002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.92);
+  animation: mobile-sheet-fade 0.2s ease both;
+}
+
+.mobile-theme-preview__img {
+  max-width: calc(100vw - 24px);
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px);
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.mobile-theme-preview__img--turned {
+  max-width: none;
+  max-height: none;
+  width: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 88px);
+  height: calc(100vw - 24px);
+  flex: none;
+  transform: rotate(90deg);
+}
+
+.mobile-theme-preview__close {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + 12px);
+  right: calc(env(safe-area-inset-right, 0px) + 12px);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
