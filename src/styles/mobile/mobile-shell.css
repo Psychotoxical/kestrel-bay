@@ -1425,6 +1425,8 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   overflow: hidden;
   background: var(--bg-card);
   box-shadow: 0 24px 50px rgba(0, 0, 0, 0.5);
+  /* Glides back after a sideways swipe (MobilePlayer); the finger drags it without. */
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
 .mobile-player__cover img {

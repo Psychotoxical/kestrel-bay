@@ -42,6 +42,8 @@ const SEEK_SLOT_PX = 32;
 const SWIPE_START_PX = 12;
 /** Swipe distance that closes the player on release. */
 const SWIPE_CLOSE_PX = 120;
+/** Sideways swipe across the cover that skips on release (left: next, right: previous). */
+const SWIPE_SKIP_PX = 70;
 
 function usePlaybackProgress() {
   return useSyncExternalStore(
@@ -182,9 +184,13 @@ export default function MobilePlayer() {
   const playSlotRef = useRef<HTMLSpanElement>(null);
   const moreWasOpenRef = useRef(false);
   const [sheet, setSheet] = useState<'queue' | 'lyrics' | 'audio' | null>(null);
-  // Swipe down anywhere (outside the seek bar and chip row) closes the player.
-  const swipeRef = useRef<{ x: number; y: number; active: boolean; dy: number } | null>(null);
+  // Swipe down anywhere (outside the seek bar and chip row) closes the player; sideways
+  // across the cover skips, as in most players.
+  const swipeRef = useRef<{
+    x: number; y: number; axis: 'down' | 'side' | null; onCover: boolean; dy: number; dx: number;
+  } | null>(null);
   const [swipeY, setSwipeY] = useState(0);
+  const [coverX, setCoverX] = useState(0);
 
   const coverRef = usePlaybackTrackCoverRef(currentTrack ?? undefined);
   const { src, cacheKey } = usePlaybackCoverArt(coverRef, 800, {
@@ -232,7 +238,8 @@ export default function MobilePlayer() {
     if (!e.currentTarget.contains(target)) return;
     if (target.closest('[role="slider"], input, .mobile-chips')) return;
     const touch = e.touches[0];
-    swipeRef.current = { x: touch.clientX, y: touch.clientY, active: false, dy: 0 };
+    const onCover = !!target.closest('.mobile-player__cover') && !currentRadio && !guestFollowsHost;
+    swipeRef.current = { x: touch.clientX, y: touch.clientY, axis: null, onCover, dy: 0, dx: 0 };
   };
   const onTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
     const swipe = swipeRef.current;
@@ -240,24 +247,33 @@ export default function MobilePlayer() {
     const touch = e.touches[0];
     const dy = touch.clientY - swipe.y;
     const dx = touch.clientX - swipe.x;
-    if (!swipe.active) {
-      if (dy > SWIPE_START_PX && dy > Math.abs(dx)) swipe.active = true;
+    if (!swipe.axis) {
+      if (dy > SWIPE_START_PX && dy > Math.abs(dx)) swipe.axis = 'down';
+      else if (swipe.onCover && Math.abs(dx) > SWIPE_START_PX && Math.abs(dx) > Math.abs(dy)) swipe.axis = 'side';
       else if (Math.abs(dx) > SWIPE_START_PX || dy < -SWIPE_START_PX) {
         swipeRef.current = null;
         return;
       }
     }
-    if (swipe.active) {
+    if (swipe.axis === 'down') {
       swipe.dy = Math.max(0, dy);
       setSwipeY(swipe.dy);
+    } else if (swipe.axis === 'side') {
+      swipe.dx = dx;
+      setCoverX(dx);
     }
   };
   const onTouchEnd = () => {
     const swipe = swipeRef.current;
     swipeRef.current = null;
     // The ref, not state: the last move may not have rendered yet.
-    if (swipe?.active && swipe.dy > SWIPE_CLOSE_PX) close();
+    if (swipe?.axis === 'down' && swipe.dy > SWIPE_CLOSE_PX) close();
     else setSwipeY(0);
+    if (swipe?.axis === 'side') {
+      if (swipe.dx <= -SWIPE_SKIP_PX) next();
+      else if (swipe.dx >= SWIPE_SKIP_PX) previous();
+    }
+    setCoverX(0);
   };
 
   return (
@@ -284,7 +300,10 @@ export default function MobilePlayer() {
       ) : (
         <>
           <div className="mobile-player__cover-area">
-            <div className="mobile-player__cover">
+            <div
+              className="mobile-player__cover"
+              style={coverX !== 0 ? { transform: `translateX(${coverX}px)`, opacity: Math.max(0.4, 1 - Math.abs(coverX) / 400), transition: 'none' } : undefined}
+            >
               {!currentRadio && cover
                 ? <img src={cover} alt="" />
                 : <span className="mobile-player__cover-fallback">

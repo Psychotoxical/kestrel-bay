@@ -34,6 +34,44 @@ describe('MobilePlayer', () => {
     expect(screen.getByTestId('location')).toHaveTextContent(/^\/$/);
   });
 
+  describe('swiping sideways across the cover', () => {
+    const three = () => [
+      makeTrack({ id: 'a', title: 'One', duration: 200 }),
+      makeTrack({ id: 'b', title: 'Two', duration: 200 }),
+      makeTrack({ id: 'c', title: 'Three', duration: 200 }),
+    ];
+    const current = () => usePlayerStore.getState().currentTrack?.id;
+    const cover = (container: HTMLElement) => container.querySelector('.mobile-player__cover') as HTMLElement;
+
+    it('to the left plays the next song, to the right the previous one', () => {
+      seedQueue(three(), { index: 1 });
+      const { container } = renderPlayer();
+      act(() => { swipe(cover(container), { x: 300, y: 300 }, { x: 150, y: 310 }); });
+      expect(current()).toBe('c');
+      act(() => { swipe(cover(container), { x: 150, y: 300 }, { x: 300, y: 305 }); });
+      expect(current()).toBe('b');
+      expect(screen.getByTestId('location')).toHaveTextContent('/now-playing');
+    });
+
+    it('a short swipe, or one beside the cover, keeps the song', () => {
+      seedQueue(three(), { index: 1 });
+      const { container } = renderPlayer();
+      act(() => { swipe(cover(container), { x: 300, y: 300 }, { x: 260, y: 300 }); });
+      expect(current()).toBe('b');
+      const meta = container.querySelector('.mobile-player__meta') as HTMLElement;
+      act(() => { swipe(meta, { x: 300, y: 300 }, { x: 100, y: 300 }); });
+      expect(current()).toBe('b');
+    });
+
+    it('an Orbit guest cannot skip by swiping either', () => {
+      useOrbitStore.setState({ role: 'guest', phase: 'active' });
+      seedQueue(three(), { index: 1 });
+      const { container } = renderPlayer();
+      act(() => { swipe(cover(container), { x: 300, y: 300 }, { x: 100, y: 300 }); });
+      expect(current()).toBe('b');
+    });
+  });
+
   it('an Orbit guest cannot skip and is told why; the host can', () => {
     useOrbitStore.setState({ role: 'guest', phase: 'active' });
     const { unmount } = renderPlayer();
