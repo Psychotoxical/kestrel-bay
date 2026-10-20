@@ -22,6 +22,7 @@ import {
 } from '@/features/offline';
 import ContextMenuItems from '@/features/contextMenu/components/ContextMenuItems';
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { safeAreaInsetBottom } from '@/lib/dom/safeAreaInset';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 
 /** Touch shell, menu above its anchor: gap to the anchor and the lowest the menu may reach up to (status bar). */
@@ -135,7 +136,8 @@ export default function ContextMenu() {
     if (contextMenu.isOpen && menuRef.current) {
       const rect = menuRef.current.getBoundingClientRect();
       const winW = window.innerWidth;
-      const winH = window.innerHeight;
+      // Touch shell: end above the home indicator / Android's navigation bar.
+      const winH = window.innerHeight - (IS_MOBILE_SHELL ? safeAreaInsetBottom() : 0);
       let finalX = contextMenu.x;
       let finalY = contextMenu.y;
       if (finalX + rect.width > winW) finalX = winW - rect.width - 10;

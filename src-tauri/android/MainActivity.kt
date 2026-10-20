@@ -35,6 +35,7 @@ class MainActivity : TauriActivity() {
   // Lock screen, notification and headset buttons (see PsysonicMedia), and the theme's
   // brightness for the system bars (see androidSystemBars.ts).
   override fun onWebViewCreate(webView: WebView) {
+    shellWebView = webView
     PsysonicMedia.attach(this, webView)
     webView.addJavascriptInterface(ShellBridge(this), "PsysonicAndroidShell")
     watchMeteredNetwork(webView)
@@ -85,9 +86,34 @@ class MainActivity : TauriActivity() {
       activity.runOnUiThread { activity.allowLandscape(allowed) }
     }
 
+    /** See `closeOverlayOnBack` and `mobileShell/android/androidBack.ts`. */
+    @JavascriptInterface
+    fun setOverlayOpen(open: Boolean) {
+      activity.runOnUiThread { activity.setOverlayOpen(open) }
+    }
+
     @JavascriptInterface
     fun isMetered(): Boolean =
       activity.getSystemService(ConnectivityManager::class.java)?.isActiveNetworkMetered ?: false
+  }
+
+  private var shellWebView: WebView? = null
+
+  /**
+   * A sheet, menu or search is open: the back key closes it (androidBack.ts sends it an
+   * Escape) instead of wry going back a page underneath it.
+   */
+  private val closeOverlayOnBack = object : OnBackPressedCallback(true) {
+    override fun handleOnBackPressed() {
+      shellWebView?.evaluateJavascript("window.__psyAndroidBack && window.__psyAndroidBack()", null)
+    }
+  }
+
+  fun setOverlayOpen(open: Boolean) {
+    // Added anew each time: the dispatcher asks the newest callback first, so this one
+    // stays ahead of wry's.
+    closeOverlayOnBack.remove()
+    if (open) onBackPressedDispatcher.addCallback(this, closeOverlayOnBack)
   }
 
   /**

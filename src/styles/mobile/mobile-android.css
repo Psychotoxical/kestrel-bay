@@ -8,3 +8,18 @@ html[data-mobile-os='android'] {
      stay fully above it. */
   --mobile-bottom-edge: calc(env(safe-area-inset-bottom, 0px) + 8px);
 }
+
+/* The player held sideways: iOS hides the status bar in landscape, so the shared layout
+   starts at the very top. Android keeps the bar, and the cover would sit under it. */
+@media (orientation: landscape) {
+  html[data-mobile-os='android'] .mobile-player {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  html[data-mobile-os='android'] .mobile-player__cover-area {
+    width: min(
+      44vw,
+      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 28px)
+    );
+  }
+}

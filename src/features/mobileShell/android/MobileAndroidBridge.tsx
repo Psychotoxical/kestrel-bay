@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { installAndroidAuto } from '@/features/mobileShell/android/androidAuto';
+import { installAndroidBack } from '@/features/mobileShell/android/androidBack';
 import { installAndroidMediaCommands } from '@/features/mobileShell/android/androidMedia';
 import { installAndroidSystemBars } from '@/features/mobileShell/android/androidSystemBars';
 import { watchAndroidMeteredNetwork } from '@/features/mobileShell/android/androidNetwork';
@@ -9,7 +10,7 @@ import { pinFullAppVolume } from '@/features/mobileShell/utils/fullAppVolume';
  * Touch shell plumbing to the native Android side, the counterpart of `ios/MobileIosBridge`.
  * Mounted only in the Android build. Keeps the app's own volume at full (the phone's
  * buttons set the loudness) and routes the lock screen / notification / headset buttons
- * into the player, and answers Android Auto.
+ * into the player, answers Android Auto, and lets the back key close sheets and menus first.
  */
 export default function MobileAndroidBridge() {
   useEffect(() => { pinFullAppVolume(); }, []);
@@ -17,5 +18,6 @@ export default function MobileAndroidBridge() {
   useEffect(() => installAndroidSystemBars(), []);
   useEffect(() => watchAndroidMeteredNetwork(), []);
   useEffect(() => installAndroidAuto(), []);
+  useEffect(() => installAndroidBack(), []);
   return null;
 }

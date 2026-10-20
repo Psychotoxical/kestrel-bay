@@ -13,6 +13,8 @@ interface AndroidShellHost {
   isMetered?(): boolean;
   /** See `mobileShell/utils/landscape.ts`. */
   allowLandscape?(allowed: boolean): void;
+  /** See `androidBack.ts`. */
+  setOverlayOpen?(open: boolean): void;
 }
 
 declare global {
