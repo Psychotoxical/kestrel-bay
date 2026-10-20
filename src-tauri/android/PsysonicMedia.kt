@@ -38,6 +38,11 @@ object PsysonicMedia {
   private var focusRequest: AudioFocusRequest? = null
   private var noisyRegistered = false
   private var resumeOnFocusGain = false
+  private var activityPaused = false
+
+  /** How long a pause keeps the service (and quick resume from a headset) in place. */
+  private const val RELEASE_AFTER_PAUSE_MS = 10 * 60 * 1000L
+  private val releaseAfterPause = Runnable { if (!playing) PsysonicMediaService.release() }
 
   var playing = false
     private set
@@ -59,6 +64,20 @@ object PsysonicMedia {
   }
 
   fun sessionToken(): MediaSessionCompat.Token? = session?.sessionToken
+
+  /**
+   * The activity went to the background (screen off, another app). Wry pauses the web view
+   * with it, which stops the page's timers: the queue would stop at the end of a track that
+   * is not chained gapless. While music plays the web view stays running; paused, it rests.
+   */
+  fun onActivityPaused() {
+    activityPaused = true
+    if (playing) webView?.onResume()
+  }
+
+  fun onActivityResumed() {
+    activityPaused = false
+  }
 
   /** A button from the lock screen, notification or a headset: hand it to the web view. */
   fun command(name: String, seconds: Double = 0.0) {
@@ -122,15 +141,25 @@ object PsysonicMedia {
     )
     if (isPlaying == playing && PsysonicMediaService.running) return
     playing = isPlaying
+    if (activityPaused) {
+      if (isPlaying) webView?.onResume() else webView?.onPause()
+    }
     if (isPlaying) {
+      main.removeCallbacks(releaseAfterPause)
       requestFocus(ctx)
       registerNoisy(ctx)
       acquireWakeLock(ctx)
-      ContextCompat.startForegroundService(ctx, Intent(ctx, PsysonicMediaService::class.java))
+      // Android refuses a foreground start from the background unless the user just acted
+      // (e.g. a resume by headset long after the service was released); play on without it.
+      runCatching {
+        ContextCompat.startForegroundService(ctx, Intent(ctx, PsysonicMediaService::class.java))
+      }
     } else {
       unregisterNoisy(ctx)
       releaseWakeLock()
       if (PsysonicMediaService.running) PsysonicMediaService.refresh(ctx)
+      main.removeCallbacks(releaseAfterPause)
+      main.postDelayed(releaseAfterPause, RELEASE_AFTER_PAUSE_MS)
     }
   }
 

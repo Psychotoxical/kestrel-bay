@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { installAndroidMediaCommands } from '@/features/mobileShell/android/androidMedia';
+import { installAndroidSystemBars } from '@/features/mobileShell/android/androidSystemBars';
 import { pinFullAppVolume } from '@/features/mobileShell/utils/fullAppVolume';
 
 /**
@@ -11,5 +12,6 @@ import { pinFullAppVolume } from '@/features/mobileShell/utils/fullAppVolume';
 export default function MobileAndroidBridge() {
   useEffect(() => { pinFullAppVolume(); }, []);
   useEffect(() => installAndroidMediaCommands(), []);
+  useEffect(() => installAndroidSystemBars(), []);
   return null;
 }

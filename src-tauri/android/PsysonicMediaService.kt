@@ -33,6 +33,21 @@ class PsysonicMediaService : Service() {
     var running = false
       private set
 
+    private var instance: PsysonicMediaService? = null
+
+    /**
+     * After a long pause: leave the foreground and stop. The notification stays, now
+     * swipeable; its play button starts the service again (allowed from a notification).
+     */
+    fun release() {
+      val service = instance ?: return
+      ServiceCompat.stopForeground(service, ServiceCompat.STOP_FOREGROUND_DETACH)
+      // The detached notification keeps the service's "cannot clear" flag; post it anew.
+      service.getSystemService(NotificationManager::class.java)
+        .notify(NOTIFICATION_ID, build(service))
+      service.stopSelf()
+    }
+
     /** Redraw the notification after the title, cover or play state changed. */
     fun refresh(ctx: Context) {
       if (!running) return
@@ -99,6 +114,7 @@ class PsysonicMediaService : Service() {
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0,
     )
     running = true
+    instance = this
     when (intent?.action) {
       ACTION_PREV -> PsysonicMedia.command("prev")
       ACTION_TOGGLE -> PsysonicMedia.command(if (PsysonicMedia.playing) "pause" else "play")
@@ -111,8 +127,18 @@ class PsysonicMediaService : Service() {
     stopSelf()
   }
 
+  // Swiped away from the recent apps while paused: nothing left to keep alive.
+  override fun onTaskRemoved(rootIntent: Intent?) {
+    if (!PsysonicMedia.playing) {
+      ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
+      stopSelf()
+    }
+    super.onTaskRemoved(rootIntent)
+  }
+
   override fun onDestroy() {
     running = false
+    instance = null
     super.onDestroy()
   }
 }
