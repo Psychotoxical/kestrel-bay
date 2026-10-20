@@ -43,6 +43,11 @@ const TAB_SYMBOLS: [&str; 4] = [
 
 /// Lists whose rows are kept for covers that arrive later; older ones are dropped.
 const MAX_SHOWN_LISTS: usize = 48;
+/// `CPAssistantCellPositionTop`, `CPAssistantCellVisibilityAlways`,
+/// `CPAssistantCellActionTypePlayMedia` (CarPlay SDK, `CPAssistantCellConfiguration.h`).
+const ASSISTANT_POSITION_TOP: isize = 0;
+const ASSISTANT_VISIBILITY_ALWAYS: isize = 2;
+const ASSISTANT_ACTION_PLAY_MEDIA: isize = 0;
 /// `MPShuffleTypeOff` / `MPShuffleTypeItems`.
 const SHUFFLE_OFF: isize = 0;
 const SHUFFLE_ITEMS: isize = 1;
@@ -412,6 +417,9 @@ unsafe fn show_tabs(result: &ListResult) {
         if !image.is_null() {
             let () = msg_send![&*list, setTabImage: image];
         }
+        if index == 0 {
+            add_assistant_cell(&list);
+        }
         let () = msg_send![&*templates, addObject: &*list];
         request_list(&tab.node, list);
     }
@@ -423,6 +431,27 @@ unsafe fn show_tabs(result: &ListResult) {
         animated: Bool::NO,
         completion: std::ptr::null::<Block<dyn Fn(Bool, *mut AnyObject)>>()
     ];
+}
+
+/// The Siri row at the top of the Start tab ("Play with Siri"): Siri asks what to play and
+/// sends the answer to Psysonic itself (`siri.rs`), no "in Psysonic" needed and no detour
+/// to Apple Music. Audio apps get no search field in CarPlay; this is Apple's way instead.
+/// iOS 15+; older systems simply show no row.
+///
+/// # Safety
+/// Main thread; `list` is a CPListTemplate.
+unsafe fn add_assistant_cell(list: &AnyObject) {
+    let Some(class) = AnyClass::get(c"CPAssistantCellConfiguration") else {
+        return;
+    };
+    let config: Allocated<AnyObject> = msg_send![class, alloc];
+    let config: Retained<AnyObject> = msg_send![
+        config,
+        initWithPosition: ASSISTANT_POSITION_TOP,
+        visibility: ASSISTANT_VISIBILITY_ALWAYS,
+        assistantAction: ASSISTANT_ACTION_PLAY_MEDIA
+    ];
+    let () = msg_send![list, setAssistantCellConfiguration: &*config];
 }
 
 /// CPListSections for the web layer's sections, cut to CarPlay's item limit.
