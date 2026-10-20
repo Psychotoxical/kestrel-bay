@@ -9,6 +9,8 @@ import { IS_ANDROID } from '@/lib/util/platform';
 
 interface AndroidShellHost {
   setDarkBackground(dark: boolean): void;
+  /** See `androidNetwork.ts`. */
+  isMetered?(): boolean;
 }
 
 declare global {

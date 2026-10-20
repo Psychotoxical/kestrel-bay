@@ -11,7 +11,7 @@
 //   comes from `cargo metadata`, so the version always matches Cargo.lock.
 
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -29,32 +29,44 @@ for (const file of readdirSync(here).filter(f => f.endsWith('.kt'))) {
   copyFileSync(join(here, file), join(packageDir, file));
 }
 
-// ── Manifest
-const manifestMarker = '<!-- psysonic: media service -->';
+// ── Drawables (`ic_*.xml` vector icons, e.g. the notification's status bar icon)
+const drawableDir = join(appDir, 'src', 'main', 'res', 'drawable');
+mkdirSync(drawableDir, { recursive: true });
+for (const file of readdirSync(here).filter(f => /^ic_.*\.xml$/.test(f))) {
+  copyFileSync(join(here, file), join(drawableDir, file));
+}
+
+// ── Manifest: each permission and the service only once
+const PERMISSIONS = [
+  'android.permission.FOREGROUND_SERVICE',
+  'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+  'android.permission.WAKE_LOCK',
+  'android.permission.ACCESS_NETWORK_STATE',
+];
+const serviceMarker = '<!-- psysonic: media service -->';
+// `[ \t]`, not `\s`: in a CRLF file `^` also matches after the `\r`.
+const internet = /^([ \t]*<uses-permission android:name="android\.permission\.INTERNET" \/>\r?\n)/m;
+const appClose = /^([ \t]*<\/application>)/m;
 let manifest = readFileSync(manifestFile, 'utf8');
-if (!manifest.includes(manifestMarker)) {
-  const permissions = [
-    'android.permission.FOREGROUND_SERVICE',
-    'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
-    'android.permission.WAKE_LOCK',
-  ].map(p => `    <uses-permission android:name="${p}" />`).join('\n');
-  const service = `        ${manifestMarker}
+if (!internet.test(manifest) || !appClose.test(manifest)) {
+  throw new Error('AndroidManifest.xml does not look like the Tauri template');
+}
+const missing = PERMISSIONS.filter(p => !manifest.includes(`android:name="${p}"`));
+if (missing.length > 0) {
+  const lines = missing.map(p => `    <uses-permission android:name="${p}" />`).join('\n');
+  manifest = manifest.replace(internet, `$1${lines}\n`);
+  console.log(`[patch-gen] manifest: ${missing.join(', ')}`);
+}
+if (!manifest.includes(serviceMarker)) {
+  manifest = manifest.replace(appClose, `        ${serviceMarker}
         <service
             android:name=".PsysonicMediaService"
             android:exported="false"
-            android:foregroundServiceType="mediaPlayback" />`;
-  // `[ \t]`, not `\s`: in a CRLF file `^` also matches after the `\r`.
-  const internet = /^([ \t]*<uses-permission android:name="android\.permission\.INTERNET" \/>\r?\n)/m;
-  const appClose = /^([ \t]*<\/application>)/m;
-  if (!internet.test(manifest) || !appClose.test(manifest)) {
-    throw new Error('AndroidManifest.xml does not look like the Tauri template');
-  }
-  manifest = manifest
-    .replace(internet, `$1${permissions}\n`)
-    .replace(appClose, `${service}\n$1`);
-  writeFileSync(manifestFile, manifest);
-  console.log('[patch-gen] manifest: media service + permissions');
+            android:foregroundServiceType="mediaPlayback" />
+$1`);
+  console.log('[patch-gen] manifest: media service');
 }
+writeFileSync(manifestFile, manifest);
 
 // ── R8 (release builds) cannot see JNI calls into the verifier. The template already
 // feeds every `*.pro` under app/ to R8.

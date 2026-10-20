@@ -64,7 +64,7 @@ class PsysonicMediaService : Service() {
       val style = MediaStyle().setShowActionsInCompactView(0, 1, 2)
       PsysonicMedia.sessionToken()?.let { style.setMediaSession(it) }
       return NotificationCompat.Builder(ctx, CHANNEL_ID)
-        .setSmallIcon(if (playing) android.R.drawable.ic_media_play else android.R.drawable.ic_media_pause)
+        .setSmallIcon(R.drawable.ic_stat_psysonic)
         .setContentTitle(PsysonicMedia.title ?: "Psysonic")
         .setContentText(PsysonicMedia.artist)
         .setLargeIcon(PsysonicMedia.cover)
