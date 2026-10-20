@@ -35,8 +35,8 @@ const HERO_ALBUM_COUNT = 8;
 const HERO_RANDOM_POOL = 32;
 /** Hero foreground cover (`.hero-cover` 220×220). */
 const HERO_FG_CSS_PX = 220;
-/** Touch shell: the sharp cover above the glass bar. */
-const HERO_MOBILE_COVER_CSS_PX = 118;
+/** Touch shell: the cover filling the square card (up to the 460 px cap). */
+const HERO_MOBILE_COVER_CSS_PX = 460;
 /** Hero blurred backdrop (full banner height). */
 const HERO_BG_CSS_PX = 360;
 
@@ -435,7 +435,7 @@ export default function Hero({ albums: albumsProp }: HeroProps = {}) {
         : <HeroBg url={heroBackdrop.url} position={heroBackdrop.position} />)}
       {showHeroBackdrop && <div className="hero-overlay" aria-hidden="true" />}
 
-      {/* Touch: the whole cover, sharp, above the glass bar. */}
+      {/* Touch: the whole cover fills the card, the glass bar lies on its lower edge. */}
       {IS_MOBILE_SHELL && heroCoverRef && (
         <div className="hero-cover-mobile animate-fade-in" key={`cover-${albumOwnerKey}`}>
           <CoverArtImage
