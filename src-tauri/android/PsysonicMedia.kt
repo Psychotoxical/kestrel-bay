@@ -94,6 +94,8 @@ object PsysonicMedia {
   private val carRequests = HashMap<Int, Pair<String, (List<MediaBrowserCompat.MediaItem>) -> Unit>>()
   /** Requests answered empty after the timeout, by id: a late answer refreshes their list. */
   private val lateCarRequests = HashMap<Int, String>()
+  /** When a late answer last refreshed a list: a list that is always slow must not loop. */
+  private val lateRefreshedAt = HashMap<String, Long>()
 
   fun requestCarList(node: String, reply: (List<MediaBrowserCompat.MediaItem>) -> Unit) {
     val view = webView ?: return reply(emptyList())
@@ -128,7 +130,13 @@ object PsysonicMedia {
 
   private fun carListResult(id: Int, json: String) {
     val (node, reply) = carRequests.remove(id) ?: run {
-      lateCarRequests.remove(id)?.let { PsysonicAutoService.listsChanged(listOf(it)) }
+      lateCarRequests.remove(id)?.let { late ->
+        val now = SystemClock.elapsedRealtime()
+        if (now - (lateRefreshedAt[late] ?: 0L) > 60_000) {
+          lateRefreshedAt[late] = now
+          PsysonicAutoService.listsChanged(listOf(late))
+        }
+      }
       return
     }
     val items = carItems(json)
@@ -313,7 +321,11 @@ object PsysonicMedia {
         }
         // Android Auto: a list row, or "Play … on Psysonic" by voice.
         override fun onPlayFromMediaId(mediaId: String?, extras: android.os.Bundle?) {
-          mediaId?.let { node -> js("window.__psyAutoPlay && window.__psyAutoPlay(${JSONObject.quote(node)})") }
+          when (mediaId) {
+            null -> {}
+            PsysonicAutoService.OPEN_ON_PHONE -> command("play")
+            else -> js("window.__psyAutoPlay && window.__psyAutoPlay(${JSONObject.quote(mediaId)})")
+          }
         }
         // "Play … on Psysonic": the spoken text, plus what the assistant made of it (a song,
         // album, artist or playlist and its fields), handed on like a Siri request.

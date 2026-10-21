@@ -15,6 +15,12 @@ const CARPLAY_COVER_TIER = 256;
  * album list showed no covers further down, however long it stayed open (car test 21.10.).
  */
 const CARPLAY_COVER_ROWS = 200;
+/**
+ * Rows whose covers are looked up before the list is sent; the rest follow with the
+ * downloads. Looking all 200 up first kept an Android phone past the car's 10 s, and the
+ * list stayed empty (car test 21.10.).
+ */
+const CARPLAY_COVER_ROWS_FIRST = 60;
 /** Missing covers download in chunks, so the first rows show theirs before the rest are in. */
 const COVER_CHUNK = 24;
 
@@ -86,22 +92,37 @@ export type CarPlayCoverRefresh = (onImages: (updates: CarPlayCoverUpdate[]) => 
 export async function attachCarPlayCovers(
   sections: ReadonlyArray<{ items: CoverTarget[] }>,
 ): Promise<CarPlayCoverRefresh | null> {
-  const pending: Array<Promise<CoverRow | null>> = [];
+  const first: Array<{ section: number; row: number; cover: CarPlayCoverSource }> = [];
+  const later: typeof first = [];
   sections.forEach((section, sectionIndex) => {
     section.items.slice(0, CARPLAY_COVER_ROWS).forEach((item, rowIndex) => {
       if (!item.cover) return;
-      pending.push(refFor(item.cover)
-        .then(ref => (ref ? { section: sectionIndex, row: rowIndex, ref } : null))
-        .catch(() => null));
+      (rowIndex < CARPLAY_COVER_ROWS_FIRST ? first : later)
+        .push({ section: sectionIndex, row: rowIndex, cover: item.cover });
     });
   });
-  const rows = (await Promise.all(pending)).filter((row): row is CoverRow => row !== null);
+  const resolve = async (targets: typeof first): Promise<CoverRow[]> =>
+    (await Promise.all(targets.map(target => refFor(target.cover)
+      .then(ref => (ref ? { section: target.section, row: target.row, ref } : null))
+      .catch(() => null))))
+      .filter((row): row is CoverRow => row !== null);
+
+  const rows = await resolve(first);
   const onDisk = await peekImages(rows);
   for (const [row, image] of onDisk) sections[row.section].items[row.row].image = image;
 
   const missing = rows.filter(row => !onDisk.has(row));
-  if (missing.length === 0) return null;
+  if (missing.length === 0 && later.length === 0) return null;
   return async onImages => {
+    // Rows further down: covers already on disk go straight out, the rest join the downloads.
+    if (later.length > 0) {
+      const laterRows = await resolve(later);
+      const laterOnDisk = await peekImages(laterRows);
+      if (laterOnDisk.size > 0) {
+        onImages([...laterOnDisk].map(([row, image]) => ({ section: row.section, row: row.row, image })));
+      }
+      missing.push(...laterRows.filter(row => !laterOnDisk.has(row)));
+    }
     for (let start = 0; start < missing.length; start += COVER_CHUNK) {
       const chunk = missing.slice(start, start + COVER_CHUNK);
       await coverCacheEnsureBatch(chunk.map(row => row.ref), CARPLAY_COVER_TIER).catch(() => {});

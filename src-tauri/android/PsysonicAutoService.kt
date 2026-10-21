@@ -16,10 +16,12 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
   companion object {
     /** The root the car opens; its children become the tabs (Start, Playlists, …). */
     const val ROOT = "tabs"
-    /** The row that asks to open Psysonic on the phone; opening it shows the Start tab. */
-    private const val OPEN_ON_PHONE = "open-on-phone"
-    /** The Start tab's node (`node('home')` in carplayContent). */
-    private const val HOME = "home"
+    /**
+     * The row that asks to open Psysonic on the phone. A tap plays (once the app is open):
+     * as a folder it opened the Start tab as a page of its own, without the tabs, which
+     * never refreshed (car test 21.10.).
+     */
+    const val OPEN_ON_PHONE = "open-on-phone"
     /** `MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM`. */
     private const val STYLE_LIST = 1
 
@@ -82,8 +84,7 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
       return
     }
     result.detach()
-    val node = if (parentId == OPEN_ON_PHONE) HOME else parentId
-    PsysonicMedia.requestCarList(node) { items -> result.sendResult(items.toMutableList()) }
+    PsysonicMedia.requestCarList(parentId) { items -> result.sendResult(items.toMutableList()) }
   }
 
   private fun openOnPhoneItem(): MediaItem {
@@ -92,6 +93,6 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
       .setTitle(getString(R.string.app_name))
       .setSubtitle(getString(R.string.car_open_on_phone))
       .build()
-    return MediaItem(description, MediaItem.FLAG_BROWSABLE)
+    return MediaItem(description, MediaItem.FLAG_PLAYABLE)
   }
 }
