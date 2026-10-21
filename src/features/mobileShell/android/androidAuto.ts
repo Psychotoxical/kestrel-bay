@@ -5,7 +5,7 @@
  * ("Play … on Psysonic") go through the same matching as Siri (`mobileShell/car/siriPlay`).
  * The player's shuffle, repeat, favourite and infinite queue buttons work as in CarPlay.
  */
-import { carPlayCommand, carPlayList, carPlayPlay, carPlayState } from '@/features/mobileShell/car/carplayContent';
+import { carPlayCommand, carPlayList, carPlayPlay, carPlayState, watchCarSongTabs } from '@/features/mobileShell/car/carplayContent';
 import { usePlayerStore } from '@/features/playback';
 import { useAuthStore } from '@/store/authStore';
 import { playSiriRequest, type SiriPlayRequest } from '@/features/mobileShell/car/siriPlay';
@@ -18,6 +18,8 @@ interface AndroidAutoHost {
   setCarState?(json: string): void;
   /** Tells the car to ask for its lists again (it kept the "open the app" list). */
   carListsReady?(): void;
+  /** Tells the car these lists changed (JSON array of nodes). Older app builds lack it. */
+  carListsChanged?(nodesJson: string): void;
 }
 
 declare global {
@@ -118,11 +120,13 @@ export function installAndroidAuto(): () => void {
   };
   const offPlayer = usePlayerStore.subscribe(pushState);
   const offAuth = useAuthStore.subscribe(pushState);
+  const offSongTabs = watchCarSongTabs(nodes => host()?.carListsChanged?.(JSON.stringify(nodes)));
   pushState();
   host()?.carListsReady?.();
   return () => {
     offPlayer();
     offAuth();
+    offSongTabs();
     delete window.__psyAutoList;
     delete window.__psyAutoPlay;
     delete window.__psyAutoSearch;

@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { mprisSetMetadata } from '@/lib/api/mpris';
+import { radioCoverUrlForMpris } from '@/cover/integrations/mpris';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import type { InternetRadioStation } from '@/lib/api/subsonicTypes';
 import type { RadioMetadata } from '@/features/radio/hooks/useRadioMetadata';
 
@@ -62,13 +64,22 @@ export function useRadioMprisSync(
     }
 
     // Mirror to the souvlaki-backed controls for desktops that surface those.
-    mprisSetMetadata({
+    const push = (coverUrl: string | null) => mprisSetMetadata({
       title,
       artist,
       album: album ?? null,
-      coverUrl: artUrl ?? null,
+      coverUrl,
       durationSecs: radioMeta.duration ?? null,
     }).catch(() => {});
+    // The phone's now-playing screens only show a cover from disk (a remote track picture
+    // is dropped there): the station logo stands in.
+    if (IS_MOBILE_SHELL) {
+      void radioCoverUrlForMpris(currentRadio).then(coverUrl => {
+        if (lastPushedRef.current === key) void push(coverUrl);
+      });
+    } else {
+      void push(artUrl ?? null);
+    }
   }, [
     currentRadio,
     radioMeta.source,

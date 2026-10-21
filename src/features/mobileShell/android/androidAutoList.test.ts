@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/util/platform', async importOriginal => ({ ...(await importOriginal<object>()), IS_ANDROID: true }));
 vi.mock('@/features/mobileShell/car/carplayContent', () => ({
   carPlayPlay: vi.fn(),
+  watchCarSongTabs: () => () => {},
   carPlayCommand: mocks.carPlayCommand,
   carPlayState: () => mocks.state,
   carPlayList: vi.fn(async () => ({

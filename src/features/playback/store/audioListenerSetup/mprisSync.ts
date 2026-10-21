@@ -2,10 +2,11 @@ import { invoke } from '@tauri-apps/api/core';
 import { mprisSetMetadata, mprisSetPlayback, mprisSetVolume } from '@/lib/api/mpris';
 import { resolvePlaybackCoverScope } from '@/cover/ref';
 import { resolveTrackCoverRefFromLibrary } from '@/cover/resolveEntryLibrary';
-import { coverArtUrlForMpris } from '@/cover/integrations/mpris';
+import { coverArtUrlForMpris, radioCoverUrlForMpris } from '@/cover/integrations/mpris';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { getPlaybackProgressSnapshot, subscribePlaybackProgress } from '@/features/playback/store/playbackProgress';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 /**
  * MPRIS / OS media-controls sync. Whenever the current track, playback state,
@@ -80,13 +81,22 @@ export function setupMprisSync(): () => void {
     if (currentRadio && currentRadioKey !== prevRadioKey) {
       prevRadioKey = currentRadioKey;
       prevTrackId = null;
-      mprisSetMetadata({
+      const push = (coverUrl: string | null) => mprisSetMetadata({
         title: currentRadio.name,
         artist: null,
         album: null,
-        coverUrl: null,
+        coverUrl,
         durationSecs: null,
       }).catch(() => {});
+      if (IS_MOBILE_SHELL) {
+        const radioKey = currentRadioKey;
+        void radioCoverUrlForMpris(currentRadio).then(coverUrl => {
+          const now = usePlayerStore.getState().currentRadio;
+          if (now && ownedEntityKey(now) === radioKey) void push(coverUrl);
+        });
+      } else {
+        void push(null);
+      }
     }
 
     // Update playback state on play/pause change (use live snapshot — persisted

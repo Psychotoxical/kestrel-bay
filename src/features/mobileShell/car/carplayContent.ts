@@ -615,6 +615,37 @@ function playQueueIndex(index: number): void {
   playTrack(resolveQueueTrack(ref), undefined, true, false, index);
 }
 
+/** Tabs that show the playing song: the resume row and the random mix's genre. */
+export const CAR_SONG_TABS = [node('home'), node('mix')];
+/** Song changes within this window refresh the tabs once (skipping through a queue). */
+const SONG_TABS_DELAY = 1500;
+
+const songTabsKey = () => {
+  const { currentTrack, currentRadio } = usePlayerStore.getState();
+  return [currentTrack?.id, currentTrack?.genre, currentRadio?.id].join('|');
+};
+
+/**
+ * Calls `refresh` with `CAR_SONG_TABS` when the playing song changes. A car keeps a tab's
+ * rows until told, so the Start tab built at a cold start, before the queue was back, had
+ * no resume row and no genre (car test 21.10.).
+ */
+export function watchCarSongTabs(refresh: (nodes: string[]) => void): () => void {
+  let last = songTabsKey();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const off = usePlayerStore.subscribe(() => {
+    const next = songTabsKey();
+    if (next === last) return;
+    last = next;
+    clearTimeout(timer);
+    timer = setTimeout(() => refresh(CAR_SONG_TABS), SONG_TABS_DELAY);
+  });
+  return () => {
+    off();
+    clearTimeout(timer);
+  };
+}
+
 /** The state the now-playing buttons reflect. */
 export function carPlayState(): CarPlayState {
   const { currentTrack, shuffleMode, repeatMode, starredOverrides } = usePlayerStore.getState();

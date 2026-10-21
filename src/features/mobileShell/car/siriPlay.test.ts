@@ -36,6 +36,7 @@ describe('stripSpokenAppName', () => {
     expect(stripSpokenAppName('Metallica and Justice for All mit Psychic')).toBe('Metallica and Justice for All');
     expect(stripSpokenAppName('Chaos in Psysonic')).toBe('Chaos');
     expect(stripSpokenAppName('Chaos with Psy Sonic')).toBe('Chaos');
+    expect(stripSpokenAppName('Metallica and Psychic')).toBe('Metallica');
   });
 
   it('leaves titles that only contain such words alone', () => {

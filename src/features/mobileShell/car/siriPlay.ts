@@ -31,10 +31,10 @@ const same = (a: string | undefined | null, b: string) => !!a && a.trim().toLowe
 
 /**
  * Siri sometimes leaves the app name in the request ("… mit Psychic": it heard "Psysonic"
- * as a word it knows). A trailing "<with|in|on|…> <app name or mishearing>" is not part of
+ * as a word it knows; "Metallica and Psychic" for "Metallica in Psysonic", car test 21.10.). A trailing "<with|in|on|…> <app name or mishearing>" is not part of
  * the title.
  */
-const APP_NAME_TAIL = /\s+(?:mit|in|auf|bei|via|über|on|with|using)\s+(?:psy\s?sonic|psysonik|psychonic|psychic)\s*$/i;
+const APP_NAME_TAIL = /\s+(?:mit|in|im|auf|bei|via|über|und|on|with|using|and)\s+(?:psy\s?sonic|psysonik|psychonic|psychic)\s*$/i;
 
 export function stripSpokenAppName(name: string | null | undefined): string | undefined {
   const cleaned = name?.replace(APP_NAME_TAIL, '').trim();

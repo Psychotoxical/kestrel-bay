@@ -8,6 +8,7 @@ const content = vi.hoisted(() => ({
   carPlayList: vi.fn(async (node: string) => ({ sections: [{ items: [{ node: `${node}-row`, title: 'Row', browse: false }] }] })),
   carPlayPlay: vi.fn(async () => {}),
   carPlayCommand: vi.fn(),
+  watchCarSongTabs: vi.fn(() => () => {}),
   carPlayState: vi.fn(() => ({ shuffle: false, repeat: 'off', starred: false, hasTrack: true, upNextTitle: 'Up next', albumTitle: 'Record' })),
 }));
 vi.mock('@/features/mobileShell/car/carplayContent', () => content);

@@ -70,7 +70,9 @@ thread_local! {
     static PENDING: RefCell<HashMap<u64, (String, Retained<AnyObject>)>> = RefCell::new(HashMap::new());
     static NEXT_REQUEST: Cell<u64> = const { Cell::new(1) };
     /// Rows of answered lists by request id, so late covers find their row.
-    static SHOWN: RefCell<HashMap<u64, Vec<ShownSection>>> = RefCell::new(HashMap::new());
+    static SHOWN: RefCell<HashMap<u64, (Retained<AnyObject>, Vec<ShownSection>)>> = RefCell::new(HashMap::new());
+    /// The tab bar's lists by node, so the web layer can have one refilled (`carplay:refresh`).
+    static TABS: RefCell<Vec<(String, Retained<AnyObject>)>> = const { RefCell::new(Vec::new()) };
     /// What the now-playing buttons show, as last reported by the web layer.
     static STATE: RefCell<NowPlayingState> = RefCell::new(NowPlayingState::default());
     /// Observer for the now-playing template's up-next and album/artist buttons.
@@ -229,6 +231,7 @@ define_class!(
             INTERFACE_CONTROLLER.with(|slot| slot.borrow_mut().take());
             PENDING.with(|pending| pending.borrow_mut().clear());
             SHOWN.with(|shown| shown.borrow_mut().clear());
+            TABS.with(|tabs| tabs.borrow_mut().clear());
         }
     }
 );
@@ -302,6 +305,13 @@ pub(crate) fn listen(app: &AppHandle) {
             unsafe { apply_images(updates) };
         });
     });
+    let refresh = app.clone();
+    app.listen_any("carplay:refresh", move |event| {
+        let Ok(request) = serde_json::from_str::<RefreshRequest>(event.payload()) else {
+            return;
+        };
+        let _ = refresh.run_on_main_thread(move || refresh_tabs(&request.nodes));
+    });
     let state = app.clone();
     app.listen_any("carplay:state", move |event| {
         let Ok(next) = serde_json::from_str::<NowPlayingState>(event.payload()) else {
@@ -339,6 +349,26 @@ fn resend_pending() {
             );
         }
     });
+}
+
+#[derive(serde::Deserialize)]
+struct RefreshRequest {
+    nodes: Vec<String>,
+}
+
+/// Refills the tabs showing `nodes`: CarPlay keeps a tab's rows until they are replaced, so
+/// the Start tab built before the queue was back never got its resume row (car test 21.10.).
+fn refresh_tabs(nodes: &[String]) {
+    let stale: Vec<(String, Retained<AnyObject>)> = TABS.with(|tabs| {
+        tabs.borrow()
+            .iter()
+            .filter(|(node, _)| nodes.contains(node))
+            .cloned()
+            .collect()
+    });
+    for (node, template) in stale {
+        request_list(&node, template);
+    }
 }
 
 /// Asks the web layer for `node`; the answer fills `template`.
@@ -478,7 +508,7 @@ unsafe fn apply_result(result: ListResult) {
     let () = msg_send![&*template, updateSections: &*sections];
     SHOWN.with(|shown| {
         let mut shown = shown.borrow_mut();
-        shown.insert(result.request_id, rows);
+        shown.insert(result.request_id, (template.clone(), rows));
         while shown.len() > MAX_SHOWN_LISTS {
             let Some(oldest) = shown.keys().min().copied() else {
                 break;
@@ -507,6 +537,7 @@ unsafe fn show_tabs(result: &ListResult) {
     };
     let loading = result.empty_text.as_deref().unwrap_or("…");
     let templates = mutable_array();
+    let mut shown_tabs = Vec::new();
     let tabs = result
         .sections
         .iter()
@@ -514,12 +545,20 @@ unsafe fn show_tabs(result: &ListResult) {
     for tab in tabs.take(MAX_TABS) {
         let list = loading_list(&tab.title, loading);
         let () = msg_send![&*list, setTabTitle: &*ns(&tab.title)];
-        if let Some(image) = symbol_image(tab.icon.as_deref().unwrap_or_default()) {
-            let () = msg_send![&*list, setTabImage: &*image];
+        match symbol_image(tab.icon.as_deref().unwrap_or_default()) {
+            Some(image) => {
+                let () = msg_send![&*list, setTabImage: &*image];
+            }
+            None => {
+                crate::app_eprintln!("[carplay] tab {} has no symbol ({:?})", tab.node, tab.icon)
+            }
         }
         let () = msg_send![&*templates, addObject: &*list];
+        shown_tabs.push((tab.node.clone(), list.clone()));
         request_list(&tab.node, list);
     }
+    crate::app_eprintln!("[carplay] tabs shown: {}", shown_tabs.len());
+    TABS.with(|slot| *slot.borrow_mut() = shown_tabs);
     let tab_bar: Allocated<AnyObject> = msg_send![class!(CPTabBarTemplate), alloc];
     let tab_bar: Retained<AnyObject> = msg_send![tab_bar, initWithTemplates: &*templates];
     let () = msg_send![
@@ -716,9 +755,14 @@ unsafe fn cover_row(
 unsafe fn apply_images(updates: ImageUpdates) {
     SHOWN.with(|shown| {
         let mut shown = shown.borrow_mut();
-        let Some(sections) = shown.get_mut(&updates.request_id) else {
+        let Some((template, sections)) = shown.get_mut(&updates.request_id) else {
+            crate::app_eprintln!(
+                "[carplay] {} late covers for a list no longer shown",
+                updates.images.len()
+            );
             return;
         };
+        crate::app_eprintln!("[carplay] late covers: {}", updates.images.len());
         let mut changed_cover_rows = Vec::new();
         for update in &updates.images {
             match sections.get_mut(update.section) {
@@ -752,6 +796,10 @@ unsafe fn apply_images(updates: ImageUpdates) {
                 let () = msg_send![&**row, updateImages: &*image_array(images)];
             }
         }
+        // A shown list kept its old pictures until it was opened again (car test 21.10.):
+        // handing the template its own sections makes CarPlay redraw them.
+        let current: Retained<AnyObject> = msg_send![&**template, sections];
+        let () = msg_send![&**template, updateSections: &*current];
     });
 }
 

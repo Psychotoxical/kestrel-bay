@@ -87,22 +87,46 @@ object PsysonicMedia {
 
   // ── Android Auto lists: asked of the web view (androidAuto.ts), answered by carListResult.
   private var nextCarRequest = 1
-  private val carRequests = HashMap<Int, (List<MediaBrowserCompat.MediaItem>) -> Unit>()
+  private val carRequests = HashMap<Int, Pair<String, (List<MediaBrowserCompat.MediaItem>) -> Unit>>()
 
   fun requestCarList(node: String, reply: (List<MediaBrowserCompat.MediaItem>) -> Unit) {
     val view = webView ?: return reply(emptyList())
     val id = nextCarRequest++
-    carRequests[id] = reply
+    carRequests[id] = node to reply
     view.evaluateJavascript(
       "window.__psyAutoList && window.__psyAutoList($id, ${JSONObject.quote(node)})",
       null,
     )
     // No answer (web view busy or gone): an empty list beats a car screen that spins.
-    main.postDelayed({ carRequests.remove(id)?.invoke(emptyList()) }, 10_000)
+    main.postDelayed({ carRequests.remove(id)?.second?.invoke(emptyList()) }, 10_000)
+  }
+
+  /**
+   * The tabs as the web view last sent them. A car that started Psysonic itself gets them
+   * before the web view is there: the car keeps the tabs it got first, and a single "open
+   * on phone" row in their place never turned into tabs (car test 21.10.).
+   */
+  fun cachedCarTabs(): List<MediaBrowserCompat.MediaItem>? {
+    val json = appContext
+      ?.getSharedPreferences(CAR_PREFS, Context.MODE_PRIVATE)
+      ?.getString(CAR_TABS_KEY, null) ?: return null
+    return runCatching { carItems(json) }.getOrNull()?.takeIf { it.isNotEmpty() }
   }
 
   private fun carListResult(id: Int, json: String) {
-    val reply = carRequests.remove(id) ?: return
+    val (node, reply) = carRequests.remove(id) ?: return
+    val items = carItems(json)
+    if (node == PsysonicAutoService.ROOT && items.isNotEmpty()) {
+      appContext?.getSharedPreferences(CAR_PREFS, Context.MODE_PRIVATE)
+        ?.edit()?.putString(CAR_TABS_KEY, json)?.apply()
+    }
+    reply(items)
+  }
+
+  private const val CAR_PREFS = "psysonic_car"
+  private const val CAR_TABS_KEY = "tabs"
+
+  private fun carItems(json: String): List<MediaBrowserCompat.MediaItem> {
     val items = ArrayList<MediaBrowserCompat.MediaItem>()
     val sections = JSONObject(json).optJSONArray("sections")
     for (s in 0 until (sections?.length() ?: 0)) {
@@ -131,7 +155,7 @@ object PsysonicMedia {
         items += MediaBrowserCompat.MediaItem(description.build(), flags)
       }
     }
-    reply(items)
+    return items
   }
 
   /** Android Auto groups rows under this header (`MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_GROUP_TITLE`). */
@@ -446,6 +470,16 @@ object PsysonicMedia {
     @JavascriptInterface
     fun carListsReady() {
       main.post { PsysonicMedia.setCarListsReady() }
+    }
+
+    @JavascriptInterface
+    fun carListsChanged(nodesJson: String) {
+      main.post {
+        runCatching {
+          val nodes = org.json.JSONArray(nodesJson)
+          PsysonicAutoService.listsChanged((0 until nodes.length()).map(nodes::getString))
+        }
+      }
     }
 
     @JavascriptInterface

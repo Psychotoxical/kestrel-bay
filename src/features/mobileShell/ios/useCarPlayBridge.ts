@@ -7,6 +7,7 @@ import {
   carPlayList,
   carPlayPlay,
   carPlayState,
+  watchCarSongTabs,
   type CarPlayState,
 } from '@/features/mobileShell/car/carplayContent';
 
@@ -77,6 +78,7 @@ export function useCarPlayBridge(): void {
       };
       unlisten.push(usePlayerStore.subscribe(pushState));
       unlisten.push(useAuthStore.subscribe(pushState));
+      unlisten.push(watchCarSongTabs(nodes => { void emit('carplay:refresh', { nodes }); }));
 
       await emit('carplay:state', lastState);
       await emit('carplay:ready');

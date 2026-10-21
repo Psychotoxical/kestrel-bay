@@ -16,6 +16,10 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
   companion object {
     /** The root the car opens; its children become the tabs (Start, Playlists, …). */
     const val ROOT = "tabs"
+    /** The row that asks to open Psysonic on the phone; opening it shows the Start tab. */
+    private const val OPEN_ON_PHONE = "open-on-phone"
+    /** The Start tab's node (`node('home')` in carplayContent). */
+    private const val HOME = "home"
     /** `MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM`. */
     private const val STYLE_LIST = 1
 
@@ -23,13 +27,27 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
     private var current: PsysonicAutoService? = null
 
     /**
-     * The web view can answer now. The car kept the "open Psysonic on your phone" list it
-     * got before and never asked again until it was reconnected (car test 21.10.).
+     * The web view can answer now. The car kept the "open Psysonic on your phone" lists it
+     * got before and never asked again until it was reconnected (car test 21.10.): each of
+     * them is told it changed.
      */
     fun listsReady() {
-      current?.notifyChildrenChanged(ROOT)
+      val service = current ?: return
+      val waiting = service.waiting.toList()
+      service.waiting.clear()
+      service.notifyChildrenChanged(ROOT)
+      waiting.filter { it != ROOT }.forEach(service::notifyChildrenChanged)
+    }
+
+    /** The web view's lists changed (the Start tab after a song change); the car asks again. */
+    fun listsChanged(nodes: List<String>) {
+      val service = current ?: return
+      nodes.forEach(service::notifyChildrenChanged)
     }
   }
+
+  /** Lists answered with the "open on phone" row, to be refreshed once the web view is there. */
+  private val waiting = HashSet<String>()
 
   override fun onCreate() {
     super.onCreate()
@@ -56,17 +74,21 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
   override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaItem>>) {
     if (!PsysonicMedia.webReady()) {
       // Started by the car with no Psysonic open on the phone: there is no web view yet to
-      // build the lists. Say so instead of showing an empty screen.
-      result.sendResult(mutableListOf(openOnPhoneItem()))
+      // build the lists. The tabs come from the last run, so the car keeps real tabs; their
+      // content says to open the app instead of showing an empty screen.
+      waiting += parentId
+      val tabs = if (parentId == ROOT) PsysonicMedia.cachedCarTabs() else null
+      result.sendResult((tabs ?: listOf(openOnPhoneItem())).toMutableList())
       return
     }
     result.detach()
-    PsysonicMedia.requestCarList(parentId) { items -> result.sendResult(items.toMutableList()) }
+    val node = if (parentId == OPEN_ON_PHONE) HOME else parentId
+    PsysonicMedia.requestCarList(node) { items -> result.sendResult(items.toMutableList()) }
   }
 
   private fun openOnPhoneItem(): MediaItem {
     val description = MediaDescriptionCompat.Builder()
-      .setMediaId("open-on-phone")
+      .setMediaId(OPEN_ON_PHONE)
       .setTitle(getString(R.string.app_name))
       .setSubtitle(getString(R.string.car_open_on_phone))
       .build()

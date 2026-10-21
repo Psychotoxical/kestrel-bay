@@ -1,4 +1,6 @@
 import { mprisSetMetadata } from '@/lib/api/mpris';
+import { radioCoverUrlForMpris } from '@/cover/integrations/mpris';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { listen } from '@tauri-apps/api/event';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 
@@ -20,13 +22,20 @@ export function setupRadioMprisMetadata(): () => void {
     const artist = sep !== -1 ? payload.title.slice(0, sep).trim() : null;
     const title  = sep !== -1 ? payload.title.slice(sep + 3).trim() : payload.title;
 
-    mprisSetMetadata({
+    const push = (coverUrl: string | null) => mprisSetMetadata({
       title: title || currentRadio.name,
       artist: artist || currentRadio.name,
       album: null,
-      coverUrl: null,
+      coverUrl,
       durationSecs: null,
     }).catch(() => {});
+    if (IS_MOBILE_SHELL) {
+      void radioCoverUrlForMpris(currentRadio).then(coverUrl => {
+        if (usePlayerStore.getState().currentRadio?.id === currentRadio.id) void push(coverUrl);
+      });
+    } else {
+      void push(null);
+    }
   });
 
   return () => {
