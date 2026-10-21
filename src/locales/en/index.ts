@@ -16,6 +16,7 @@ import { genres } from './genres';
 import { moods } from './moods';
 import { randomMix } from './randomMix';
 import { luckyMix } from './luckyMix';
+import { alarm } from './alarm';
 import { carPlay } from './carPlay';
 import { albums } from './albums';
 import { tracks } from './tracks';
@@ -72,6 +73,7 @@ export const enTranslation = {
   moods,
   randomMix,
   luckyMix,
+  alarm,
   carPlay,
   albums,
   tracks,

@@ -11,7 +11,7 @@ export const MOBILE_TAB_ROOTS: Record<MobileTabId, string> = {
 const LIBRARY_ROUTES = [
   '/library', '/albums', '/album/', '/artists', '/artist/', '/tracks', '/genres', '/moods',
   '/favorites', '/radio', '/composers', '/composer/', '/folders', '/new-releases', '/most-played',
-  '/lossless-albums', '/random', '/lucky-mix', '/label/', '/shared', '/offline', '/search',
+  '/lossless-albums', '/random', '/lucky-mix', '/label/', '/shared', '/offline', '/search', '/alarm',
 ];
 
 function matchesRoute(pathname: string, route: string): boolean {

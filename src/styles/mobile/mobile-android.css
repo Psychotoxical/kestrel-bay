@@ -23,3 +23,392 @@ html[data-mobile-os='android'] {
     );
   }
 }
+
+/* ── Music alarm (mobileShell/alarm): the page with big time cards, the edit sheet and the
+   ringing screen over the lock screen (Frank 21.10.). */
+html[data-mobile-os='android'] .alarm-page__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+html[data-mobile-os='android'] .alarm-page__empty {
+  margin: 24px 0;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+html[data-mobile-os='android'] .alarm-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-card));
+}
+
+html[data-mobile-os='android'] .alarm-setup__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+html[data-mobile-os='android'] .alarm-setup__item {
+  min-height: 40px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+}
+
+html[data-mobile-os='android'] .alarm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+html[data-mobile-os='android'] .alarm-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--bg-card);
+}
+
+html[data-mobile-os='android'] .alarm-card__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+html[data-mobile-os='android'] .alarm-card__time {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 48px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+
+html[data-mobile-os='android'] .alarm-card.is-off .alarm-card__time,
+html[data-mobile-os='android'] .alarm-card.is-off .alarm-card__source {
+  color: var(--text-muted);
+}
+
+html[data-mobile-os='android'] .alarm-card__days {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+html[data-mobile-os='android'] .alarm-card__days .is-on {
+  color: var(--accent);
+}
+
+html[data-mobile-os='android'] .alarm-card__source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-secondary);
+}
+
+html[data-mobile-os='android'] .alarm-card__next {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+html[data-mobile-os='android'] .alarm-card__toggle {
+  flex: none;
+}
+
+/* Edit sheet */
+html[data-mobile-os='android'] .alarm-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-bottom: 8px;
+}
+
+html[data-mobile-os='android'] .alarm-edit__time input {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 8px 0;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 56px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-mobile-os='android'] .alarm-edit__section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+html[data-mobile-os='android'] .alarm-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+html[data-mobile-os='android'] .alarm-day {
+  aspect-ratio: 1;
+  max-width: 100%;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+html[data-mobile-os='android'] .alarm-day.is-active {
+  background: var(--accent);
+  color: var(--bg-app);
+}
+
+html[data-mobile-os='android'] .alarm-edit__select,
+html[data-mobile-os='android'] .alarm-edit__label input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 12px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 15px;
+}
+
+html[data-mobile-os='android'] .alarm-edit__label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+html[data-mobile-os='android'] .alarm-edit__hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+
+html[data-mobile-os='android'] .alarm-edit__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+html[data-mobile-os='android'] .alarm-edit__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+html[data-mobile-os='android'] .alarm-edit__actions .btn {
+  min-height: 44px;
+  padding-inline: 20px;
+}
+
+html[data-mobile-os='android'] .alarm-edit__delete {
+  margin-right: auto;
+  color: var(--danger);
+}
+
+/* Ringing screen: over everything, also over the lock screen. */
+html[data-mobile-os='android'] .alarm-ringing {
+  position: fixed;
+  inset: 0;
+  z-index: 100002;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 28px);
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 28px);
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+  background: var(--bg-app);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+html[data-mobile-os='android'] .alarm-ringing__time {
+  margin-top: 8px;
+  font-family: var(--font-display);
+  font-size: 84px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -2px;
+  font-variant-numeric: tabular-nums;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__date {
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+html[data-mobile-os='android'] .alarm-ringing__cover {
+  flex: 1;
+  min-height: 0;
+  width: min(70vw, 300px);
+  max-width: 100%;
+  margin-top: 16px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+
+html[data-mobile-os='android'] .alarm-ringing__cover img {
+  width: 100%;
+  max-height: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 20px;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__track {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 100%;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__title,
+html[data-mobile-os='android'] .alarm-ringing__artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__artist {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+html[data-mobile-os='android'] .alarm-ringing__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 18px;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__btn {
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: none;
+  border-radius: 24px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__btn small {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+html[data-mobile-os='android'] .alarm-ringing__btn--stop {
+  background: var(--accent);
+  color: var(--bg-app);
+}
+
+/* Stop is held for two seconds; the ring fills meanwhile. */
+html[data-mobile-os='android'] .alarm-ringing__btn--stop {
+  position: relative;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__btn--stop small {
+  color: color-mix(in srgb, var(--bg-app) 70%, transparent);
+}
+
+html[data-mobile-os='android'] .alarm-ringing__hold {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  transform: rotate(-90deg);
+}
+
+html[data-mobile-os='android'] .alarm-ringing__hold circle {
+  fill: none;
+  stroke: var(--bg-app);
+  stroke-width: 4;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+
+html[data-mobile-os='android'] .alarm-ringing__btn--stop.is-holding .alarm-ringing__hold circle {
+  animation: alarm-hold-fill 2s linear forwards;
+}
+
+@keyframes alarm-hold-fill {
+  to { stroke-dashoffset: 0; }
+}

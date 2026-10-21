@@ -2,6 +2,7 @@
 // (the generated project under `src-tauri/gen/android` is not in git).
 package dev.psysonic.player
 
+import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.graphics.Color
 import android.net.ConnectivityManager
@@ -20,6 +21,7 @@ class MainActivity : TauriActivity() {
     applySystemBars(dark = true)
     super.onCreate(savedInstanceState)
     allowLandscape(false)
+    PsysonicAlarm.onActivityIntent(this, intent)
     // Last in the back chain: wry's callback (added later, so asked first) steps the web view
     // back through its history and hands on once there is nothing left. Closing the activity
     // would end the process and the music; a music player goes to the background instead.
@@ -32,12 +34,20 @@ class MainActivity : TauriActivity() {
     })
   }
 
-  // Lock screen, notification and headset buttons (see PsysonicMedia), and the theme's
-  // brightness for the system bars (see androidSystemBars.ts), and copies of picked files
-  // (see PsysonicFiles).
+  /** A ringing alarm opens the running activity again (PsysonicAlarm). */
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    PsysonicAlarm.onActivityIntent(this, intent)
+  }
+
+  // Lock screen, notification and headset buttons (see PsysonicMedia), the theme's
+  // brightness for the system bars (see androidSystemBars.ts), copies of picked files
+  // (see PsysonicFiles) and the music alarm (see PsysonicAlarm).
   override fun onWebViewCreate(webView: WebView) {
     shellWebView = webView
     PsysonicMedia.attach(this, webView)
+    PsysonicAlarm.attach(this, webView)
     webView.addJavascriptInterface(ShellBridge(this), "PsysonicAndroidShell")
     webView.addJavascriptInterface(PsysonicFiles(applicationContext, webView), "PsysonicAndroidFiles")
     watchMeteredNetwork(webView)

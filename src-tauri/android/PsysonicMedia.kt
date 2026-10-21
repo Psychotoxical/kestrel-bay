@@ -297,6 +297,7 @@ object PsysonicMedia {
 
   /** A button from the lock screen, notification or a headset: hand it to the web view. */
   fun command(name: String, seconds: Double = 0.0) {
+    android.util.Log.i("PsysonicMedia", "command $name (web ready: ${webReady()})")
     main.post {
       if (!webReady()) {
         playWhenReady = name == "play" || (playWhenReady && name != "pause" && name != "stop")

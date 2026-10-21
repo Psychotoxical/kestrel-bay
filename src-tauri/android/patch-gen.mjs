@@ -46,6 +46,13 @@ const PERMISSIONS = [
   'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
   'android.permission.WAKE_LOCK',
   'android.permission.ACCESS_NETWORK_STATE',
+  // The music alarm (PsysonicAlarm): exact alarms (granted to alarm clocks, Android 13+), set
+  // again after a reboot, shown over the lock screen, with a notification and vibration.
+  'android.permission.USE_EXACT_ALARM',
+  'android.permission.RECEIVE_BOOT_COMPLETED',
+  'android.permission.USE_FULL_SCREEN_INTENT',
+  'android.permission.POST_NOTIFICATIONS',
+  'android.permission.VIBRATE',
 ];
 const serviceMarker = '<!-- psysonic: media service -->';
 // `[ \t]`, not `\s`: in a CRLF file `^` also matches after the `\r`.
@@ -69,6 +76,32 @@ if (!manifest.includes(serviceMarker)) {
             android:foregroundServiceType="mediaPlayback" />
 $1`);
   console.log('[patch-gen] manifest: media service');
+}
+// Android 12 asks the user for exact alarms; from 13 on USE_EXACT_ALARM covers them.
+const exactAlarmBefore13 = 'android.permission.SCHEDULE_EXACT_ALARM';
+if (!manifest.includes(`android:name="${exactAlarmBefore13}"`)) {
+  manifest = manifest.replace(internet, `$1    <uses-permission android:name="${exactAlarmBefore13}" android:maxSdkVersion="32" />
+`);
+}
+const alarmMarker = '<!-- psysonic: alarm -->';
+if (!manifest.includes(alarmMarker)) {
+  manifest = manifest.replace(appClose, `        ${alarmMarker}
+        <receiver
+            android:name=".PsysonicAlarmReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name=".PsysonicAlarmService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+$1`);
+  console.log('[patch-gen] manifest: alarm');
 }
 const autoMarker = '<!-- psysonic: android auto -->';
 if (!manifest.includes(autoMarker)) {

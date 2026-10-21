@@ -4,7 +4,7 @@ import { lazyLoadAlbumsPage } from '@/features/album/utils/albumBrowseRoutePrefe
 import { lazyLoadArtistsPage } from '@/features/artist/utils/artistBrowseRoutePrefetch';
 import MobilePlayerView from '@/features/nowPlaying/components/MobilePlayerView';
 import { MobilePlayer } from '@/features/mobileShell/shell';
-import { IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { IS_ANDROID, IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { useSidebarStore } from '@/features/sidebar';
 import { useAuthStore } from '../store/authStore';
@@ -54,6 +54,7 @@ const MoodDetail = lazy(() =>import('@/features/mood/pages/MoodDetail'));
 const Shared = lazy(() => import('@/features/share/pages/Shared'));
 const MobileLibraryHub = lazy(() => import('@/features/mobileShell/pages/MobileLibraryHub'));
 const MobileOrbitHub = lazy(() => import('@/features/mobileShell/pages/MobileOrbitHub'));
+const MobileAlarmPage = lazy(() => import('@/features/mobileShell/alarm/MobileAlarmPage'));
 
 /**
  * Index route ("/") = Mainstage. When the user has hidden Mainstage from the
@@ -128,6 +129,7 @@ export default function AppRoutes() {
       />
       {IS_MOBILE_SHELL && <Route path="/library" element={<MobileLibraryHub />} />}
       {IS_MOBILE_SHELL && <Route path="/orbit" element={<MobileOrbitHub />} />}
+      {IS_ANDROID && <Route path="/alarm" element={<MobileAlarmPage />} />}
       <Route path="/settings" element={<Settings />} />
       <Route path="/whats-new" element={<WhatsNew />} />
       <Route path="/help" element={<Help />} />
