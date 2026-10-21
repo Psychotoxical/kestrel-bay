@@ -75,7 +75,15 @@ object PsysonicMedia {
     return ensureSession(ctx.applicationContext).sessionToken
   }
 
-  fun webReady(): Boolean = webView != null
+  /** The web view's Android Auto half is listening (androidAuto.ts reports it). */
+  private var carListsReady = false
+
+  fun webReady(): Boolean = webView != null && carListsReady
+
+  private fun setCarListsReady() {
+    carListsReady = true
+    PsysonicAutoService.listsReady()
+  }
 
   // ── Android Auto lists: asked of the web view (androidAuto.ts), answered by carListResult.
   private var nextCarRequest = 1
@@ -324,7 +332,7 @@ object PsysonicMedia {
     }
     if (isPlaying) {
       main.removeCallbacks(releaseAfterPause)
-      requestFocus(ctx)
+      if (!radio) requestFocus(ctx)
       registerNoisy(ctx)
       acquireWakeLock(ctx)
       // Android refuses a foreground start from the background unless the user just acted
@@ -341,11 +349,35 @@ object PsysonicMedia {
     }
   }
 
+  /**
+   * Radio plays through the web view's audio element, and Chromium asks for audio focus for
+   * it on its own, which takes focus from this session; answering that with a pause stopped
+   * every station right after it started (car test 21.10.). While radio plays, Chromium owns
+   * focus and pauses the element itself for calls; this session neither asks nor reacts.
+   */
+  private var radio = false
+  private const val FOCUS_LOSS_GRACE_MS = 800L
+
+  private fun setRadio(isRadio: Boolean) {
+    radio = isRadio
+  }
+
   // ── Audio focus: a call or another player takes the speaker → pause (and resume after a call).
   private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
+    if (radio) return@OnAudioFocusChangeListener
     when (change) {
-      AudioManager.AUDIOFOCUS_LOSS -> { resumeOnFocusGain = false; if (playing) command("pause") }
-      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> { resumeOnFocusGain = playing; if (playing) command("pause") }
+      // The radio's own focus request can race the web view's report that a station is
+      // starting, so a loss waits a moment and is dropped if it was the radio.
+      AudioManager.AUDIOFOCUS_LOSS -> main.postDelayed({
+        if (radio) return@postDelayed
+        resumeOnFocusGain = false
+        if (playing) command("pause")
+      }, FOCUS_LOSS_GRACE_MS)
+      AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> main.postDelayed({
+        if (radio) return@postDelayed
+        resumeOnFocusGain = playing
+        if (playing) command("pause")
+      }, FOCUS_LOSS_GRACE_MS)
       AudioManager.AUDIOFOCUS_GAIN -> { if (resumeOnFocusGain && !playing) command("play"); resumeOnFocusGain = false }
       // Ducking for navigation prompts is done by the system for media streams.
     }
@@ -409,6 +441,16 @@ object PsysonicMedia {
     @JavascriptInterface
     fun setPlayback(isPlaying: Boolean, positionSecs: Double) {
       main.post { runCatching { PsysonicMedia.setPlayback(isPlaying, (positionSecs * 1000).toLong()) } }
+    }
+
+    @JavascriptInterface
+    fun carListsReady() {
+      main.post { PsysonicMedia.setCarListsReady() }
+    }
+
+    @JavascriptInterface
+    fun setRadio(radio: Boolean) {
+      main.post { PsysonicMedia.setRadio(radio) }
     }
 
     @JavascriptInterface

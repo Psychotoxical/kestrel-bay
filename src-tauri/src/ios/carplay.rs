@@ -43,6 +43,12 @@ const MAX_TABS: usize = 4;
 /// Seconds without `carplay:ready` before the loading screen asks to open the app.
 const OPEN_ON_PHONE_DELAY: f64 = 6.0;
 
+#[link(name = "CarPlay", kind = "framework")]
+unsafe extern "C" {
+    /// Most images one `CPListImageRowItem` takes.
+    static CPMaximumNumberOfGridImages: usize;
+}
+
 /// Lists whose rows are kept for covers that arrive later; older ones are dropped.
 const MAX_SHOWN_LISTS: usize = 48;
 /// `MPShuffleTypeOff` / `MPShuffleTypeItems`.
@@ -206,8 +212,12 @@ define_class!(
             PENDING.with(|pending| {
                 for (node, template) in pending.borrow().values() {
                     if node == NODE_TABS {
-                        // SAFETY: main thread (performSelector on the main run loop).
-                        unsafe { set_empty_text(template, &open_on_phone_text()) };
+                        // SAFETY: main thread (performSelector on the main run loop). CarPlay
+                        // only redraws a shown list's empty text when its sections change.
+                        unsafe {
+                            set_empty_text(template, &open_on_phone_text());
+                            let () = msg_send![&**template, updateSections: &*mutable_array()];
+                        }
                     }
                 }
             });
@@ -607,7 +617,9 @@ unsafe fn cover_row(
     Vec<Retained<AnyObject>>,
     Option<Vec<Retained<AnyObject>>>,
 ) {
-    let max_images: usize = msg_send![class!(CPListImageRowItem), maximumImageCount];
+    // A global constant, not a class method: messaging the class for it raised an
+    // Objective-C exception, which aborted the app when the first row was built.
+    let max_images = CPMaximumNumberOfGridImages;
     let shown: Vec<&Item> = items.iter().take(max_images).collect();
     let images: Vec<Retained<AnyObject>> = shown
         .iter()

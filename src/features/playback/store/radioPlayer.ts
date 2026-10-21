@@ -183,7 +183,14 @@ async function maybeAttachEqGraph(): Promise<boolean> {
   return radioGraphActive;
 }
 
+/**
+ * Sent before a station starts, ahead of `currentRadio`: on Android the element's own audio
+ * focus request arrives first, and the native media session must know it is the radio.
+ */
+export const RADIO_STARTING_EVENT = 'psysonic:radio-starting';
+
 export async function playRadioStream(streamUrl: string, volume: number): Promise<void> {
+  window.dispatchEvent(new Event(RADIO_STARTING_EVENT));
   beginRadioFade();
   transportGain = 1;
   radioReconnectCount = 0;

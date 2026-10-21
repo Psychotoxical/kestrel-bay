@@ -16,6 +16,8 @@ interface AndroidAutoHost {
   carListResult(id: number, json: string): void;
   /** Older app builds lack it. */
   setCarState?(json: string): void;
+  /** Tells the car to ask for its lists again (it kept the "open the app" list). */
+  carListsReady?(): void;
 }
 
 declare global {
@@ -117,6 +119,7 @@ export function installAndroidAuto(): () => void {
   const offPlayer = usePlayerStore.subscribe(pushState);
   const offAuth = useAuthStore.subscribe(pushState);
   pushState();
+  host()?.carListsReady?.();
   return () => {
     offPlayer();
     offAuth();

@@ -26,13 +26,20 @@ mod ipc;
 #[cfg(target_os = "linux")]
 mod linux_realtime;
 pub mod mix_commands;
+#[cfg(target_os = "android")]
+mod output_lost;
 mod play_input;
 pub mod playback_rate;
 #[cfg(target_os = "linux")]
 mod power_notify_linux;
 #[cfg(target_os = "windows")]
 mod power_notify_win;
-#[cfg(any(target_os = "windows", target_os = "linux", target_os = "ios"))]
+#[cfg(any(
+    target_os = "windows",
+    target_os = "linux",
+    target_os = "ios",
+    target_os = "android"
+))]
 mod power_resume;
 pub mod preload_commands;
 mod preserve_worker;
@@ -67,10 +74,17 @@ pub fn register_post_sleep_audio_recovery(app: tauri::AppHandle) {
     power_notify_win::register(app);
     #[cfg(target_os = "linux")]
     power_notify_linux::register(app);
+    // Android: the output's own error callback reports a lost route (`output_lost`).
+    #[cfg(target_os = "android")]
+    output_lost::register(app);
     // macOS intentionally falls through for now: we only ship native resume hooks
     // where we have verified regressions (Windows WASAPI, Linux logind/PipeWire).
     // macOS currently relies on the generic device watcher path.
-    #[cfg(all(not(target_os = "windows"), not(target_os = "linux")))]
+    #[cfg(all(
+        not(target_os = "windows"),
+        not(target_os = "linux"),
+        not(target_os = "android")
+    ))]
     let _ = app;
 }
 

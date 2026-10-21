@@ -18,15 +18,28 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
     const val ROOT = "tabs"
     /** `MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM`. */
     private const val STYLE_LIST = 1
+
+    /** The running service, while the car is connected. */
+    private var current: PsysonicAutoService? = null
+
+    /**
+     * The web view can answer now. The car kept the "open Psysonic on your phone" list it
+     * got before and never asked again until it was reconnected (car test 21.10.).
+     */
+    fun listsReady() {
+      current?.notifyChildrenChanged(ROOT)
+    }
   }
 
   override fun onCreate() {
     super.onCreate()
+    current = this
     sessionToken = PsysonicMedia.sessionTokenFor(applicationContext)
     PsysonicMedia.onCarConnected(true)
   }
 
   override fun onDestroy() {
+    if (current === this) current = null
     PsysonicMedia.onCarConnected(false)
     super.onDestroy()
   }

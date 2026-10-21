@@ -7,6 +7,8 @@ import { isOrbitGuestFollowingHost, useOrbitStore } from '@/features/orbit';
 import { usePlaybackCoverArt } from '@/cover/usePlaybackCoverArt';
 import { usePlaybackTrackCoverRef } from '@/cover/useLibraryCoverRef';
 import { useCachedUrl } from '@/ui/CachedImage';
+import { CoverArtImage } from '@/cover/CoverArtImage';
+import { radioCoverRef } from '@/cover/ref';
 
 function MiniProgress() {
   const progress = useSyncExternalStore(
@@ -74,7 +76,9 @@ export default function MobileMiniPlayer() {
         aria-label={`${t('queue.touchNowPlaying')}: ${title}`}
       >
         <span className="mobile-miniplayer__cover">
-          {!currentRadio && cover
+          {currentRadio?.coverArt
+            ? <CoverArtImage coverRef={radioCoverRef(currentRadio)} displayCssPx={48} surface="dense" alt="" />
+            : !currentRadio && cover
             ? <img src={cover} alt="" />
             : currentRadio ? <Radio size={22} aria-hidden="true" /> : <Music size={22} aria-hidden="true" />}
         </span>

@@ -20,6 +20,8 @@ import {
 import { usePlaybackCoverArt } from '@/cover/usePlaybackCoverArt';
 import { usePlaybackTrackCoverRef } from '@/cover/useLibraryCoverRef';
 import { useCachedUrl } from '@/ui/CachedImage';
+import { CoverArtImage } from '@/cover/CoverArtImage';
+import { radioCoverRef } from '@/cover/ref';
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import TouchMarquee from './TouchMarquee';
 import { useCoverAccentColor } from '@/features/nowPlaying';
@@ -304,7 +306,9 @@ export default function MobilePlayer() {
               className="mobile-player__cover"
               style={coverX !== 0 ? { transform: `translateX(${coverX}px)`, opacity: Math.max(0.4, 1 - Math.abs(coverX) / 400), transition: 'none' } : undefined}
             >
-              {!currentRadio && cover
+              {currentRadio?.coverArt
+                ? <CoverArtImage coverRef={radioCoverRef(currentRadio)} displayCssPx={320} alt="" />
+                : !currentRadio && cover
                 ? <img src={cover} alt="" />
                 : <span className="mobile-player__cover-fallback">
                     {currentRadio ? <Radio size={72} aria-hidden="true" /> : <Music size={72} aria-hidden="true" />}

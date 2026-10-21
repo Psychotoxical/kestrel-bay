@@ -56,10 +56,13 @@ fn open_stream_with_verified_rate(
     #[cfg(not(target_os = "linux"))]
     let builder = rodio::DeviceSinkBuilder::from_device(device.clone())
         .map_err(|error| format!("failed to configure audio output device: {error}"))?;
+    let builder = builder.with_sample_rate(
+        std::num::NonZeroU32::new(actual_rate).unwrap_or(std::num::NonZeroU32::MIN),
+    );
+    // Android disconnects the output when the media route moves (Android Auto, headphones).
+    #[cfg(target_os = "android")]
+    let builder = builder.with_error_callback(crate::output_lost::on_stream_error);
     let handle = builder
-        .with_sample_rate(
-            std::num::NonZeroU32::new(actual_rate).unwrap_or(std::num::NonZeroU32::MIN),
-        )
         .open_stream()
         .map_err(|error| format!("failed to open audio output stream: {error}"))?;
     Ok((finalize_mixer_device_sink(handle), actual_rate))

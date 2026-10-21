@@ -7,6 +7,7 @@ import { makeTrack, seedQueue } from '@/test/helpers/factories';
 import { registerDefaultCoverInvokeHandlers } from '@/test/mocks/tauri';
 import { swipe } from '@/test/helpers/touch';
 import { useOrbitStore } from '@/features/orbit';
+import { usePlayerStore } from '@/features/playback';
 import MobileMiniPlayer from './MobileMiniPlayer';
 
 function Location() {
@@ -21,6 +22,16 @@ describe('MobileMiniPlayer', () => {
   beforeEach(() => {
     resetAllStores();
     registerDefaultCoverInvokeHandlers();
+  });
+
+  it('shows the station logo for a radio station that has one, the radio icon otherwise', () => {
+    usePlayerStore.setState({ currentRadio: { id: 'r1', name: 'SmoothJazz', streamUrl: 'https://x', coverArt: 'ra-r1', serverId: 'srv' } });
+    const { container, unmount } = renderMini();
+    expect(container.querySelector('.mobile-miniplayer__cover svg.lucide-radio')).toBeNull();
+    unmount();
+    usePlayerStore.setState({ currentRadio: { id: 'r2', name: '1fm', streamUrl: 'https://y' } });
+    const second = renderMini();
+    expect(second.container.querySelector('.mobile-miniplayer__cover svg.lucide-radio')).not.toBeNull();
   });
 
   it('renders nothing while nothing plays', () => {
