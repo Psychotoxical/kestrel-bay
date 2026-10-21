@@ -43,6 +43,14 @@ describe('useIosAudioInterruptions', () => {
     unmount();
   });
 
+  it('a starting radio station taking the audio session over does not pause', async () => {
+    const { unmount } = await mount();
+    window.dispatchEvent(new Event('psysonic:radio-starting'));
+    await interruption(true);
+    expect(pause).not.toHaveBeenCalled();
+    unmount();
+  });
+
   it('resumes only after the engine reported the reopened output', async () => {
     let finishReopen!: () => void;
     audio.audioSetDevice.mockImplementationOnce(() => new Promise<void>(resolve => { finishReopen = resolve; }));

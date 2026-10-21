@@ -2,6 +2,10 @@ import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { usePlayerStore } from '@/features/playback';
 import { reopenAudioOutput } from '@/features/mobileShell/utils/reopenAudioOutput';
+import { RADIO_STARTING_EVENT } from '@/features/playback/store/radioPlayer';
+
+/** How long after a station starts an interruption is its own audio taking over (seen: 2 s). */
+const RADIO_TAKEOVER_MS = 5000;
 
 interface InterruptionPayload {
   began: boolean;
@@ -23,6 +27,13 @@ export function useIosAudioInterruptions(): void {
     let interrupted = false;
     let resumeAfterInterruption = false;
     const unlisten: Array<() => void> = [];
+
+    // A station plays through the page's own audio, which takes the audio session over from
+    // the engine: iOS reports that as an interruption, and pausing then left the player
+    // showing "paused" while the radio played (car test 21.10.).
+    let radioStartedAt = -Infinity;
+    const onRadioStarting = () => { radioStartedAt = performance.now(); };
+    window.addEventListener(RADIO_STARTING_EVENT, onRadioStarting);
 
     const pauseIfPlaying = () => {
       const player = usePlayerStore.getState();
@@ -48,6 +59,7 @@ export function useIosAudioInterruptions(): void {
     const setup = async () => {
       const offInterruption = await listen<InterruptionPayload>('ios-audio:interruption', ({ payload }) => {
         if (payload.began) {
+          if (performance.now() - radioStartedAt < RADIO_TAKEOVER_MS) return;
           interrupted = true;
           resumeAfterInterruption = usePlayerStore.getState().isPlaying;
           pauseIfPlaying();
@@ -72,6 +84,7 @@ export function useIosAudioInterruptions(): void {
     return () => {
       cancelled = true;
       document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener(RADIO_STARTING_EVENT, onRadioStarting);
       unlisten.forEach(off => off());
     };
   }, []);

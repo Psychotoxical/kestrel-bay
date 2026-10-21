@@ -172,30 +172,20 @@ const ALBUM_FEEDS: ReadonlyArray<{ feed: AlbumFeed; title: () => string }> = [
 ];
 
 /**
- * Paging stops after this long with what it has: a page of recently added albums took 2.4 s
- * on an Android phone, so 100 albums missed the car's 10 s and the list stayed empty (car
- * test 21.10.).
+ * Recently played and added come from the local index, like the Start page, but in one
+ * request: page by page (12 albums each, every page scanning from the top again) took 2.4 s a
+ * page on an Android phone, so 100 albums missed the car's 10 s (car test 21.10.).
  */
-const CHRONOLOGICAL_BUDGET_MS = 4000;
-
-/** Recently played and added come from the local index, page by page, like the Start page. */
 async function chronologicalAlbums(serverId: string, feed: 'recentlyPlayed' | 'newReleases', size: number): Promise<SubsonicAlbum[] | null> {
   const scope = getLibraryBrowseScope();
-  const albums: SubsonicAlbum[] = [];
-  const deadline = performance.now() + CHRONOLOGICAL_BUDGET_MS;
-  while (albums.length < size && (albums.length === 0 || performance.now() < deadline)) {
-    const page = await loadHomeChronologicalFeed({
-      anchorServerId: serverId,
-      serverIds: scope.serverIds,
-      scopes: scope.pairs,
-      feed,
-      offset: albums.length,
-    });
-    if (page.status !== 'success') return albums.length > 0 ? albums : null;
-    albums.push(...page.albums);
-    if (!page.hasMore || page.albums.length === 0) break;
-  }
-  return albums.slice(0, size);
+  const page = await loadHomeChronologicalFeed({
+    anchorServerId: serverId,
+    serverIds: scope.serverIds,
+    scopes: scope.pairs,
+    feed,
+    limit: size,
+  });
+  return page.status === 'success' ? page.albums.slice(0, size) : null;
 }
 
 async function feedAlbums(serverId: string, feed: AlbumFeed, size: number): Promise<SubsonicAlbum[]> {

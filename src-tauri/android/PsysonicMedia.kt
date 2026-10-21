@@ -100,6 +100,7 @@ object PsysonicMedia {
   fun requestCarList(node: String, reply: (List<MediaBrowserCompat.MediaItem>) -> Unit) {
     val view = webView ?: return reply(emptyList())
     val id = nextCarRequest++
+    android.util.Log.i("PsysonicAuto", "list $node requested")
     carRequests[id] = node to reply
     view.evaluateJavascript(
       "window.__psyAutoList && window.__psyAutoList($id, ${JSONObject.quote(node)})",
@@ -110,6 +111,7 @@ object PsysonicMedia {
     // 21.10.): when the answer still comes, the car is told to ask again.
     main.postDelayed({
       carRequests.remove(id)?.let { (late, reply) ->
+        android.util.Log.w("PsysonicAuto", "list $late: no answer after 10 s, sent empty")
         lateCarRequests[id] = late
         reply(emptyList())
       }
@@ -133,6 +135,7 @@ object PsysonicMedia {
       lateCarRequests.remove(id)?.let { late ->
         val now = SystemClock.elapsedRealtime()
         if (now - (lateRefreshedAt[late] ?: 0L) > 60_000) {
+          android.util.Log.i("PsysonicAuto", "list $late: late answer, asking the car to reload")
           lateRefreshedAt[late] = now
           PsysonicAutoService.listsChanged(listOf(late))
         }

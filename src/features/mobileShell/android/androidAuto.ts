@@ -10,6 +10,7 @@ import { usePlayerStore } from '@/features/playback';
 import { useAuthStore } from '@/store/authStore';
 import { playSiriRequest, type SiriPlayRequest } from '@/features/mobileShell/car/siriPlay';
 import i18n from '@/lib/i18n';
+import { frontendDebugLog } from '@/lib/api/debugLog';
 import { IS_ANDROID } from '@/lib/util/platform';
 
 interface AndroidAutoHost {
@@ -76,7 +77,13 @@ const AUTO_COVER_ROW_SIZE = 8;
 
 /** One car list as the native side reads it: sections of rows, covers as file paths. */
 export async function carListJson(node: string): Promise<string> {
+  const startedAt = performance.now();
   const list: CarPlayList = await carPlayList(node).catch(() => ({ sections: [] }));
+  // The car gives up after 10 s (PsysonicMedia.requestCarList): how long each list takes.
+  frontendDebugLog('car', JSON.stringify({
+    step: 'list', node, ms: Math.round(performance.now() - startedAt),
+    rows: list.sections.reduce((sum, section) => sum + section.items.length, 0),
+  }));
   // Covers not on disk yet: once they are, the car asks for the list again and gets them
   // (it showed rows without covers until the list was opened anew, car test 21.10.).
   if (list.refreshCovers) {

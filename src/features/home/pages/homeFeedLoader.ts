@@ -135,6 +135,8 @@ interface LoadHomeChronologicalFeedOptions {
   scopes: LibraryScopePair[];
   feed: 'newReleases' | 'recentlyPlayed';
   offset?: number;
+  /** Albums in one request; the Start page pages by `HOME_PAGE_SIZE`. */
+  limit?: number;
   freshness?: number;
   deps?: Pick<HomeFeedLoaderDeps, 'libraryScopeListMainstageAlbums'>;
 }
@@ -295,12 +297,13 @@ export async function loadHomeChronologicalFeed(
       canonicalScopes,
       options.feed,
       options.offset ?? 0,
+      options.limit ?? HOME_PAGE_SIZE,
       options.freshness ?? 0,
     ]),
     () => deps.libraryScopeListMainstageAlbums(resolveIndexKey(options.anchorServerId), {
       scopes: canonicalScopes,
       feed: options.feed,
-      limit: HOME_PAGE_SIZE,
+      limit: options.limit ?? HOME_PAGE_SIZE,
       offset: options.offset ?? 0,
       includeGenreCounts: false,
     }),
