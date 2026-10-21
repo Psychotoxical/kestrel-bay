@@ -14,6 +14,8 @@ export const alarm = {
   hoursMinutes: '{{hours}} Std. {{minutes}} Min.',
   minutesOnly: '{{minutes}} Min.',
   time: 'Uhrzeit',
+  hours: 'Stunden',
+  minutes: 'Minuten',
   repeat: 'Wiederholen',
   music: 'Musik',
   sourceLuckymix: 'Glücks-Mix',

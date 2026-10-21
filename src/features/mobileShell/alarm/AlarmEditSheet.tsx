@@ -4,7 +4,8 @@ import MobileSheet from '@/features/mobileShell/components/MobileSheet';
 import { usePlaylistStore } from '@/features/playlist/store/playlistStore';
 import { useLuckyMixAvailable } from '@/features/randomMix';
 import { FADE_CHOICES, SNOOZE_CHOICES, type Alarm, type AlarmSource } from './alarmStore';
-import { alarmClock, weekdayNames } from './alarmFormat';
+import { weekdayNames } from './alarmFormat';
+import AlarmTimeFields from './AlarmTimeFields';
 
 interface Props {
   alarm: Alarm;
@@ -22,7 +23,7 @@ export default function AlarmEditSheet({ alarm, isNew, onSave, onDelete, onClose
   const [draft, setDraft] = useState<Alarm>(alarm);
   const playlists = usePlaylistStore(s => s.playlists);
   const luckyAvailable = useLuckyMixAvailable();
-  const ids = { time: useId(), repeat: useId(), music: useId(), snooze: useId(), fade: useId(), volume: useId() };
+  const ids = { repeat: useId(), music: useId(), snooze: useId(), fade: useId(), volume: useId() };
   const update = (patch: Partial<Alarm>) => setDraft(d => ({ ...d, ...patch }));
   const days = weekdayNames(i18n.language);
 
@@ -46,18 +47,7 @@ export default function AlarmEditSheet({ alarm, isNew, onSave, onDelete, onClose
   return (
     <MobileSheet title={t(isNew ? 'alarm.add' : 'alarm.edit')} onClose={onClose} className="mobile-sheet--alarm">
       <div className="alarm-edit">
-        <label className="alarm-edit__time" htmlFor={ids.time}>
-          <span className="visually-hidden">{t('alarm.time')}</span>
-          <input
-            id={ids.time}
-            type="time"
-            value={alarmClock(draft)}
-            onChange={e => {
-              const [h, m] = e.target.value.split(':').map(Number);
-              if (Number.isInteger(h) && Number.isInteger(m)) update({ hour: h, minute: m });
-            }}
-          />
-        </label>
+        <AlarmTimeFields hour={draft.hour} minute={draft.minute} onChange={(hour, minute) => update({ hour, minute })} />
 
         <section className="alarm-edit__section" aria-labelledby={ids.repeat}>
           <h3 id={ids.repeat} className="mobile-source-section__title">{t('alarm.repeat')}</h3>
