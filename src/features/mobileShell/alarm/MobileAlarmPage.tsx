@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Music, Plus, Sparkles, Shuffle, Heart, AlertTriangle } from 'lucide-react';
+import { Music, Plus, Sparkles, Shuffle, Heart, ShieldAlert } from 'lucide-react';
 import { newAlarm, useAlarmStore, type Alarm } from './alarmStore';
 import { alarmClock, repeatSummary, ringsIn, sourceLabel, weekdayNames } from './alarmFormat';
 import { alarmStatus, fixAlarmStatus, type AlarmStatus } from './androidAlarm';
 import AlarmEditSheet from './AlarmEditSheet';
+import AlarmSetupSheet from './AlarmSetupSheet';
+import { ALARM_SETUP_STEPS, missingAlarmSetup } from './alarmSetup';
 
 const SOURCE_ICON = { luckymix: Sparkles, random: Shuffle, favorites: Heart, playlist: Music } as const;
+/** How often the page asks Android which permissions are still missing. */
+const STATUS_POLL_MS = 2000;
 
 /**
  * ⚠️ Android territory. The alarms, as big time cards (Frank 21.10.): time, repeat days,
- * on/off and what plays; a tap opens the edit sheet. Above them, what the phone still has to
- * allow for the alarm to ring reliably.
+ * on/off and what plays; a tap opens the edit sheet. Above them, while the phone still lacks
+ * a permission, a banner that opens the setup checklist (AlarmSetupSheet).
  */
 export default function MobileAlarmPage() {
   const { t, i18n } = useTranslation();
@@ -19,25 +23,30 @@ export default function MobileAlarmPage() {
   const { save, remove, setEnabled } = useAlarmStore.getState();
   const [editing, setEditing] = useState<{ alarm: Alarm; isNew: boolean } | null>(null);
   const [status, setStatus] = useState<AlarmStatus | null>(() => alarmStatus());
+  const [setupOpen, setSetupOpen] = useState(false);
   const [, setTick] = useState(0);
 
-  // Permissions change in the system settings: look again when the page comes back.
+  // Permissions change in the system settings: look again when the page comes back, and
+  // every few seconds while it shows, so a granted step disappears on its own (Frank 21.10.).
   useEffect(() => {
-    const refresh = () => { if (document.visibilityState === 'visible') setStatus(alarmStatus()); };
+    const refresh = () => {
+      if (document.visibilityState !== 'visible') return;
+      const next = alarmStatus();
+      setStatus(prev => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
+    };
     document.addEventListener('visibilitychange', refresh);
+    window.addEventListener('focus', refresh);
+    const poll = setInterval(refresh, STATUS_POLL_MS);
     const minute = setInterval(() => setTick(n => n + 1), 30_000);
-    return () => { document.removeEventListener('visibilitychange', refresh); clearInterval(minute); };
+    return () => {
+      document.removeEventListener('visibilitychange', refresh);
+      window.removeEventListener('focus', refresh);
+      clearInterval(poll);
+      clearInterval(minute);
+    };
   }, []);
 
-  const missing = status
-    ? (['notifications', 'fullScreen', 'exact', 'battery'] as const).filter(key => !status[key])
-    : [];
-  const setupLabel: Record<keyof AlarmStatus, string> = {
-    notifications: t('alarm.setupNotifications'),
-    fullScreen: t('alarm.setupFullScreen'),
-    exact: t('alarm.setupExact'),
-    battery: t('alarm.setupBattery'),
-  };
+  const missing = missingAlarmSetup(status);
   const days = weekdayNames(i18n.language);
 
   return (
@@ -55,13 +64,17 @@ export default function MobileAlarmPage() {
       </div>
 
       {alarms.length > 0 && missing.length > 0 && (
-        <section className="alarm-setup" aria-label={t('alarm.setupTitle')}>
-          <h2 className="alarm-setup__title"><AlertTriangle size={16} aria-hidden="true" /> {t('alarm.setupTitle')}</h2>
-          {missing.map(key => (
-            <button key={key} type="button" className="alarm-setup__item" onClick={() => fixAlarmStatus(key)}>
-              {setupLabel[key]}
-            </button>
-          ))}
+        <section className="alarm-setup-banner" aria-labelledby="alarm-setup-banner-title">
+          <ShieldAlert className="alarm-setup-banner__icon" size={28} aria-hidden="true" />
+          <div className="alarm-setup-banner__text">
+            <h2 id="alarm-setup-banner-title" className="alarm-setup-banner__title">{t('alarm.setupBannerTitle')}</h2>
+            <p className="alarm-setup-banner__count">
+              {t('alarm.setupBannerCount', { count: missing.length, total: ALARM_SETUP_STEPS.length })}
+            </p>
+          </div>
+          <button type="button" className="alarm-setup-banner__btn" onClick={() => setSetupOpen(true)}>
+            {t('alarm.setupStart')}
+          </button>
         </section>
       )}
 
@@ -97,6 +110,10 @@ export default function MobileAlarmPage() {
             );
           })}
         </ul>
+      )}
+
+      {setupOpen && status && missing.length > 0 && (
+        <AlarmSetupSheet status={status} onClose={() => setSetupOpen(false)} />
       )}
 
       {editing && (

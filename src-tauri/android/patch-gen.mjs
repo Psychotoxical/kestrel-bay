@@ -53,6 +53,9 @@ const PERMISSIONS = [
   'android.permission.USE_FULL_SCREEN_INTENT',
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.VIBRATE',
+  // Opening the alarm over an unlocked phone (a start from the background, see PsysonicAlarm).
+  'android.permission.SYSTEM_ALERT_WINDOW',
+  'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
 ];
 const serviceMarker = '<!-- psysonic: media service -->';
 // `[ \t]`, not `\s`: in a CRLF file `^` also matches after the `\r`.

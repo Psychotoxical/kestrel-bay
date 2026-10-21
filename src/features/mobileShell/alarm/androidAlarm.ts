@@ -18,6 +18,8 @@ export interface AlarmStatus {
   fullScreen: boolean;
   exact: boolean;
   battery: boolean;
+  /** May open over other apps: the alarm then also opens while the phone is in use. */
+  overlay: boolean;
 }
 
 interface AndroidAlarmHost {

@@ -188,9 +188,13 @@ object PsysonicAlarm {
     if (alarm.optBoolean("vibrate", true)) vibrate(ctx)
     startVolumeRamp(ctx, alarm)
     deliverToWeb()
-    // The activity comes up through the notification's full-screen intent: over the lock
-    // screen when the phone is locked, as a banner while it is in use. A direct start from
-    // here is blocked in the background (Android 10+).
+    // Locked, the notification's full-screen intent opens the app over the lock screen. In
+    // use, Android only shows a banner, and without the app there is no music, just the
+    // ringtone (Asra, 21.10.). A direct start from the background is allowed only to apps
+    // that may draw over other apps, so the alarm page asks for that.
+    if (Settings.canDrawOverlays(ctx)) {
+      runCatching { ctx.startActivity(ringIntent(ctx)) }
+    }
     main.postDelayed(fallback, FALLBACK_MS)
     main.removeCallbacks(autoSilence)
     main.postDelayed(autoSilence, AUTO_SILENCE_MS)
@@ -421,6 +425,7 @@ object PsysonicAlarm {
         .put("fullScreen", fullScreen)
         .put("exact", canScheduleExact(ctx))
         .put("battery", battery)
+        .put("overlay", Settings.canDrawOverlays(ctx))
         .toString()
     }
 
@@ -441,7 +446,9 @@ object PsysonicAlarm {
             "exact" -> if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
               act.startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, pkg))
             }
-            "battery" -> act.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+            // The system's own yes/no dialog, not the list of all apps (alarm clocks may ask).
+            "battery" -> act.startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, pkg))
+            "overlay" -> act.startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, pkg))
           }
         }
       }
