@@ -4,10 +4,10 @@ import { useLocation } from 'react-router';
 /** Attribute on `<html>` the touch-shell CSS reads to fold the bottom bars into one row. */
 export const MOBILE_BARS_ATTR = 'data-mobile-bars';
 
-/** Travel in one direction before the bars fold or unfold, so a jittery finger does not flip them. */
+/** Travel down before the bars fold, so a jittery finger does not flip them. */
 const DIRECTION_PX = 12;
-/** Close to the top of a page the bars always stay unfolded. */
-const TOP_PX = 24;
+/** Close to the top of a page the bars unfold again. */
+const TOP_PX = 48;
 
 function setCollapsed(collapsed: boolean) {
   const root = document.documentElement;
@@ -15,12 +15,22 @@ function setCollapsed(collapsed: boolean) {
   else root.removeAttribute(MOBILE_BARS_ATTR);
 }
 
+export function barsFolded(): boolean {
+  return document.documentElement.getAttribute(MOBILE_BARS_ATTR) === 'collapsed';
+}
+
+/** A tap on the folded tab button brings all tabs back without leaving the page. */
+export function unfoldBars(): void {
+  setCollapsed(false);
+}
+
 /**
- * Folds the player bar and the tab bar into one row while the page scrolls down,
- * and unfolds them when it scrolls back up or reaches the top — the platform music
- * app's pattern. Only page scrollers count (the route host, including in-page browse
- * areas); sheets live outside it and sideways rails do not change `scrollTop`.
- * Driven by an attribute instead of React state, so scrolling renders nothing.
+ * Folds the player bar and the tab bar into one row while the page scrolls down. They
+ * unfold near the top of the page or on a tap on the folded tab button, not on every
+ * small move up, which made them pop out while reading down a page (beta feedback).
+ * Only page scrollers count (the route host, including in-page browse areas); sheets
+ * live outside it and sideways rails do not change `scrollTop`. Driven by an attribute
+ * instead of React state, so scrolling renders nothing.
  */
 export function useCollapseBarsOnScroll(): void {
   const { pathname } = useLocation();
@@ -43,11 +53,11 @@ export function useCollapseBarsOnScroll(): void {
         return;
       }
       const delta = top - prev;
-      if (travelTarget !== el || Math.sign(delta) !== Math.sign(travel)) travel = 0;
+      if (travelTarget !== el || delta < 0) travel = 0;
       travelTarget = el;
+      if (delta < 0) return;
       travel += delta;
       if (travel > DIRECTION_PX) setCollapsed(true);
-      else if (travel < -DIRECTION_PX) setCollapsed(false);
     };
 
     // Scroll events do not bubble; the capture phase sees every scroller on the page.

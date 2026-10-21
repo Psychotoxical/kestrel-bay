@@ -7,7 +7,7 @@ html[data-mobile-app] {
   --mobile-miniplayer-height: 64px;
   /* One-row height of both bars while the page scrolls down (`data-mobile-bars`). */
   --mobile-folded-height: 52px;
-  --mobile-bars-motion: 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --mobile-bars-motion: 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   --mobile-bottom-edge: max(12px, calc(env(safe-area-inset-bottom, 0px) - 8px));
   --mobile-glass-bg: color-mix(in srgb, var(--bg-elevated, var(--bg-card)) 74%, transparent);
   --mobile-glass-border: color-mix(in srgb, var(--text-primary) 12%, transparent);
@@ -366,7 +366,7 @@ html[data-mobile-app] .mobile-search-overlay {
   font-size: 10px;
   font-weight: 600;
   cursor: pointer;
-  transition: flex-grow var(--mobile-bars-motion), flex-basis var(--mobile-bars-motion), opacity 0.2s, visibility 0s;
+  transition: flex-grow var(--mobile-bars-motion), flex-basis var(--mobile-bars-motion), opacity 0.3s, visibility 0s;
 }
 
 .mobile-tabbar__tab span {
@@ -512,7 +512,7 @@ html[data-mobile-bars='collapsed'] .mobile-tabbar__tab {
   overflow: hidden;
   opacity: 0;
   visibility: hidden;
-  transition: flex-grow var(--mobile-bars-motion), flex-basis var(--mobile-bars-motion), opacity 0.2s, visibility 0s linear 0.2s;
+  transition: flex-grow var(--mobile-bars-motion), flex-basis var(--mobile-bars-motion), opacity 0.3s, visibility 0s linear 0.3s;
 }
 
 html[data-mobile-bars='collapsed'] .mobile-tabbar__tab:first-child {

@@ -7,7 +7,7 @@ import { OPEN_SEARCH_EVENT } from '@/lib/dom/openSearch';
 import { APP_MAIN_SCROLL_VIEWPORT_ID } from '@/constants/appScroll';
 import { MOBILE_TAB_ROOTS, type MobileTabId } from '@/features/mobileShell/utils/mobileTabs';
 import { useMobileActiveTab, useRecordMobileTab } from '@/features/mobileShell/hooks/useMobileActiveTab';
-import { useCollapseBarsOnScroll } from '@/features/mobileShell/hooks/useCollapseBarsOnScroll';
+import { barsFolded, unfoldBars, useCollapseBarsOnScroll } from '@/features/mobileShell/hooks/useCollapseBarsOnScroll';
 import { useOrbitPendingApprovalCount, useOrbitStore } from '@/features/orbit';
 import { forgetSearchReturn, takeSearchReturn } from '@/features/mobileShell/utils/searchReturn';
 
@@ -21,7 +21,8 @@ const TABS: ReadonlyArray<{ id: MobileTabId; icon: typeof Disc3; labelKey: strin
 /**
  * Floating glass tab bar with the round search button beside it. While the page
  * scrolls down it folds to a single Mainstage button (its first tab), with the
- * player bar moving in between it and the search button.
+ * player bar moving in between it and the search button; a tap on that button
+ * unfolds the tabs again.
  */
 export default function MobileTabBar() {
   const { t } = useTranslation();
@@ -65,6 +66,10 @@ export default function MobileTabBar() {
   };
 
   const openTab = (id: MobileTabId) => {
+    if (barsFolded()) {
+      unfoldBars();
+      return;
+    }
     forgetSearchReturn();
     const root = MOBILE_TAB_ROOTS[id];
     if (pathname === root) {

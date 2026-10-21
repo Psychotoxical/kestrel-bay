@@ -33,11 +33,13 @@ class MainActivity : TauriActivity() {
   }
 
   // Lock screen, notification and headset buttons (see PsysonicMedia), and the theme's
-  // brightness for the system bars (see androidSystemBars.ts).
+  // brightness for the system bars (see androidSystemBars.ts), and copies of picked files
+  // (see PsysonicFiles).
   override fun onWebViewCreate(webView: WebView) {
     shellWebView = webView
     PsysonicMedia.attach(this, webView)
     webView.addJavascriptInterface(ShellBridge(this), "PsysonicAndroidShell")
+    webView.addJavascriptInterface(PsysonicFiles(applicationContext, webView), "PsysonicAndroidFiles")
     watchMeteredNetwork(webView)
   }
 

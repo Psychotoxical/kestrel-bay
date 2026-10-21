@@ -1,7 +1,8 @@
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { pickExportPath } from '@/lib/util/exportFile';
+import { localCopyOfPicked, pickExportPath } from '@/lib/util/exportFile';
 import { writeFile, readTextFile } from '@tauri-apps/plugin-fs';
 import { invoke } from '@tauri-apps/api/core';
+import { IS_ANDROID, IS_MOBILE_SHELL } from '@/lib/util/platform';
 import {
   commands,
   type FullImportRecoveryStatusDto,
@@ -505,16 +506,22 @@ export async function exportBackupToPath(mode: BackupExportMode, path: string): 
 
 export async function pickBackupImportPath(): Promise<string | null> {
   const path = await openDialog({
-    filters: [{ name: 'Psysonic Backup', extensions: ['psybkp', 'psylib', 'psyfull', 'zip'] }],
+    // Android's picker filters by media type and knows none of these extensions, so it
+    // greyed every backup out; there it shows all files and the import tells them apart.
+    filters: IS_ANDROID ? undefined : [{ name: 'Psysonic Backup', extensions: ['psybkp', 'psylib', 'psyfull', 'zip'] }],
     multiple: false,
     title: 'Import Backup',
   });
-  return path && typeof path === 'string' ? path : null;
+  return path && typeof path === 'string' ? localCopyOfPicked(path) : null;
 }
+
+/** Archives are never a JSON settings backup; reading one whole as text can run a phone out of memory. */
+const ARCHIVE_EXTENSION = /\.(psyfull|psylib|zip)$/i;
 
 export async function importAnyBackupFromPath(path: string): Promise<ImportedBackupKind> {
   let configStores: Record<string, unknown> | null = null;
   try {
+    if (IS_MOBILE_SHELL && ARCHIVE_EXTENSION.test(path)) throw new Error('archive');
     const raw = await readTextFile(path);
     const manifest = JSON.parse(raw);
     if (typeof manifest.version === 'number' && manifest.stores && typeof manifest.stores === 'object') {

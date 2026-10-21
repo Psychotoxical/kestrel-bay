@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { MOBILE_BARS_ATTR, useCollapseBarsOnScroll } from '@/features/mobileShell/hooks/useCollapseBarsOnScroll';
+import { MOBILE_BARS_ATTR, barsFolded, unfoldBars, useCollapseBarsOnScroll } from '@/features/mobileShell/hooks/useCollapseBarsOnScroll';
 
 function Harness() {
   useCollapseBarsOnScroll();
@@ -28,17 +28,27 @@ const folded = () => document.documentElement.getAttribute(MOBILE_BARS_ATTR) ===
 describe('useCollapseBarsOnScroll', () => {
   afterEach(() => document.documentElement.removeAttribute(MOBILE_BARS_ATTR));
 
-  it('folds while the page scrolls down and unfolds on the way back up', () => {
+  it('folds while the page scrolls down and stays folded on the way back up', () => {
     const { page } = renderHarness();
     scrollTo(page, 100);
     scrollTo(page, 200);
     expect(folded()).toBe(true);
 
-    // A small step back up is not enough…
+    // Moving up further down the page leaves the bars folded, however far.
     scrollTo(page, 192);
+    scrollTo(page, 80);
     expect(folded()).toBe(true);
-    // …a clear move up is.
-    scrollTo(page, 170);
+    // Down again after a move up folds as before.
+    scrollTo(page, 300);
+    expect(folded()).toBe(true);
+  });
+
+  it('unfolds on a tap on the folded tab button', () => {
+    const { page } = renderHarness();
+    scrollTo(page, 100);
+    scrollTo(page, 200);
+    expect(barsFolded()).toBe(true);
+    act(() => unfoldBars());
     expect(folded()).toBe(false);
   });
 
@@ -47,7 +57,7 @@ describe('useCollapseBarsOnScroll', () => {
     scrollTo(page, 300);
     scrollTo(page, 600);
     expect(folded()).toBe(true);
-    scrollTo(page, 10);
+    scrollTo(page, 40);
     expect(folded()).toBe(false);
   });
 
