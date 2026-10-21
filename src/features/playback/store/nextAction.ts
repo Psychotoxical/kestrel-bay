@@ -33,6 +33,7 @@ import {
   setRadioFetching,
 } from '@/features/playback/store/radioSessionState';
 import { finalizePlayQueueAtTrackEnd } from '@/features/playback/store/queueSync';
+import { topUpInfiniteQueueAhead } from '@/features/playback/store/infiniteQueueTopUp';
 import { applySkipStarOnManualNext } from '@/features/playback/store/skipStarRating';
 import type { SubsonicSong } from '@/lib/api/subsonicTypes';
 import {
@@ -130,37 +131,7 @@ export function runNext(set: SetState, get: GetState, manual: boolean): void {
     get().playTrack(nextTrack, undefined, manual, false, nextIdx);
     const topUpGeneration = getPlayGeneration();
     const topUpServerId = playbackProfileIdForTrack(nextTrack, nextRef);
-    // Proactively top up auto-added tracks when ≤ 2 remain ahead,
-    // so the queue never runs dry without a visible loading pause.
-    // Skipped while in Orbit — the host's queue is the source of
-    // truth there, and any silent local extension would either
-    // drift this client off the host or pop the bulk-add modal at
-    // the next track-end fallback.
-    const { infiniteQueueEnabled } = useAuthStore.getState();
-    if (infiniteQueueEnabled && repeatMode === 'off' && !isInfiniteQueueFetching() && !isInOrbitSession()) {
-      const remainingAuto = queueItems.slice(nextIdx + 1).filter(r => r.autoAdded).length;
-      if (remainingAuto <= 2) {
-        setInfiniteQueueFetching(true);
-        const existingIdentities = new Set(get().queueItems.map(queueItemIdentityKey));
-        buildInfiniteQueueCandidates(nextTrack, topUpServerId, existingIdentities, 5).then(newTracks => {
-          // Re-check at resolution time — the user may have joined
-          // an Orbit session between scheduling and resolving.
-          if (isInOrbitSession() || getPlayGeneration() !== topUpGeneration) return;
-          if (newTracks.length > 0) {
-            // Pin before set so the appended refs carry the canonical server
-            // key; without this the auto-added rows render as '…' / 0:00
-            // when the queue was populated without a queue-replacing playTrack
-            // (see PR #892).
-            ensureQueueServerPinned(newTracks);
-            set(state => {
-              if (topUpServerId) seedQueueResolver(topUpServerId, newTracks);
-              const newItems = [...state.queueItems, ...toQueueItemRefs(topUpServerId, newTracks)];
-              return { queueItems: newItems };
-            });
-          }
-        }).catch(() => {}).finally(() => { setInfiniteQueueFetching(false); });
-      }
-    }
+    topUpInfiniteQueueAhead(set, get, nextIdx, nextTrack);
     // Proactively top up radio tracks when ≤ 2 remain — independent of the
     // infinite-queue setting, but still skipped in Orbit: the radio top-up
     // appends unrelated tracks and trims queue history, which would drift a
