@@ -99,6 +99,7 @@ object PsysonicMedia {
     for (s in 0 until (sections?.length() ?: 0)) {
       val section = sections!!.getJSONObject(s)
       val header = section.optString("header").ifEmpty { null }
+      val grid = section.optBoolean("grid")
       val rows = section.optJSONArray("items") ?: continue
       for (r in 0 until rows.length()) {
         val row = rows.getJSONObject(r)
@@ -107,7 +108,10 @@ object PsysonicMedia {
           .setTitle(row.optString("title"))
           .setSubtitle(row.optString("subtitle").ifEmpty { null })
         row.optString("image").ifEmpty { null }?.let { path -> carIcon(path)?.let(description::setIconBitmap) }
-        header?.let { description.setExtras(android.os.Bundle().apply { putString(GROUP_TITLE, it) }) }
+        val extras = android.os.Bundle()
+        header?.let { extras.putString(GROUP_TITLE, it) }
+        if (grid && !row.optBoolean("list")) extras.putInt(SINGLE_ITEM_STYLE, STYLE_GRID)
+        if (!extras.isEmpty) description.setExtras(extras)
         val flags = if (row.optBoolean("browse")) {
           MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
         } else {
@@ -121,6 +125,10 @@ object PsysonicMedia {
 
   /** Android Auto groups rows under this header (`MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_GROUP_TITLE`). */
   private const val GROUP_TITLE = "android.media.browse.CONTENT_STYLE_GROUP_TITLE_HINT"
+
+  /** Per-row style (`MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_SINGLE_ITEM`): the Start tab's cover rows as a grid. */
+  private const val SINGLE_ITEM_STYLE = "android.media.browse.CONTENT_STYLE_SINGLE_ITEM_HINT"
+  private const val STYLE_GRID = 2
 
   /** A cover from the app's cache, scaled down for a car list row. */
   private fun carIcon(path: String): Bitmap? = runCatching {

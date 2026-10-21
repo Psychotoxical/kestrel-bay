@@ -47,7 +47,7 @@ function bareCoverPath(path: string): string {
 
 async function refFor(cover: CarPlayCoverSource): Promise<CoverArtRef | null> {
   const scope = coverServerScopeForServerId(cover.serverId);
-  // A playlist's cover is the server's collage, keyed by its cover id like the
+  // A playlist's (or radio station's) cover is the server's image, keyed by its cover id like the
   // playlist cards do (no library lookup: the index holds no playlist covers).
   if (cover.kind === 'playlist') {
     return cover.coverArt ? albumCoverRef(cover.coverArt, cover.coverArt, scope) : null;

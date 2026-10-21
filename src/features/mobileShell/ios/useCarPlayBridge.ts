@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { emit, listen } from '@tauri-apps/api/event';
 import { usePlayerStore } from '@/features/playback';
+import { useAuthStore } from '@/store/authStore';
 import {
   carPlayCommand,
   carPlayList,
@@ -23,7 +24,7 @@ interface CommandRequest {
 }
 
 const sameState = (a: CarPlayState, b: CarPlayState) =>
-  a.shuffle === b.shuffle && a.repeat === b.repeat && a.starred === b.starred && a.hasTrack === b.hasTrack
+  a.shuffle === b.shuffle && a.repeat === b.repeat && a.starred === b.starred && a.infinite === b.infinite && a.hasTrack === b.hasTrack
   && a.upNextTitle === b.upNextTitle && a.albumTitle === b.albumTitle;
 
 async function answerList({ requestId, node }: ListRequest): Promise<void> {
@@ -68,12 +69,14 @@ export function useCarPlayBridge(): void {
       if (cancelled) { offCommand(); return; }
       unlisten.push(offCommand);
 
-      unlisten.push(usePlayerStore.subscribe(() => {
+      const pushState = () => {
         const next = carPlayState();
         if (sameState(next, lastState)) return;
         lastState = next;
         void emit('carplay:state', next);
-      }));
+      };
+      unlisten.push(usePlayerStore.subscribe(pushState));
+      unlisten.push(useAuthStore.subscribe(pushState));
 
       await emit('carplay:state', lastState);
       await emit('carplay:ready');

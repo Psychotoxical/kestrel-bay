@@ -16,6 +16,8 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
   companion object {
     /** The root the car opens; its children become the tabs (Start, Playlists, …). */
     const val ROOT = "tabs"
+    /** `MediaConstants.DESCRIPTION_EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM`. */
+    private const val STYLE_LIST = 1
   }
 
   override fun onCreate() {
@@ -29,8 +31,14 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
     super.onDestroy()
   }
 
+  // Rows are lists unless a row asks for a grid (the Start tab's cover rows); the car only
+  // honours such per-row hints when the root says it uses content styles.
   override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot =
-    BrowserRoot(ROOT, null)
+    BrowserRoot(ROOT, Bundle().apply {
+      putBoolean("android.media.browse.CONTENT_STYLE_SUPPORTED", true)
+      putInt("android.media.browse.CONTENT_STYLE_BROWSABLE_HINT", STYLE_LIST)
+      putInt("android.media.browse.CONTENT_STYLE_PLAYABLE_HINT", STYLE_LIST)
+    })
 
   override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaItem>>) {
     if (!PsysonicMedia.webReady()) {
@@ -47,7 +55,7 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
     val description = MediaDescriptionCompat.Builder()
       .setMediaId("open-on-phone")
       .setTitle(getString(R.string.app_name))
-      .setSubtitle("Open Psysonic on your phone once")
+      .setSubtitle(getString(R.string.car_open_on_phone))
       .build()
     return MediaItem(description, MediaItem.FLAG_BROWSABLE)
   }

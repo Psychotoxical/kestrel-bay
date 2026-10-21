@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android Auto, shown while Psysonic is not open on the phone (PsysonicAutoService). -->
+<resources>
+  <string name="car_open_on_phone">Open Psysonic on your phone once</string>
+</resources>

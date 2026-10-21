@@ -30,8 +30,13 @@ import {
   getLibraryBrowseScope,
   browseScopeLibraryIdsForServer,
 } from '@/lib/library/libraryBrowseScope';
-import { getRandomSongsForServer } from '@/lib/api/subsonicLibrary';
-import type { SubsonicAlbum, SubsonicSong } from '@/lib/api/subsonicTypes';
+import { getAlbumListForServer, getRandomSongsForServer } from '@/lib/api/subsonicLibrary';
+import { getInternetRadioStationsForServer } from '@/lib/api/subsonicRadio';
+import type { InternetRadioStation, SubsonicAlbum, SubsonicSong } from '@/lib/api/subsonicTypes';
+import { fetchGenreTracksForPlayback } from '@/features/playback/utils/playback/genreBrowsePlayback';
+import { isLuckyMixAvailable } from '@/features/randomMix';
+import { buildAndPlayLuckyMix } from '@/features/randomMix/utils/luckyMix';
+import { deriveEffectiveLibraryBrowseServerIds } from '@/lib/library/libraryBrowseScope';
 import { songToTrack } from '@/lib/media/songToTrack';
 import type { Track } from '@/lib/media/trackTypes';
 import { resolveAlbum } from '@/store/mediaResolver';
@@ -42,6 +47,10 @@ import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { resolveServerIdForIndexKey } from '@/lib/server/serverLookup';
 import { attachCarPlayCovers, type CarPlayCoverSource, type CarPlayCoverUpdate } from './carplayCovers';
 
+/** Symbol a row shows when it has no cover; each car maps it to its own image. */
+export type CarPlayIcon =
+  | 'home' | 'library' | 'playlists' | 'lucky' | 'shuffle' | 'resume' | 'heart' | 'download' | 'radio';
+
 /** One row in a CarPlay list: `browse` rows open `node`, the others play it. */
 export interface CarPlayItem {
   node: string;
@@ -51,11 +60,14 @@ export interface CarPlayItem {
   /** Absolute path of the row's cover on disk. */
   image?: string;
   cover?: CarPlayCoverSource;
+  icon?: CarPlayIcon;
 }
 
 export interface CarPlaySection {
   header?: string;
   items: CarPlayItem[];
+  /** A row of covers under `header`; tapping the header opens this node, the full list. */
+  more?: string;
 }
 
 export interface CarPlayList {
@@ -70,6 +82,8 @@ export interface CarPlayState {
   shuffle: boolean;
   repeat: 'off' | 'all' | 'one';
   starred: boolean;
+  /** The infinite queue is on (the ∞ button). */
+  infinite: boolean;
   hasTrack: boolean;
   /** Titles of the lists behind the up-next and album/artist buttons. */
   upNextTitle: string;
@@ -79,6 +93,12 @@ export interface CarPlayState {
 /** CarPlay cuts long lists anyway; this keeps the requests small. */
 const LIST_LIMIT = 200;
 const RANDOM_MIX_SIZE = 50;
+/** Covers per row on the Start tab; the car shows as many as fit. */
+const COVER_ROW_SIZE = 12;
+/** Albums behind a cover row's header. */
+const FEED_LIST_SIZE = 100;
+/** A genre mix with fewer songs than this falls back to a plain random mix. */
+const GENRE_MIX_MIN = 10;
 
 // Node ids: `kind|part|part`, each part URI-encoded so ids with `|` stay intact.
 const node = (kind: string, ...parts: string[]) => [kind, ...parts.map(encodeURIComponent)].join('|');
@@ -90,8 +110,10 @@ function parseNode(id: string): [string, string[]] {
 /** Track lists shown in CarPlay, kept so a tapped row plays exactly what was listed. */
 interface ShownTracks { tracks: Track[]; source?: QueueSource }
 const shownTracks = new Map<string, ShownTracks>();
-/** Offline cards shown in the downloads tab, by position. */
+/** Offline cards shown in the downloads list, by position. */
 let shownOfflineCards: OfflineLibraryCard[] = [];
+/** Radio stations shown in the radio list, by position. */
+let shownStations: InternetRadioStation[] = [];
 
 const t = (key: string) => i18n.t(key);
 
@@ -138,28 +160,138 @@ function trackListRows(listNode: string, tracks: Track[], source?: QueueSource):
 
 const empty = (): CarPlayList => ({ sections: [], emptyText: t('deviceSync.browserEmpty') });
 
-async function homeList(): Promise<CarPlayList> {
-  const serverId = browseServerId();
-  const sections: CarPlaySection[] = [];
-  if (serverId) {
-    const scope = getLibraryBrowseScope();
-    const feed = await loadHomeChronologicalFeed({
+/** The album lists behind the Start tab's cover rows. */
+type AlbumFeed = 'recentlyPlayed' | 'frequent' | 'newest' | 'random' | 'starred';
+
+const ALBUM_FEEDS: ReadonlyArray<{ feed: AlbumFeed; title: () => string }> = [
+  { feed: 'recentlyPlayed', title: () => t('home.recentlyPlayed') },
+  { feed: 'frequent', title: () => t('home.mostPlayed') },
+  { feed: 'newest', title: () => t('carPlay.recentlyAdded') },
+  { feed: 'random', title: () => t('carPlay.randomAlbums') },
+  { feed: 'starred', title: () => t('carPlay.starredAlbums') },
+];
+
+/** Recently played and added come from the local index, page by page, like the Start page. */
+async function chronologicalAlbums(serverId: string, feed: 'recentlyPlayed' | 'newReleases', size: number): Promise<SubsonicAlbum[] | null> {
+  const scope = getLibraryBrowseScope();
+  const albums: SubsonicAlbum[] = [];
+  while (albums.length < size) {
+    const page = await loadHomeChronologicalFeed({
       anchorServerId: serverId,
       serverIds: scope.serverIds,
       scopes: scope.pairs,
-      feed: 'recentlyPlayed',
+      feed,
+      offset: albums.length,
     });
-    if (feed.status === 'success' && feed.albums.length > 0) {
-      sections.push({ header: t('home.recentlyPlayed'), items: albumRows(feed.albums, serverId) });
-    }
+    if (page.status !== 'success') return albums.length > 0 ? albums : null;
+    albums.push(...page.albums);
+    if (!page.hasMore || page.albums.length === 0) break;
   }
+  return albums.slice(0, size);
+}
+
+async function feedAlbums(serverId: string, feed: AlbumFeed, size: number): Promise<SubsonicAlbum[]> {
+  if (feed === 'starred') {
+    const starred = await loadStarredFromAllLibraryIndexes();
+    return starred.albums.slice(0, size);
+  }
+  if (feed === 'recentlyPlayed' || feed === 'newest') {
+    const local = await chronologicalAlbums(serverId, feed === 'newest' ? 'newReleases' : 'recentlyPlayed', size);
+    if (local) return local;
+  }
+  const type = feed === 'recentlyPlayed' ? 'recent' : feed;
+  const libraryIds = browseScopeLibraryIdsForServer(getLibraryBrowseScope().pairs, serverId);
+  return getAlbumListForServer(serverId, type, size, 0, {}, 15000, libraryIds).catch(() => []);
+}
+
+/** The playing (or paused) queue's song: a tap carries on with it. */
+function resumeRow(): CarPlayItem | null {
+  const { currentTrack, currentRadio } = usePlayerStore.getState();
+  if (!currentTrack || currentRadio) return null;
+  const serverId = currentTrack.serverId ?? browseServerId() ?? '';
+  return {
+    node: node('resume'),
+    title: currentTrack.title,
+    subtitle: [currentTrack.artist, t('carPlay.resumeHint')].filter(Boolean).join(' · '),
+    browse: false,
+    icon: 'resume',
+    cover: currentTrack.albumId
+      ? { kind: 'album', id: currentTrack.albumId, coverArt: currentTrack.coverArt, serverId }
+      : undefined,
+  };
+}
+
+function randomMixHint(): string {
+  const genre = usePlayerStore.getState().currentTrack?.genre?.trim();
+  return genre ? `${t('carPlay.randomMixHint')} (${genre})` : t('carPlay.randomMixHintNoGenre');
+}
+
+async function homeList(): Promise<CarPlayList> {
+  const serverId = browseServerId();
+  const sections: CarPlaySection[] = [];
+  const resume = resumeRow();
+  if (resume) sections.push({ header: t('carPlay.resume'), items: [resume] });
   sections.push({
+    header: t('carPlay.quickPlay'),
     items: [
-      { node: node('random'), title: t('sidebar.randomMix'), browse: false },
-      { node: node('favorites'), title: t('sidebar.favorites'), browse: true },
+      { node: node('random'), title: t('sidebar.randomMix'), subtitle: randomMixHint(), browse: false, icon: 'shuffle' },
+      { node: node('favplay'), title: t('carPlay.favoritesPlay'), subtitle: t('carPlay.favoritesPlayHint'), browse: false, icon: 'heart' },
+      { node: node('downloads'), title: t('carPlay.downloads'), subtitle: t('carPlay.downloadsHint'), browse: true, icon: 'download' },
     ],
   });
+  if (!serverId) return { sections };
+  const rows = await Promise.all(ALBUM_FEEDS.map(({ feed }) => feedAlbums(serverId, feed, COVER_ROW_SIZE).catch(() => [])));
+  ALBUM_FEEDS.forEach(({ feed, title }, index) => {
+    if (rows[index].length === 0) return;
+    sections.push({ header: title(), items: albumRows(rows[index], serverId), more: node('feed', feed) });
+  });
   return { sections };
+}
+
+/** The full list behind a cover row's header. */
+async function feedList(feed: string): Promise<CarPlayList> {
+  const serverId = browseServerId();
+  if (!serverId || !ALBUM_FEEDS.some(entry => entry.feed === feed)) return empty();
+  const albums = await feedAlbums(serverId, feed as AlbumFeed, FEED_LIST_SIZE);
+  return albums.length > 0 ? { sections: [{ items: albumRows(albums, serverId) }] } : empty();
+}
+
+function luckyMixAvailableNow(): boolean {
+  const auth = useAuthStore.getState();
+  return isLuckyMixAvailable({
+    activeServerId: auth.activeServerId,
+    libraryBrowseServerIds: deriveEffectiveLibraryBrowseServerIds(auth),
+    audiomuseByServer: auth.audiomuseNavidromeByServer,
+    showLuckyMixMenu: auth.showLuckyMixMenu,
+  });
+}
+
+/** The fourth tab: Lucky Mix where AudioMuse runs, the random mix everywhere else. */
+function mixList(): CarPlayList {
+  const item: CarPlayItem = luckyMixAvailableNow()
+    ? { node: node('luckymix'), title: t('carPlay.luckyMixStart'), subtitle: t('carPlay.luckyMixStartHint'), browse: false, icon: 'lucky' }
+    : { node: node('random'), title: t('carPlay.randomMixStart'), subtitle: randomMixHint(), browse: false, icon: 'shuffle' };
+  return { sections: [{ items: [item] }] };
+}
+
+async function radioList(): Promise<CarPlayList> {
+  const serverId = browseServerId();
+  const stations = serverId ? await getInternetRadioStationsForServer(serverId).catch(() => []) : [];
+  shownStations = stations.slice(0, LIST_LIMIT);
+  if (shownStations.length === 0) return empty();
+  return {
+    sections: [{
+      items: shownStations.map((station, index) => ({
+        node: node('radio', String(index)),
+        title: station.name,
+        browse: false,
+        icon: 'radio' as const,
+        cover: station.coverArt && serverId
+          ? { kind: 'playlist' as const, id: station.id, coverArt: station.coverArt, serverId }
+          : undefined,
+      })),
+    }],
+  };
 }
 
 async function playlistsList(): Promise<CarPlayList> {
@@ -188,7 +320,9 @@ function libraryList(): CarPlayList {
       items: [
         { node: node('artists'), title: t('sidebar.artists'), browse: true },
         { node: node('albums'), title: t('sidebar.allAlbums'), browse: true },
+        { node: node('feed', 'newest'), title: t('carPlay.recentlyAdded'), browse: true },
         { node: node('genres'), title: t('sidebar.genres'), browse: true },
+        { node: node('radio'), title: t('sidebar.radio'), browse: true },
       ],
     }],
   };
@@ -348,10 +482,12 @@ function tabsList(): CarPlayList {
   return {
     sections: [{
       items: [
-        { node: node('home'), title: t('sidebar.mainstage'), browse: true },
-        { node: node('playlists'), title: t('sidebar.playlists'), browse: true },
-        { node: node('library'), title: t('sidebar.library'), browse: true },
-        { node: node('downloads'), title: t('sidebar.offlineLibrary'), browse: true },
+        { node: node('home'), title: t('sidebar.mainstage'), browse: true, icon: 'home' },
+        { node: node('library'), title: t('sidebar.library'), browse: true, icon: 'library' },
+        { node: node('playlists'), title: t('sidebar.playlists'), browse: true, icon: 'playlists' },
+        luckyMixAvailableNow()
+          ? { node: node('mix'), title: t('sidebar.feelingLucky'), browse: true, icon: 'lucky' }
+          : { node: node('mix'), title: t('sidebar.randomMix'), browse: true, icon: 'shuffle' },
       ],
     }],
     emptyText: t('common.loading'),
@@ -373,6 +509,9 @@ async function listFor(id: string): Promise<CarPlayList> {
     case 'playlists': return playlistsList();
     case 'library': return libraryList();
     case 'downloads': return downloadsList();
+    case 'mix': return mixList();
+    case 'feed': return feedList(parts[0]);
+    case 'radio': return radioList();
     case 'artists': return artistsList();
     case 'albums': return albumsList();
     case 'genres': return genresList();
@@ -402,9 +541,20 @@ function playShown(listNode: string, index: number, shuffle: boolean): void {
   else run();
 }
 
+/** Songs in the playing song's genre; without a genre, or with too few songs, any songs. */
 async function playRandomMix(): Promise<void> {
   const serverId = browseServerId();
   if (!serverId) return;
+  const genre = usePlayerStore.getState().currentTrack?.genre?.trim();
+  if (genre) {
+    const inGenre = await fetchGenreTracksForPlayback(serverId, genre, {
+      shuffle: true, cap: RANDOM_MIX_SIZE, indexEnabled: indexEnabled(serverId),
+    }).catch(() => []);
+    if (inGenre.length >= GENRE_MIX_MIN) {
+      usePlayerStore.getState().playTrack(inGenre[0], inGenre);
+      return;
+    }
+  }
   const scopes = getLibraryBrowseScope().pairs;
   const local = await runLocalRandomSongs(serverId, RANDOM_MIX_SIZE, scopes);
   const songs = local && local.length > 0
@@ -424,6 +574,22 @@ async function playOfflineCard(index: number): Promise<void> {
   if (tracks.length > 0) usePlayerStore.getState().playTrack(tracks[0], tracks);
 }
 
+async function playFavorites(): Promise<void> {
+  const starred = await loadStarredFromAllLibraryIndexes();
+  const tracks = shuffleTracks(starred.songs.map(songToTrack));
+  if (tracks.length > 0) usePlayerStore.getState().playTrack(tracks[0], tracks);
+}
+
+function resumePlayback(): void {
+  const player = usePlayerStore.getState();
+  if (player.currentTrack && !player.isPlaying) player.resume();
+}
+
+function playStation(index: number): void {
+  const station = shownStations[index];
+  if (station) usePlayerStore.getState().playRadio(station);
+}
+
 /** Plays what a CarPlay row stands for. */
 export async function carPlayPlay(id: string): Promise<void> {
   const [kind, parts] = parseNode(id);
@@ -432,6 +598,10 @@ export async function carPlayPlay(id: string): Promise<void> {
     case 'shuffle': playShown(parts[0], 0, true); return;
     case 'track': playShown(parts[0], Number(parts[1]), false); return;
     case 'random': await playRandomMix(); return;
+    case 'favplay': await playFavorites(); return;
+    case 'luckymix': await buildAndPlayLuckyMix(); return;
+    case 'resume': resumePlayback(); return;
+    case 'radio': playStation(Number(parts[0])); return;
     case 'offline': await playOfflineCard(Number(parts[0])); return;
     case 'queueat': playQueueIndex(Number(parts[0])); return;
     default: return;
@@ -455,6 +625,7 @@ export function carPlayState(): CarPlayState {
     shuffle: shuffleMode,
     repeat: repeatMode,
     starred,
+    infinite: useAuthStore.getState().infiniteQueueEnabled,
     hasTrack: !!currentTrack,
     upNextTitle: t('queue.upNext'),
     albumTitle: currentTrack?.album ?? '',
@@ -467,6 +638,11 @@ export function carPlayCommand(action: string): void {
   switch (action) {
     case 'shuffle': player.toggleShuffleMode(); return;
     case 'repeat': player.toggleRepeat(); return;
+    case 'infinite': {
+      const auth = useAuthStore.getState();
+      auth.setInfiniteQueueEnabled(!auth.infiniteQueueEnabled);
+      return;
+    }
     case 'star': {
       const track = player.currentTrack;
       if (track) queueSongStar(track.id, !carPlayState().starred, track.serverId);
@@ -479,4 +655,5 @@ export function carPlayCommand(action: string): void {
 export function _resetCarPlayContentForTest(): void {
   shownTracks.clear();
   shownOfflineCards = [];
+  shownStations = [];
 }

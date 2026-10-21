@@ -6,6 +6,7 @@
  */
 import { carPlayList, carPlayPlay } from '@/features/mobileShell/car/carplayContent';
 import { playSiriRequest, type SiriPlayRequest } from '@/features/mobileShell/car/siriPlay';
+import i18n from '@/lib/i18n';
 import { IS_ANDROID } from '@/lib/util/platform';
 
 interface AndroidAutoHost {
@@ -60,19 +61,30 @@ function host(): AndroidAutoHost | undefined {
   return (window as unknown as { PsysonicAndroidMedia?: AndroidAutoHost }).PsysonicAndroidMedia;
 }
 
+/** Albums per cover row in Android Auto, which shows the row as list rows; the rest is "show all". */
+const AUTO_COVER_ROW_SIZE = 8;
+
 /** One car list as the native side reads it: sections of rows, covers as file paths. */
 export async function carListJson(node: string): Promise<string> {
   const list = await carPlayList(node).catch(() => ({ sections: [] }));
   return JSON.stringify({
     sections: list.sections.map(section => ({
       header: section.header ?? '',
-      items: section.items.map(item => ({
-        node: item.node,
-        title: item.title,
-        subtitle: item.subtitle ?? '',
-        browse: item.browse,
-        image: item.image ?? '',
-      })),
+      // A cover row asks for a grid (the desktop head unit still shows a list);
+      // its header link becomes a last "show all" row.
+      grid: !!section.more,
+      items: [
+        ...(section.more ? section.items.slice(0, AUTO_COVER_ROW_SIZE) : section.items).map(item => ({
+          node: item.node,
+          title: item.title,
+          subtitle: item.subtitle ?? '',
+          browse: item.browse,
+          image: item.image ?? '',
+        })),
+        ...(section.more
+          ? [{ node: section.more, title: i18n.t('carPlay.showAll'), subtitle: '', browse: true, image: '', list: true }]
+          : []),
+      ],
     })),
   });
 }

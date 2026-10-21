@@ -8,6 +8,15 @@ const mocks = vi.hoisted(() => ({
   resolveAlbum: vi.fn(),
   runLocalRandomSongs: vi.fn(),
   getRandomSongsForServer: vi.fn(),
+  getAlbumListForServer: vi.fn(async (..._args: unknown[]) => [] as unknown[]),
+  getInternetRadioStationsForServer: vi.fn(async (..._args: unknown[]) => [] as unknown[]),
+  fetchGenreTracksForPlayback: vi.fn(async (..._args: unknown[]) => [] as unknown[]),
+  buildAndPlayLuckyMix: vi.fn(async () => {}),
+  luckyAvailable: false,
+  starredSongs: [] as unknown[],
+  starredAlbums: [] as unknown[],
+  auth: { infiniteQueueEnabled: false } as Record<string, unknown>,
+  setInfiniteQueueEnabled: vi.fn(),
   queueSongStar: vi.fn(),
   toggleShuffleMode: vi.fn(),
   toggleRepeat: vi.fn(),
@@ -43,7 +52,7 @@ vi.mock('@/features/offline', () => ({
   hydrateOfflineLibraryCards: vi.fn(async () => []),
   isOfflineBrowseActive: () => false,
   loadArtistFromLibraryIndex: vi.fn(async () => null),
-  loadStarredFromAllLibraryIndexes: vi.fn(async () => ({ artists: [], albums: [], songs: [] })),
+  loadStarredFromAllLibraryIndexes: vi.fn(async () => ({ artists: [], albums: mocks.starredAlbums, songs: mocks.starredSongs })),
   offlineQueueServerKeyForCard: () => 'srv',
   offlineTrackCount: () => 0,
 }));
@@ -58,7 +67,20 @@ vi.mock('@/lib/library/browseTextSearch', async importOriginal => ({
   fetchLocalArtistCatalogChunk: vi.fn(async () => null),
   runLocalRandomSongs: mocks.runLocalRandomSongs,
 }));
-vi.mock('@/lib/api/subsonicLibrary', async importOriginal => ({ ...(await importOriginal<object>()), getRandomSongsForServer: mocks.getRandomSongsForServer }));
+vi.mock('@/lib/api/subsonicLibrary', async importOriginal => ({
+  ...(await importOriginal<object>()),
+  getRandomSongsForServer: mocks.getRandomSongsForServer,
+  getAlbumListForServer: mocks.getAlbumListForServer,
+}));
+vi.mock('@/lib/api/subsonicRadio', () => ({ getInternetRadioStationsForServer: mocks.getInternetRadioStationsForServer }));
+vi.mock('@/features/playback/utils/playback/genreBrowsePlayback', () => ({ fetchGenreTracksForPlayback: mocks.fetchGenreTracksForPlayback }));
+vi.mock('@/features/randomMix', () => ({ isLuckyMixAvailable: () => mocks.luckyAvailable }));
+vi.mock('@/features/randomMix/utils/luckyMix', () => ({ buildAndPlayLuckyMix: mocks.buildAndPlayLuckyMix }));
+vi.mock('@/store/authStore', () => ({
+  useAuthStore: {
+    getState: () => ({ servers: [], activeServerId: 'srv', ...mocks.auth, setInfiniteQueueEnabled: mocks.setInfiniteQueueEnabled }),
+  },
+}));
 vi.mock('./carplayCovers', () => ({ attachCarPlayCovers: vi.fn(async () => null) }));
 vi.mock('@/store/mediaResolver', async importOriginal => ({ ...(await importOriginal<object>()), resolveAlbum: mocks.resolveAlbum }));
 
@@ -74,6 +96,12 @@ describe('carplayContent', () => {
     _resetCarPlayContentForTest();
     mocks.player = {};
     mocks.playlists = [];
+    mocks.luckyAvailable = false;
+    mocks.starredSongs = [];
+    mocks.starredAlbums = [];
+    mocks.auth = { infiniteQueueEnabled: false };
+    mocks.getAlbumListForServer.mockResolvedValue([]);
+    mocks.fetchGenreTracksForPlayback.mockResolvedValue([]);
   });
 
   it('playlist rows carry their cover source only when the playlist has a cover', async () => {
@@ -121,21 +149,91 @@ describe('carplayContent', () => {
     expect(carPlayState()).toMatchObject({ shuffle: true, repeat: 'one', starred: true, hasTrack: true, albumTitle: 'Record' });
   });
 
-  it('offers the four tabs in the native tab order', async () => {
-    const list = await carPlayList('tabs');
-    expect(list.sections[0].items.map(item => item.node)).toEqual(['home', 'playlists', 'library', 'downloads']);
-    expect(list.sections[0].items.every(item => item.browse)).toBe(true);
+  it('offers start, library, playlists and the mix tab, which is Lucky Mix only with AudioMuse', async () => {
+    const plain = await carPlayList('tabs');
+    expect(plain.sections[0].items.map(item => item.node)).toEqual(['home', 'library', 'playlists', 'mix']);
+    expect(plain.sections[0].items.every(item => item.browse)).toBe(true);
+    expect(plain.sections[0].items[3].icon).toBe('shuffle');
+    expect((await carPlayList('mix')).sections[0].items[0].node).toBe('random');
+
+    mocks.luckyAvailable = true;
+    const lucky = await carPlayList('tabs');
+    expect(lucky.sections[0].items[3].icon).toBe('lucky');
+    const mix = await carPlayList('mix');
+    expect(mix.sections[0].items[0].node).toBe('luckymix');
+    await carPlayPlay('luckymix');
+    expect(mocks.buildAndPlayLuckyMix).toHaveBeenCalledOnce();
   });
 
-  it('home lists recently played albums from the local feed, then the mix rows', async () => {
-    mocks.loadHomeChronologicalFeed.mockResolvedValue({
-      status: 'success', hasMore: false, durationMs: 1,
-      albums: [{ id: 'al1', name: 'Record', artist: 'Band', artistId: 'ar1', songCount: 2, duration: 400, serverId: 'srv' }],
-    });
+  it('start: continue listening, quick play, then a cover row per feed that has albums', async () => {
+    mocks.player = { currentTrack: { id: 't1', title: 'One', artist: 'Band', albumId: 'al1', serverId: 'srv', genre: 'Thrash' }, currentRadio: null };
+    const album = { id: 'al1', name: 'Record', artist: 'Band', artistId: 'ar1', songCount: 2, duration: 400, serverId: 'srv' };
+    mocks.loadHomeChronologicalFeed.mockResolvedValue({ status: 'success', hasMore: false, durationMs: 1, albums: [album] });
+    mocks.getAlbumListForServer.mockImplementation(async (...args: unknown[]) => (args[1] === 'frequent' ? [album] : []));
+    mocks.starredAlbums = [album];
     const list = await carPlayList('home');
-    expect(mocks.loadHomeChronologicalFeed).toHaveBeenCalledWith(expect.objectContaining({ feed: 'recentlyPlayed', anchorServerId: 'srv' }));
-    expect(list.sections[0].items[0]).toMatchObject({ node: 'album|srv|al1', title: 'Record', browse: true });
-    expect(list.sections[1].items.map(item => item.node)).toEqual(['random', 'favorites']);
+    expect(list.sections[0].items[0]).toMatchObject({ node: 'resume', title: 'One', browse: false });
+    expect(list.sections[1].items.map(item => item.node)).toEqual(['random', 'favplay', 'downloads']);
+    expect(list.sections[1].items[0].subtitle).toContain('Thrash');
+    expect(list.sections.slice(2).map(section => section.more)).toEqual(['feed|recentlyPlayed', 'feed|frequent', 'feed|newest', 'feed|starred']);
+    expect(list.sections[2].items[0]).toMatchObject({ node: 'album|srv|al1', browse: true });
+  });
+
+  it('start has no continue row without a song or while the radio plays', async () => {
+    mocks.loadHomeChronologicalFeed.mockResolvedValue({ status: 'success', hasMore: false, durationMs: 1, albums: [] });
+    expect((await carPlayList('home')).sections[0].items[0].node).toBe('random');
+    mocks.player = { currentTrack: { id: 't1', title: 'One' }, currentRadio: { id: 'r1' } };
+    expect((await carPlayList('home')).sections[0].items[0].node).toBe('random');
+  });
+
+  it('continue resumes a paused song and leaves a playing one alone', async () => {
+    const resume = vi.fn();
+    mocks.player = { currentTrack: { id: 't1' }, isPlaying: false, resume };
+    await carPlayPlay('resume');
+    mocks.player = { currentTrack: { id: 't1' }, isPlaying: true, resume };
+    await carPlayPlay('resume');
+    expect(resume).toHaveBeenCalledOnce();
+  });
+
+  it('the library lists recently added and the radio stations, and a station plays', async () => {
+    const library = await carPlayList('library');
+    expect(library.sections[0].items.map(item => item.node)).toEqual(['artists', 'albums', 'feed|newest', 'genres', 'radio']);
+    const playRadio = vi.fn();
+    mocks.player = { playRadio };
+    const station = { id: 'r1', name: 'Jazz', streamUrl: 'https://x' };
+    mocks.getInternetRadioStationsForServer.mockResolvedValueOnce([station]);
+    const radio = await carPlayList('radio');
+    expect(radio.sections[0].items[0]).toMatchObject({ node: 'radio|0', title: 'Jazz', browse: false });
+    await carPlayPlay('radio|0');
+    expect(playRadio).toHaveBeenCalledWith(station);
+  });
+
+  it('favourite songs play shuffled', async () => {
+    mocks.starredSongs = [song('f1'), song('f2')];
+    await carPlayPlay('favplay');
+    expect(mocks.playTrack.mock.calls[0][1].map((t: { id: string }) => t.id)).toEqual(['f2', 'f1']);
+  });
+
+  it('the random mix stays in the playing genre when it has enough songs', async () => {
+    mocks.player = { currentTrack: { id: 't1', genre: 'Thrash' } };
+    const inGenre = Array.from({ length: 12 }, (_, i) => ({ id: 'g' + i }));
+    mocks.fetchGenreTracksForPlayback.mockResolvedValueOnce(inGenre);
+    await carPlayPlay('random');
+    expect(mocks.fetchGenreTracksForPlayback).toHaveBeenCalledWith('srv', 'Thrash', expect.objectContaining({ shuffle: true }));
+    expect(mocks.runLocalRandomSongs).not.toHaveBeenCalled();
+    expect(mocks.playTrack.mock.calls[0][0].id).toBe('g0');
+
+    mocks.fetchGenreTracksForPlayback.mockResolvedValueOnce(inGenre.slice(0, 3));
+    mocks.runLocalRandomSongs.mockResolvedValueOnce([song('r1')]);
+    await carPlayPlay('random');
+    expect(mocks.playTrack.mock.calls[1][0].id).toBe('r1');
+  });
+
+  it('the infinity button toggles the infinite queue and its state is reported', () => {
+    mocks.auth = { infiniteQueueEnabled: true };
+    expect(carPlayState().infinite).toBe(true);
+    carPlayCommand('infinite');
+    expect(mocks.setInfiniteQueueEnabled).toHaveBeenCalledWith(false);
   });
 
   it('the album/artist button lists the artist as a row that opens their albums, then the album', async () => {

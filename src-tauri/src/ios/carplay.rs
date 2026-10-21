@@ -10,9 +10,14 @@
 //! album/artist buttons (lists `queue` / `current`) and our shuffle, repeat and heart
 //! buttons, which send `carplay:command` and redraw from `carplay:state`.
 //!
+//! A section with `more` is a row of covers (`CPListImageRowItem`) whose title opens the
+//! full list; rows without a cover can show a symbol (`icon`).
+//!
 //! On a cold start from the car the web layer may not listen yet: requests wait here
-//! and are sent again when it reports `carplay:ready`. tao is left out entirely; the
-//! phone scene starts exactly as before.
+//! and are sent again when it reports `carplay:ready`. If it has not reported after a few
+//! seconds (Psysonic was closed on the phone and iOS started only the car), the loading
+//! screen asks to open Psysonic on the iPhone instead of showing "…" forever. tao is left
+//! out entirely; the phone scene starts exactly as before.
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -22,7 +27,7 @@ use std::sync::OnceLock;
 use block2::{Block, RcBlock};
 use objc2::rc::{Allocated, Retained};
 use objc2::runtime::{AnyClass, AnyObject, Bool, NSObject};
-use objc2::{class, define_class, ffi, msg_send, ClassType, MainThreadMarker, MainThreadOnly};
+use objc2::{class, define_class, ffi, msg_send, sel, ClassType, MainThreadMarker, MainThreadOnly};
 use objc2_foundation::NSString;
 use tauri::{AppHandle, Emitter, Listener};
 
@@ -33,21 +38,13 @@ pub(crate) const ROLE_CARPLAY: &str = "CPTemplateApplicationSceneSessionRoleAppl
 const NODE_TABS: &str = "tabs";
 /// `CPListItemAccessoryTypeDisclosureIndicator`.
 const ACCESSORY_DISCLOSURE: isize = 1;
-/// SF Symbols per tab, in the order the web layer sends the tabs.
-const TAB_SYMBOLS: [&str; 4] = [
-    "house.fill",
-    "music.note.list",
-    "square.stack.fill",
-    "arrow.down.circle.fill",
-];
+/// CarPlay shows at most this many tabs for an audio app.
+const MAX_TABS: usize = 4;
+/// Seconds without `carplay:ready` before the loading screen asks to open the app.
+const OPEN_ON_PHONE_DELAY: f64 = 6.0;
 
 /// Lists whose rows are kept for covers that arrive later; older ones are dropped.
 const MAX_SHOWN_LISTS: usize = 48;
-/// `CPAssistantCellPositionTop`, `CPAssistantCellVisibilityAlways`,
-/// `CPAssistantCellActionTypePlayMedia` (CarPlay SDK, `CPAssistantCellConfiguration.h`).
-const ASSISTANT_POSITION_TOP: isize = 0;
-const ASSISTANT_VISIBILITY_ALWAYS: isize = 2;
-const ASSISTANT_ACTION_PLAY_MEDIA: isize = 0;
 /// `MPShuffleTypeOff` / `MPShuffleTypeItems`.
 const SHUFFLE_OFF: isize = 0;
 const SHUFFLE_ITEMS: isize = 1;
@@ -67,16 +64,28 @@ thread_local! {
     static PENDING: RefCell<HashMap<u64, (String, Retained<AnyObject>)>> = RefCell::new(HashMap::new());
     static NEXT_REQUEST: Cell<u64> = const { Cell::new(1) };
     /// Rows of answered lists by request id, so late covers find their row.
-    static SHOWN: RefCell<HashMap<u64, Vec<Vec<Retained<AnyObject>>>>> = RefCell::new(HashMap::new());
+    static SHOWN: RefCell<HashMap<u64, Vec<ShownSection>>> = RefCell::new(HashMap::new());
     /// What the now-playing buttons show, as last reported by the web layer.
     static STATE: RefCell<NowPlayingState> = RefCell::new(NowPlayingState::default());
     /// Observer for the now-playing template's up-next and album/artist buttons.
     static NOW_PLAYING_OBSERVER: RefCell<Option<Retained<NowPlayingObserver>>> = const { RefCell::new(None) };
     /// The shuffle / repeat remote commands are enabled and have their target (done once).
     static MODE_COMMANDS_READY: Cell<bool> = const { Cell::new(false) };
-    /// The heart state the now-playing buttons were last built with; rebuilding them on every
-    /// shuffle / repeat change made the buttons flash twice.
-    static BUTTONS_STARRED: Cell<Option<bool>> = const { Cell::new(None) };
+    /// The heart and ∞ states the now-playing buttons were last built with; rebuilding them
+    /// on every shuffle / repeat change made the buttons flash twice.
+    static BUTTONS_BUILT: Cell<Option<(bool, bool)>> = const { Cell::new(None) };
+    /// The web layer has reported `carplay:ready`, so it answers list requests.
+    static WEB_READY: Cell<bool> = const { Cell::new(false) };
+}
+
+/// The rows of one shown section, kept so covers that arrive later find their place.
+enum ShownSection {
+    Rows(Vec<Retained<AnyObject>>),
+    /// A row of covers: the row and the images it shows, in order.
+    Covers {
+        row: Retained<AnyObject>,
+        images: Vec<Retained<AnyObject>>,
+    },
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -103,6 +112,9 @@ struct NowPlayingState {
     /// `off` / `all` / `one`.
     repeat: String,
     starred: bool,
+    /// The infinite queue is on.
+    #[serde(default)]
+    infinite: bool,
     up_next_title: String,
     album_title: String,
 }
@@ -135,6 +147,8 @@ struct ListResult {
 struct Section {
     header: Option<String>,
     items: Vec<Item>,
+    /// Set on a row of covers: the node its title opens.
+    more: Option<String>,
 }
 
 #[derive(serde::Deserialize)]
@@ -147,6 +161,8 @@ struct Item {
     browse: bool,
     /// Absolute path of the cover on disk.
     image: Option<String>,
+    /// Symbol shown when there is no cover (`CarPlayIcon` in the web layer).
+    icon: Option<String>,
 }
 
 define_class!(
@@ -169,7 +185,30 @@ define_class!(
             unsafe {
                 setup_now_playing();
                 show_loading_root(controller);
+                let () = msg_send![
+                    self,
+                    performSelector: sel!(psyShowOpenOnPhoneHint),
+                    withObject: std::ptr::null::<AnyObject>(),
+                    afterDelay: OPEN_ON_PHONE_DELAY
+                ];
             }
+        }
+
+        /// Psysonic did not start behind the car: ask to open it on the phone.
+        #[unsafe(method(psyShowOpenOnPhoneHint))]
+        fn show_open_on_phone_hint(&self) {
+            if WEB_READY.with(Cell::get) {
+                return;
+            }
+            crate::app_eprintln!("[carplay] web layer not ready, asking to open the app");
+            PENDING.with(|pending| {
+                for (node, template) in pending.borrow().values() {
+                    if node == NODE_TABS {
+                        // SAFETY: main thread (performSelector on the main run loop).
+                        unsafe { set_empty_text(template, &open_on_phone_text()) };
+                    }
+                }
+            });
         }
 
         #[unsafe(method(templateApplicationScene:didDisconnectInterfaceController:))]
@@ -266,7 +305,10 @@ pub(crate) fn listen(app: &AppHandle) {
     });
     let ready = app.clone();
     app.listen_any("carplay:ready", move |_| {
-        let _ = ready.run_on_main_thread(resend_pending);
+        let _ = ready.run_on_main_thread(|| {
+            WEB_READY.with(|ready| ready.set(true));
+            resend_pending();
+        });
     });
     // Requests made before the app handle existed (CarPlay connected first).
     let _ = app.run_on_main_thread(resend_pending);
@@ -312,6 +354,54 @@ fn request_list(node: &str, template: Retained<AnyObject>) {
 
 fn ns(text: &str) -> Retained<NSString> {
     NSString::from_str(text)
+}
+
+/// The car's text before the web layer (and its translations) exists: German or English,
+/// after the phone's first language.
+fn open_on_phone_text() -> String {
+    // SAFETY: plain Foundation reads.
+    let german = unsafe {
+        let languages: *mut AnyObject = msg_send![class!(NSLocale), preferredLanguages];
+        let first: *mut AnyObject = if languages.is_null() {
+            std::ptr::null_mut()
+        } else {
+            msg_send![languages, firstObject]
+        };
+        !first.is_null() && (*(first as *const NSString)).to_string().starts_with("de")
+    };
+    if german {
+        "Bitte Psysonic einmal auf dem iPhone öffnen".to_string()
+    } else {
+        "Open Psysonic on your iPhone once".to_string()
+    }
+}
+
+/// SF Symbol for a row or tab symbol sent by the web layer.
+fn symbol_name(icon: &str) -> &'static str {
+    match icon {
+        "home" => "house.fill",
+        "library" => "square.stack.fill",
+        "playlists" => "music.note.list",
+        "lucky" => "sparkles",
+        "shuffle" => "shuffle",
+        "resume" => "play.circle.fill",
+        "heart" => "heart.fill",
+        "download" => "arrow.down.circle.fill",
+        "radio" => "dot.radiowaves.left.and.right",
+        _ => "music.note",
+    }
+}
+
+/// # Safety
+/// Main thread.
+unsafe fn symbol_image(icon: &str) -> Option<Retained<AnyObject>> {
+    msg_send![class!(UIImage), systemImageNamed: &*ns(symbol_name(icon))]
+}
+
+/// # Safety
+/// Main thread.
+unsafe fn file_image(path: &str) -> Option<Retained<AnyObject>> {
+    msg_send![class!(UIImage), imageWithContentsOfFile: &*ns(path)]
 }
 
 /// # Safety
@@ -409,16 +499,11 @@ unsafe fn show_tabs(result: &ListResult) {
         .sections
         .iter()
         .flat_map(|section| section.items.iter());
-    for (index, tab) in tabs.take(TAB_SYMBOLS.len()).enumerate() {
+    for tab in tabs.take(MAX_TABS) {
         let list = loading_list(&tab.title, loading);
         let () = msg_send![&*list, setTabTitle: &*ns(&tab.title)];
-        let image: *mut AnyObject =
-            msg_send![class!(UIImage), systemImageNamed: &*ns(TAB_SYMBOLS[index])];
-        if !image.is_null() {
-            let () = msg_send![&*list, setTabImage: image];
-        }
-        if index == 0 {
-            add_assistant_cell(&list);
+        if let Some(image) = symbol_image(tab.icon.as_deref().unwrap_or_default()) {
+            let () = msg_send![&*list, setTabImage: &*image];
         }
         let () = msg_send![&*templates, addObject: &*list];
         request_list(&tab.node, list);
@@ -433,34 +518,11 @@ unsafe fn show_tabs(result: &ListResult) {
     ];
 }
 
-/// The Siri row at the top of the Start tab ("Play with Siri"): Siri asks what to play and
-/// sends the answer to Psysonic itself (`siri.rs`), no "in Psysonic" needed and no detour
-/// to Apple Music. Audio apps get no search field in CarPlay; this is Apple's way instead.
-/// iOS 15+; older systems simply show no row.
-///
-/// # Safety
-/// Main thread; `list` is a CPListTemplate.
-unsafe fn add_assistant_cell(list: &AnyObject) {
-    let Some(class) = AnyClass::get(c"CPAssistantCellConfiguration") else {
-        return;
-    };
-    let config: Allocated<AnyObject> = msg_send![class, alloc];
-    let config: Retained<AnyObject> = msg_send![
-        config,
-        initWithPosition: ASSISTANT_POSITION_TOP,
-        visibility: ASSISTANT_VISIBILITY_ALWAYS,
-        assistantAction: ASSISTANT_ACTION_PLAY_MEDIA
-    ];
-    let () = msg_send![list, setAssistantCellConfiguration: &*config];
-}
-
 /// CPListSections for the web layer's sections, cut to CarPlay's item limit.
 ///
 /// # Safety
 /// Main thread.
-unsafe fn build_sections(
-    sections: &[Section],
-) -> (Retained<AnyObject>, Vec<Vec<Retained<AnyObject>>>) {
+unsafe fn build_sections(sections: &[Section]) -> (Retained<AnyObject>, Vec<ShownSection>) {
     let max_items: usize = msg_send![class!(CPListTemplate), maximumItemCount];
     let max_sections: usize = msg_send![class!(CPListTemplate), maximumSectionCount];
     let mut budget = max_items;
@@ -471,15 +533,24 @@ unsafe fn build_sections(
             break;
         }
         let items = mutable_array();
-        let mut section_rows = Vec::new();
-        for item in section.items.iter().take(budget) {
-            let row = list_item(item);
+        let mut header = section.header.as_deref().map(ns);
+        if let Some(more) = section.more.as_deref() {
+            let title = section.header.clone().unwrap_or_default();
+            let (row, images) = cover_row(&title, more, &section.items);
             let () = msg_send![&*items, addObject: &*row];
-            section_rows.push(row);
+            kept.push(ShownSection::Covers { row, images });
+            budget -= 1;
+            header = None; // the row carries the title
+        } else {
+            let mut section_rows = Vec::new();
+            for item in section.items.iter().take(budget) {
+                let row = list_item(item);
+                let () = msg_send![&*items, addObject: &*row];
+                section_rows.push(row);
+            }
+            kept.push(ShownSection::Rows(section_rows));
+            budget = budget.saturating_sub(section.items.len());
         }
-        kept.push(section_rows);
-        budget = budget.saturating_sub(section.items.len());
-        let header = section.header.as_deref().map(ns);
         let header_ptr: *const NSString = header
             .as_deref()
             .map_or(std::ptr::null(), |h| h as *const NSString);
@@ -498,10 +569,87 @@ unsafe fn build_sections(
 /// # Safety
 /// Main thread; `row` is a CPListItem.
 unsafe fn set_row_image(row: &AnyObject, path: &str) {
-    let image: *mut AnyObject = msg_send![class!(UIImage), imageWithContentsOfFile: &*ns(path)];
-    if !image.is_null() {
-        let () = msg_send![row, setImage: image];
+    if let Some(image) = file_image(path) {
+        let () = msg_send![row, setImage: &*image];
     }
+}
+
+/// # Safety
+/// Main thread.
+unsafe fn image_array(images: &[Retained<AnyObject>]) -> Retained<AnyObject> {
+    let array = mutable_array();
+    for image in images {
+        let () = msg_send![&*array, addObject: &**image];
+    }
+    array
+}
+
+/// A row of covers titled `title`: a cover opens or plays its item, the title opens `more`.
+/// Covers not on disk yet show a symbol until `apply_images` swaps them in.
+///
+/// # Safety
+/// Main thread.
+unsafe fn cover_row(
+    title: &str,
+    more: &str,
+    items: &[Item],
+) -> (Retained<AnyObject>, Vec<Retained<AnyObject>>) {
+    let max_images: usize = msg_send![class!(CPListImageRowItem), maximumImageCount];
+    let shown: Vec<&Item> = items.iter().take(max_images).collect();
+    let images: Vec<Retained<AnyObject>> = shown
+        .iter()
+        .filter_map(|item| {
+            item.image
+                .as_deref()
+                .and_then(|path| file_image(path))
+                .or_else(|| symbol_image(item.icon.as_deref().unwrap_or_default()))
+        })
+        .collect();
+    let row: Allocated<AnyObject> = msg_send![class!(CPListImageRowItem), alloc];
+    let row: Retained<AnyObject> = msg_send![
+        row,
+        initWithText: &*ns(title),
+        images: &*image_array(&images)
+    ];
+
+    let targets: Vec<(String, String, bool)> = shown
+        .iter()
+        .map(|item| (item.node.clone(), item.title.clone(), item.browse))
+        .collect();
+    let on_image: RcBlock<dyn Fn(NonNull<AnyObject>, isize, NonNull<Block<dyn Fn()>>)> =
+        RcBlock::new(
+            move |_row: NonNull<AnyObject>, index: isize, done: NonNull<Block<dyn Fn()>>| {
+                // SAFETY: CarPlay calls list handlers on the main thread.
+                unsafe {
+                    if let Some((node, title, browse)) = usize::try_from(index)
+                        .ok()
+                        .and_then(|index| targets.get(index))
+                    {
+                        if *browse {
+                            open_list(node, title);
+                        } else {
+                            play(node);
+                        }
+                    }
+                    done.as_ref().call(());
+                }
+            },
+        );
+    let () = msg_send![&*row, setListImageRowHandler: &*on_image];
+
+    let more = more.to_string();
+    let title = title.to_string();
+    let on_title: RcBlock<dyn Fn(NonNull<AnyObject>, NonNull<Block<dyn Fn()>>)> = RcBlock::new(
+        move |_row: NonNull<AnyObject>, done: NonNull<Block<dyn Fn()>>| {
+            // SAFETY: as above.
+            unsafe {
+                open_list(&more, &title);
+                done.as_ref().call(());
+            }
+        },
+    );
+    let () = msg_send![&*row, setHandler: &*on_title];
+    (row, images)
 }
 
 /// Covers downloaded after their list was shown.
@@ -510,16 +658,33 @@ unsafe fn set_row_image(row: &AnyObject, path: &str) {
 /// Main thread; rows in SHOWN are live CPListItems.
 unsafe fn apply_images(updates: ImageUpdates) {
     SHOWN.with(|shown| {
-        let shown = shown.borrow();
-        let Some(rows) = shown.get(&updates.request_id) else {
+        let mut shown = shown.borrow_mut();
+        let Some(sections) = shown.get_mut(&updates.request_id) else {
             return;
         };
+        let mut changed_cover_rows = Vec::new();
         for update in &updates.images {
-            if let Some(row) = rows
-                .get(update.section)
-                .and_then(|section| section.get(update.row))
-            {
-                set_row_image(row, &update.image);
+            match sections.get_mut(update.section) {
+                Some(ShownSection::Rows(rows)) => {
+                    if let Some(row) = rows.get(update.row) {
+                        set_row_image(row, &update.image);
+                    }
+                }
+                Some(ShownSection::Covers { images, .. }) => {
+                    if let (Some(slot), Some(image)) =
+                        (images.get_mut(update.row), file_image(&update.image))
+                    {
+                        *slot = image;
+                        changed_cover_rows.push(update.section);
+                    }
+                }
+                None => {}
+            }
+        }
+        changed_cover_rows.dedup();
+        for index in changed_cover_rows {
+            if let Some(ShownSection::Covers { row, images }) = sections.get(index) {
+                let () = msg_send![&**row, updateImages: &*image_array(images)];
             }
         }
     });
@@ -543,6 +708,8 @@ unsafe fn list_item(item: &Item) -> Retained<AnyObject> {
     }
     if let Some(path) = item.image.as_deref() {
         set_row_image(&row, path);
+    } else if let Some(image) = item.icon.as_deref().and_then(|icon| symbol_image(icon)) {
+        let () = msg_send![&*row, setImage: &*image];
     }
     let node = item.node.clone();
     let title = item.title.clone();
@@ -639,7 +806,7 @@ unsafe fn setup_now_playing() {
         NOW_PLAYING_OBSERVER.with(|slot| *slot.borrow_mut() = Some(observer));
     }
     // A new car connection starts with default buttons.
-    BUTTONS_STARRED.with(|last| last.set(None));
+    BUTTONS_BUILT.with(|last| last.set(None));
     update_now_playing_buttons();
 }
 
@@ -685,8 +852,9 @@ unsafe fn update_now_playing_buttons() {
         state.repeat,
         state.starred
     );
-    if BUTTONS_STARRED.with(|last| last.replace(Some(state.starred))) != Some(state.starred) {
-        rebuild_now_playing_buttons(state.starred);
+    let built = (state.starred, state.infinite);
+    if BUTTONS_BUILT.with(|last| last.replace(Some(built))) != Some(built) {
+        rebuild_now_playing_buttons(state.starred, state.infinite);
     }
 
     apply_modes(state.shuffle, &state.repeat);
@@ -749,11 +917,11 @@ fn press_mode(action: &'static str) {
     }
 }
 
-/// The shuffle / repeat / heart buttons themselves; only the heart changes with the state.
+/// The shuffle / repeat / heart / ∞ buttons themselves; the heart and ∞ change with the state.
 ///
 /// # Safety
 /// Main thread.
-unsafe fn rebuild_now_playing_buttons(starred: bool) {
+unsafe fn rebuild_now_playing_buttons(starred: bool, infinite: bool) {
     let now_playing: *mut AnyObject = msg_send![class!(CPNowPlayingTemplate), sharedTemplate];
     let buttons = mutable_array();
 
@@ -779,6 +947,19 @@ unsafe fn rebuild_now_playing_buttons(starred: bool) {
         let heart: Retained<AnyObject> =
             msg_send![heart, initWithImage: heart_image, handler: &*on_heart];
         let () = msg_send![&*buttons, addObject: &*heart];
+    }
+
+    let infinity_image: *mut AnyObject =
+        msg_send![class!(UIImage), systemImageNamed: &*ns("infinity")];
+    if !infinity_image.is_null() {
+        let on_infinite: RcBlock<dyn Fn(NonNull<AnyObject>)> =
+            RcBlock::new(|_button: NonNull<AnyObject>| send_command("infinite"));
+        let button: Allocated<AnyObject> = msg_send![class!(CPNowPlayingImageButton), alloc];
+        let button: Retained<AnyObject> =
+            msg_send![button, initWithImage: infinity_image, handler: &*on_infinite];
+        // Highlighted while the infinite queue is on.
+        let () = msg_send![&*button, setSelected: Bool::new(infinite)];
+        let () = msg_send![&*buttons, addObject: &*button];
     }
     let () = msg_send![now_playing, updateNowPlayingButtons: &*buttons];
 }
