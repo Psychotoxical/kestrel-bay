@@ -38,8 +38,6 @@ import { refreshWaveformForTrack } from '@/features/playback/store/waveformRefre
 import { analysisTrackRef } from '@/features/playback/store/analysisTrackRef';
 import { syncQueueToServer } from '@/features/playback/store/queueSync';
 import { useAuthStore } from '@/store/authStore';
-import { IS_MOBILE_SHELL } from '@/lib/util/platform';
-import { topUpInfiniteQueueAhead } from '@/features/playback/store/infiniteQueueTopUp';
 import { setIsAudioPaused } from '@/features/playback/store/engineState';
 import {
   getLastEngineProgressSec,
@@ -223,10 +221,6 @@ export function applyGaplessQueueAdvance(opts?: {
   }
   void playListenSessionOnTrackSwitched(nextTrack);
   applyGaplessSuccessorUi(store, nextTrack, newIndex, source);
-  // Touch shell: gapless is the usual way a song changes, and the phone may be locked with
-  // the page asleep when the queue would run dry, so the infinite queue tops up here too,
-  // not only on `next`.
-  if (IS_MOBILE_SHELL) topUpInfiniteQueueAhead(usePlayerStore.setState, usePlayerStore.getState, newIndex, nextTrack);
   return { advanced: true, nextTrack, newIndex };
 }
 
