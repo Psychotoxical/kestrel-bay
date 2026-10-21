@@ -11,6 +11,7 @@ import type { SearchResults, SubsonicSong } from '@/lib/api/subsonicTypes';
 import { songToTrack } from '@/lib/media/songToTrack';
 import { resolveAlbum } from '@/store/mediaResolver';
 import { useAuthStore } from '@/store/authStore';
+import { frontendDebugLog } from '@/lib/api/debugLog';
 import { carPlayPlay } from './carplayContent';
 
 /** What Siri understood (`siri:play`); `mediaType` is `INMediaItemType`. */
@@ -158,6 +159,21 @@ async function playPlaylist(name: string): Promise<boolean> {
  * plays on with its album. Returns whether anything started.
  */
 export async function playSiriRequest(request: SiriPlayRequest): Promise<boolean> {
+  // Steps with their time since the request: the car test of 21.10. took 59 s to play.
+  const startedAt = performance.now();
+  const step = (name: string, details?: Record<string, unknown>) => frontendDebugLog(
+    'siri', JSON.stringify({ step: name, ms: Math.round(performance.now() - startedAt), ...details }),
+  );
+  step('received', { mediaType: request.mediaType });
+  const played = await playSiriRequestSteps(request, step);
+  step(played ? 'playing' : 'nothing-found');
+  return played;
+}
+
+async function playSiriRequestSteps(
+  request: SiriPlayRequest,
+  step: (name: string, details?: Record<string, unknown>) => void,
+): Promise<boolean> {
   const query = stripSpokenAppName(request.mediaName)
     ?? stripSpokenAppName(request.artistName)
     ?? stripSpokenAppName(request.albumName);
@@ -172,6 +188,7 @@ export async function playSiriRequest(request: SiriPlayRequest): Promise<boolean
     found.artists.some(a => same(a.name, query))
     || found.albums.some(a => spokenMatchScore(query, a.name, a.artist, artistHint) > 0)
     || found.songs.some(s => spokenMatchScore(query, s.title, s.artist, artistHint) > 0));
+  step('searched', { artists: hits.artists.length, albums: hits.albums.length, songs: hits.songs.length });
   const artist = hits.artists.find(a => same(a.name, query));
   const album = best(hits.albums, a => spokenMatchScore(query, a.name, a.artist, artistHint));
   const song = best(hits.songs, s => spokenMatchScore(query, s.title, s.artist, artistHint));

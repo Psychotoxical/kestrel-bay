@@ -30,6 +30,7 @@ import android.support.v4.media.session.PlaybackStateCompat
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.drawable.toBitmap
 import org.json.JSONObject
 
 object PsysonicMedia {
@@ -107,10 +108,12 @@ object PsysonicMedia {
           .setMediaId(row.getString("node"))
           .setTitle(row.optString("title"))
           .setSubtitle(row.optString("subtitle").ifEmpty { null })
-        row.optString("image").ifEmpty { null }?.let { path -> carIcon(path)?.let(description::setIconBitmap) }
+        val image = row.optString("image").ifEmpty { null }?.let { path -> carIcon(path) }
+          ?: if (grid) moreIcon() else null
+        image?.let(description::setIconBitmap)
         val extras = android.os.Bundle()
         header?.let { extras.putString(GROUP_TITLE, it) }
-        if (grid && !row.optBoolean("list")) extras.putInt(SINGLE_ITEM_STYLE, STYLE_GRID)
+        if (grid) extras.putInt(SINGLE_ITEM_STYLE, STYLE_GRID)
         if (!extras.isEmpty) description.setExtras(extras)
         val flags = if (row.optBoolean("browse")) {
           MediaBrowserCompat.MediaItem.FLAG_BROWSABLE
@@ -129,6 +132,11 @@ object PsysonicMedia {
   /** Per-row style (`MediaConstants.DESCRIPTION_EXTRAS_KEY_CONTENT_STYLE_SINGLE_ITEM`): the Start tab's cover rows as a grid. */
   private const val SINGLE_ITEM_STYLE = "android.media.browse.CONTENT_STYLE_SINGLE_ITEM_HINT"
   private const val STYLE_GRID = 2
+
+  /** The "show all" tile of a cover row; a tile without a picture shows a warning sign. */
+  private fun moreIcon(): Bitmap? = appContext?.let { ctx ->
+    runCatching { ContextCompat.getDrawable(ctx, R.drawable.ic_car_more)?.toBitmap(192, 192) }.getOrNull()
+  }
 
   /** A cover from the app's cache, scaled down for a car list row. */
   private fun carIcon(path: String): Bitmap? = runCatching {
@@ -160,6 +168,7 @@ object PsysonicMedia {
   fun onCarConnected(connected: Boolean) {
     main.post {
       carConnected = connected
+      refreshPlaybackState()
       if (activityPaused) {
         if (keepWebAwake()) webView?.onResume() else webView?.onPause()
       }
@@ -167,6 +176,54 @@ object PsysonicMedia {
   }
 
   private fun keepWebAwake() = playing || carConnected
+
+  // ── Android Auto player buttons: shuffle, repeat, favourite and the infinite queue, as
+  // custom actions. Only while a car is connected, so the phone's media notification keeps
+  // its usual buttons. The web view reports their state (`setCarState`, androidAuto.ts).
+  private var carShuffle = false
+  private var carRepeat = "off"
+  private var carStarred = false
+  private var carInfinite = false
+
+  private fun setCarState(json: String) {
+    val o = JSONObject(json)
+    carShuffle = o.optBoolean("shuffle")
+    carRepeat = o.optString("repeat").ifEmpty { "off" }
+    carStarred = o.optBoolean("starred")
+    carInfinite = o.optBoolean("infinite")
+    if (carConnected) refreshPlaybackState()
+  }
+
+  private fun carAction(ctx: Context, id: String, name: Int, icon: Int) =
+    PlaybackStateCompat.CustomAction.Builder(id, ctx.getString(name), icon).build()
+
+  private fun playbackState(state: Int, positionMs: Long, speed: Float, updatedAt: Long): PlaybackStateCompat {
+    val builder = PlaybackStateCompat.Builder().setActions(ACTIONS).setState(state, positionMs, speed, updatedAt)
+    val ctx = appContext
+    if (carConnected && ctx != null) {
+      builder.addCustomAction(carAction(ctx, "shuffle", R.string.car_shuffle,
+        if (carShuffle) R.drawable.ic_car_shuffle_on else R.drawable.ic_car_shuffle_off))
+      builder.addCustomAction(carAction(ctx, "repeat", R.string.car_repeat, when (carRepeat) {
+        "all" -> R.drawable.ic_car_repeat_all
+        "one" -> R.drawable.ic_car_repeat_one
+        else -> R.drawable.ic_car_repeat_off
+      }))
+      builder.addCustomAction(carAction(ctx, "star", R.string.car_favorite,
+        if (carStarred) R.drawable.ic_car_heart_filled else R.drawable.ic_car_heart))
+      builder.addCustomAction(carAction(ctx, "infinite", R.string.car_infinite,
+        if (carInfinite) R.drawable.ic_car_infinite_on else R.drawable.ic_car_infinite_off))
+    }
+    return builder.build()
+  }
+
+  /** Same play state and position, buttons redrawn. */
+  private fun refreshPlaybackState() {
+    val s = session ?: return
+    val current = s.controller.playbackState ?: return
+    s.setPlaybackState(
+      playbackState(current.state, current.position, current.playbackSpeed, current.lastPositionUpdateTime),
+    )
+  }
 
   fun onActivityResumed() {
     activityPaused = false
@@ -191,6 +248,10 @@ object PsysonicMedia {
         override fun onSkipToPrevious() = command("prev")
         override fun onStop() = command("pause")
         override fun onSeekTo(pos: Long) = command("seek", pos / 1000.0)
+        // Android Auto's own buttons (shuffle, repeat, favourite, infinite queue).
+        override fun onCustomAction(action: String?, extras: android.os.Bundle?) {
+          action?.let { js("window.__psyAutoCommand && window.__psyAutoCommand(${JSONObject.quote(it)})") }
+        }
         // Android Auto: a list row, or "Play … on Psysonic" by voice.
         override fun onPlayFromMediaId(mediaId: String?, extras: android.os.Bundle?) {
           mediaId?.let { node -> js("window.__psyAutoPlay && window.__psyAutoPlay(${JSONObject.quote(node)})") }
@@ -254,10 +315,7 @@ object PsysonicMedia {
     val s = ensureSession(ctx)
     val state = if (isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
     s.setPlaybackState(
-      PlaybackStateCompat.Builder()
-        .setActions(ACTIONS)
-        .setState(state, positionMs.coerceAtLeast(0), if (isPlaying) 1f else 0f, SystemClock.elapsedRealtime())
-        .build(),
+      playbackState(state, positionMs.coerceAtLeast(0), if (isPlaying) 1f else 0f, SystemClock.elapsedRealtime()),
     )
     if (isPlaying == playing && PsysonicMediaService.running) return
     playing = isPlaying
@@ -351,6 +409,11 @@ object PsysonicMedia {
     @JavascriptInterface
     fun setPlayback(isPlaying: Boolean, positionSecs: Double) {
       main.post { runCatching { PsysonicMedia.setPlayback(isPlaying, (positionSecs * 1000).toLong()) } }
+    }
+
+    @JavascriptInterface
+    fun setCarState(json: String) {
+      main.post { runCatching { PsysonicMedia.setCarState(json) } }
     }
 
     @JavascriptInterface

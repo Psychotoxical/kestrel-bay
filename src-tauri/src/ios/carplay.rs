@@ -81,10 +81,12 @@ thread_local! {
 /// The rows of one shown section, kept so covers that arrive later find their place.
 enum ShownSection {
     Rows(Vec<Retained<AnyObject>>),
-    /// A row of covers: the row and the images it shows, in order.
+    /// A row of covers: the row and the images it shows, in order. From iOS 26 each cover is
+    /// an element with its own title and subtitle (`elements`); before that only images.
     Covers {
         row: Retained<AnyObject>,
         images: Vec<Retained<AnyObject>>,
+        elements: Option<Vec<Retained<AnyObject>>>,
     },
 }
 
@@ -536,9 +538,13 @@ unsafe fn build_sections(sections: &[Section]) -> (Retained<AnyObject>, Vec<Show
         let mut header = section.header.as_deref().map(ns);
         if let Some(more) = section.more.as_deref() {
             let title = section.header.clone().unwrap_or_default();
-            let (row, images) = cover_row(&title, more, &section.items);
+            let (row, images, elements) = cover_row(&title, more, &section.items);
             let () = msg_send![&*items, addObject: &*row];
-            kept.push(ShownSection::Covers { row, images });
+            kept.push(ShownSection::Covers {
+                row,
+                images,
+                elements,
+            });
             budget -= 1;
             header = None; // the row carries the title
         } else {
@@ -585,15 +591,22 @@ unsafe fn image_array(images: &[Retained<AnyObject>]) -> Retained<AnyObject> {
 }
 
 /// A row of covers titled `title`: a cover opens or plays its item, the title opens `more`.
-/// Covers not on disk yet show a symbol until `apply_images` swaps them in.
+/// Covers not on disk yet show a symbol until `apply_images` swaps them in. iOS 26 and later
+/// get `CPListImageRowItemRowElement`s (cover, title and artist, the current API); older
+/// systems the plain image row (`initWithText:images:`, deprecated since iOS 26).
 ///
 /// # Safety
 /// Main thread.
+#[allow(clippy::type_complexity)]
 unsafe fn cover_row(
     title: &str,
     more: &str,
     items: &[Item],
-) -> (Retained<AnyObject>, Vec<Retained<AnyObject>>) {
+) -> (
+    Retained<AnyObject>,
+    Vec<Retained<AnyObject>>,
+    Option<Vec<Retained<AnyObject>>>,
+) {
     let max_images: usize = msg_send![class!(CPListImageRowItem), maximumImageCount];
     let shown: Vec<&Item> = items.iter().take(max_images).collect();
     let images: Vec<Retained<AnyObject>> = shown
@@ -606,11 +619,43 @@ unsafe fn cover_row(
         })
         .collect();
     let row: Allocated<AnyObject> = msg_send![class!(CPListImageRowItem), alloc];
-    let row: Retained<AnyObject> = msg_send![
-        row,
-        initWithText: &*ns(title),
-        images: &*image_array(&images)
-    ];
+    let (row, elements): (Retained<AnyObject>, _) =
+        match AnyClass::get(c"CPListImageRowItemRowElement") {
+            Some(element_class) => {
+                let elements: Vec<Retained<AnyObject>> = shown
+                    .iter()
+                    .zip(&images)
+                    .map(|(item, image)| {
+                        let subtitle = item.subtitle.as_deref().map(ns);
+                        let subtitle_ptr: *const NSString = subtitle
+                            .as_deref()
+                            .map_or(std::ptr::null(), |s| s as *const NSString);
+                        let element: Allocated<AnyObject> = msg_send![element_class, alloc];
+                        msg_send![
+                            element,
+                            initWithImage: &**image,
+                            title: &*ns(&item.title),
+                            subtitle: subtitle_ptr
+                        ]
+                    })
+                    .collect();
+                let row: Retained<AnyObject> = msg_send![
+                    row,
+                    initWithText: &*ns(title),
+                    elements: &*image_array(&elements),
+                    allowsMultipleLines: Bool::NO
+                ];
+                (row, Some(elements))
+            }
+            None => {
+                let row: Retained<AnyObject> = msg_send![
+                    row,
+                    initWithText: &*ns(title),
+                    images: &*image_array(&images)
+                ];
+                (row, None)
+            }
+        };
 
     let targets: Vec<(String, String, bool)> = shown
         .iter()
@@ -649,7 +694,7 @@ unsafe fn cover_row(
         },
     );
     let () = msg_send![&*row, setHandler: &*on_title];
-    (row, images)
+    (row, images, elements)
 }
 
 /// Covers downloaded after their list was shown.
@@ -670,12 +715,20 @@ unsafe fn apply_images(updates: ImageUpdates) {
                         set_row_image(row, &update.image);
                     }
                 }
-                Some(ShownSection::Covers { images, .. }) => {
+                Some(ShownSection::Covers {
+                    images, elements, ..
+                }) => {
                     if let (Some(slot), Some(image)) =
                         (images.get_mut(update.row), file_image(&update.image))
                     {
+                        match elements.as_ref().and_then(|e| e.get(update.row)) {
+                            // An element shows its new image itself.
+                            Some(element) => {
+                                let () = msg_send![&**element, setImage: &*image];
+                            }
+                            None => changed_cover_rows.push(update.section),
+                        }
                         *slot = image;
-                        changed_cover_rows.push(update.section);
                     }
                 }
                 None => {}
@@ -683,7 +736,7 @@ unsafe fn apply_images(updates: ImageUpdates) {
         }
         changed_cover_rows.dedup();
         for index in changed_cover_rows {
-            if let Some(ShownSection::Covers { row, images }) = sections.get(index) {
+            if let Some(ShownSection::Covers { row, images, .. }) = sections.get(index) {
                 let () = msg_send![&**row, updateImages: &*image_array(images)];
             }
         }

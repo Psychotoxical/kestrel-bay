@@ -3,14 +3,19 @@
  * PsysonicAutoService.kt`): the car asks for a list by node, gets the same lists CarPlay
  * shows (`mobileShell/car/carplayContent`), plays a row by node, and voice requests
  * ("Play … on Psysonic") go through the same matching as Siri (`mobileShell/car/siriPlay`).
+ * The player's shuffle, repeat, favourite and infinite queue buttons work as in CarPlay.
  */
-import { carPlayList, carPlayPlay } from '@/features/mobileShell/car/carplayContent';
+import { carPlayCommand, carPlayList, carPlayPlay, carPlayState } from '@/features/mobileShell/car/carplayContent';
+import { usePlayerStore } from '@/features/playback';
+import { useAuthStore } from '@/store/authStore';
 import { playSiriRequest, type SiriPlayRequest } from '@/features/mobileShell/car/siriPlay';
 import i18n from '@/lib/i18n';
 import { IS_ANDROID } from '@/lib/util/platform';
 
 interface AndroidAutoHost {
   carListResult(id: number, json: string): void;
+  /** Older app builds lack it. */
+  setCarState?(json: string): void;
 }
 
 declare global {
@@ -18,6 +23,7 @@ declare global {
     __psyAutoList?: (id: number, node: string) => void;
     __psyAutoPlay?: (node: string) => void;
     __psyAutoSearch?: (request: AutoSearchRequest) => void;
+    __psyAutoCommand?: (action: string) => void;
   }
 }
 
@@ -61,7 +67,7 @@ function host(): AndroidAutoHost | undefined {
   return (window as unknown as { PsysonicAndroidMedia?: AndroidAutoHost }).PsysonicAndroidMedia;
 }
 
-/** Albums per cover row in Android Auto, which shows the row as list rows; the rest is "show all". */
+/** Albums per cover row in Android Auto; the rest is behind "show all". */
 const AUTO_COVER_ROW_SIZE = 8;
 
 /** One car list as the native side reads it: sections of rows, covers as file paths. */
@@ -70,8 +76,7 @@ export async function carListJson(node: string): Promise<string> {
   return JSON.stringify({
     sections: list.sections.map(section => ({
       header: section.header ?? '',
-      // A cover row asks for a grid (the desktop head unit still shows a list);
-      // its header link becomes a last "show all" row.
+      // A cover row becomes a grid of tiles; its header link becomes a last "show all" tile.
       grid: !!section.more,
       items: [
         ...(section.more ? section.items.slice(0, AUTO_COVER_ROW_SIZE) : section.items).map(item => ({
@@ -82,7 +87,7 @@ export async function carListJson(node: string): Promise<string> {
           image: item.image ?? '',
         })),
         ...(section.more
-          ? [{ node: section.more, title: i18n.t('carPlay.showAll'), subtitle: '', browse: true, image: '', list: true }]
+          ? [{ node: section.more, title: i18n.t('carPlay.showAll'), subtitle: '', browse: true, image: '' }]
           : []),
       ],
     })),
@@ -99,9 +104,25 @@ export function installAndroidAuto(): () => void {
   window.__psyAutoSearch = request => {
     void playSiriRequest(autoSearchToSiri(request)).catch(() => {});
   };
+  // The player's shuffle, repeat, favourite and infinite queue buttons, as in CarPlay.
+  window.__psyAutoCommand = action => carPlayCommand(action);
+  let lastState = '';
+  const pushState = () => {
+    const { shuffle, repeat, starred, infinite } = carPlayState();
+    const json = JSON.stringify({ shuffle, repeat, starred, infinite });
+    if (json === lastState) return;
+    lastState = json;
+    host()?.setCarState?.(json);
+  };
+  const offPlayer = usePlayerStore.subscribe(pushState);
+  const offAuth = useAuthStore.subscribe(pushState);
+  pushState();
   return () => {
+    offPlayer();
+    offAuth();
     delete window.__psyAutoList;
     delete window.__psyAutoPlay;
     delete window.__psyAutoSearch;
+    delete window.__psyAutoCommand;
   };
 }

@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android Auto, shown while Psysonic is not open on the phone (PsysonicAutoService). -->
+<!-- Android Auto: the hint while Psysonic is not open on the phone (PsysonicAutoService) and
+     the player's own buttons (PsysonicMedia custom actions). -->
 <resources>
   <string name="car_open_on_phone">Bitte Psysonic einmal auf dem Handy öffnen</string>
+  <string name="car_shuffle">Zufall</string>
+  <string name="car_repeat">Wiederholen</string>
+  <string name="car_favorite">Favorit</string>
+  <string name="car_infinite">Endlos-Warteschlange</string>
 </resources>
