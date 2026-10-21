@@ -83,11 +83,17 @@ object PsysonicMedia {
   private fun setCarListsReady() {
     carListsReady = true
     PsysonicAutoService.listsReady()
+    if (playWhenReady) {
+      playWhenReady = false
+      command("play")
+    }
   }
 
   // ── Android Auto lists: asked of the web view (androidAuto.ts), answered by carListResult.
   private var nextCarRequest = 1
   private val carRequests = HashMap<Int, Pair<String, (List<MediaBrowserCompat.MediaItem>) -> Unit>>()
+  /** Requests answered empty after the timeout, by id: a late answer refreshes their list. */
+  private val lateCarRequests = HashMap<Int, String>()
 
   fun requestCarList(node: String, reply: (List<MediaBrowserCompat.MediaItem>) -> Unit) {
     val view = webView ?: return reply(emptyList())
@@ -97,8 +103,15 @@ object PsysonicMedia {
       "window.__psyAutoList && window.__psyAutoList($id, ${JSONObject.quote(node)})",
       null,
     )
-    // No answer (web view busy or gone): an empty list beats a car screen that spins.
-    main.postDelayed({ carRequests.remove(id)?.second?.invoke(emptyList()) }, 10_000)
+    // No answer (web view busy or gone): an empty list beats a car screen that spins. Right
+    // after a start the library can be busy for longer (the Start tab stayed empty, car test
+    // 21.10.): when the answer still comes, the car is told to ask again.
+    main.postDelayed({
+      carRequests.remove(id)?.let { (late, reply) ->
+        lateCarRequests[id] = late
+        reply(emptyList())
+      }
+    }, 10_000)
   }
 
   /**
@@ -114,7 +127,10 @@ object PsysonicMedia {
   }
 
   private fun carListResult(id: Int, json: String) {
-    val (node, reply) = carRequests.remove(id) ?: return
+    val (node, reply) = carRequests.remove(id) ?: run {
+      lateCarRequests.remove(id)?.let { PsysonicAutoService.listsChanged(listOf(it)) }
+      return
+    }
     val items = carItems(json)
     if (node == PsysonicAutoService.ROOT && items.isNotEmpty()) {
       appContext?.getSharedPreferences(CAR_PREFS, Context.MODE_PRIVATE)
@@ -261,9 +277,20 @@ object PsysonicMedia {
     activityPaused = false
   }
 
+  /**
+   * Android Auto starts playback as it connects ("start music automatically"), before a
+   * Psysonic it launched itself has a web view: the press was lost and the restored song sat
+   * paused while the car waited for sound (car test 21.10.). It is played once the page is up.
+   */
+  private var playWhenReady = false
+
   /** A button from the lock screen, notification or a headset: hand it to the web view. */
   fun command(name: String, seconds: Double = 0.0) {
     main.post {
+      if (!webReady()) {
+        playWhenReady = name == "play" || (playWhenReady && name != "pause" && name != "stop")
+        return@post
+      }
       webView?.evaluateJavascript(
         "window.__psyAndroidMediaCommand && window.__psyAndroidMediaCommand('$name', $seconds)",
         null,

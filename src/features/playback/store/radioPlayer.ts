@@ -1,4 +1,6 @@
 import { showToast } from '@/lib/dom/toast';
+import { frontendDebugLog } from '@/lib/api/debugLog';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { usePlayerStore } from '@/features/playback/store/playerStore';
 import { useEqStore } from '@/store/eqStore';
 import {
@@ -137,7 +139,17 @@ radioAudio.addEventListener('error', () => {
   usePlayerStore.setState({ isPlaying: false, currentRadio: null });
   showToast('Radio stream error', 3000, 'error');
 });
+/**
+ * Mobile only: when the station was asked for, so the log shows how long the first sound
+ * took (a first start in the car felt very slow, car test 21.10.).
+ */
+let radioStartRequestedAt = 0;
+
 radioAudio.addEventListener('playing', () => {
+  if (IS_MOBILE_SHELL && radioStartRequestedAt) {
+    frontendDebugLog('radio', JSON.stringify({ step: 'playing', ms: Math.round(performance.now() - radioStartRequestedAt) }));
+    radioStartRequestedAt = 0;
+  }
   suppressHtml5RadioErrors = false;
   radioAwaitingFirstFrame = false;
   radioReconnectCount = 0;
@@ -190,6 +202,10 @@ async function maybeAttachEqGraph(): Promise<boolean> {
 export const RADIO_STARTING_EVENT = 'psysonic:radio-starting';
 
 export async function playRadioStream(streamUrl: string, volume: number): Promise<void> {
+  if (IS_MOBILE_SHELL) {
+    radioStartRequestedAt = performance.now();
+    frontendDebugLog('radio', JSON.stringify({ step: 'start' }));
+  }
   window.dispatchEvent(new Event(RADIO_STARTING_EVENT));
   beginRadioFade();
   transportGain = 1;

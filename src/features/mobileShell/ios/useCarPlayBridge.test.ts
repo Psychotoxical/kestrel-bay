@@ -54,7 +54,7 @@ describe('useCarPlayBridge', () => {
   it('sends covers that were missing on disk after the list', async () => {
     content.carPlayList.mockResolvedValueOnce({
       sections: [{ items: [{ node: 'album|s|a', title: 'A', browse: true }] }],
-      refreshCovers: async () => [{ section: 0, row: 0, image: '/covers/a/256.webp' }],
+      refreshCovers: async (onImages: (images: unknown[]) => void) => { onImages([{ section: 0, row: 0, image: '/covers/a/256.webp' }]); },
     } as never);
     const { unmount } = renderHook(() => useCarPlayBridge());
     await waitFor(() => expect(emitMock).toHaveBeenCalledWith('carplay:ready'));

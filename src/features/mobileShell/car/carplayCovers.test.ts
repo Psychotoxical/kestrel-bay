@@ -60,8 +60,23 @@ describe('attachCarPlayCovers', () => {
     const sections = [{ items: [row('a')] }, { items: [{}, row('c')] }];
     const refresh = await attachCarPlayCovers(sections);
     expect(refresh).not.toBeNull();
-    const updates = await refresh!();
+    const updates: unknown[] = [];
+    await refresh!(chunk => updates.push(...chunk));
     expect(covers.ensure).toHaveBeenCalledWith([{ fetchCoverArtId: 'al-c' }], 256);
     expect(updates).toEqual([{ section: 1, row: 1, image: '/covers/c/256.webp' }]);
+  });
+
+  it('covers rows far down a long list, in chunks from the top', async () => {
+    covers.peek.mockImplementation(async (refs: Array<{ fetchCoverArtId: string }>) =>
+      // Nothing on disk until the first download.
+      Object.fromEntries(covers.ensure.mock.calls.length === 0 ? [] : refs
+        .map(ref => [`${ref.fetchCoverArtId}:256`, `/covers/${ref.fetchCoverArtId}/256.webp`])));
+    const sections = [{ items: Array.from({ length: 100 }, (_, i) => row(String(i))) }];
+    const refresh = await attachCarPlayCovers(sections);
+    const chunks: number[][] = [];
+    await refresh!(chunk => chunks.push(chunk.map(update => update.row)));
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks[0][0]).toBe(0);
+    expect(chunks.flat()).toContain(99);
   });
 });

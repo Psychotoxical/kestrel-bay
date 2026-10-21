@@ -10,8 +10,13 @@ import {
 
 /** Row thumbnails in CarPlay are small; this tier is sharp on every car screen. */
 const CARPLAY_COVER_TIER = 256;
-/** Only the first rows get covers; CarPlay rarely shows more without scrolling far. */
-const CARPLAY_COVER_ROWS = 60;
+/**
+ * Rows that get covers: every row of the longest list (200). With only the first 60, an
+ * album list showed no covers further down, however long it stayed open (car test 21.10.).
+ */
+const CARPLAY_COVER_ROWS = 200;
+/** Missing covers download in chunks, so the first rows show theirs before the rest are in. */
+const COVER_CHUNK = 24;
 
 /** The entity whose cover a row shows. */
 export interface CarPlayCoverSource {
@@ -70,6 +75,9 @@ async function peekImages(rows: CoverRow[]): Promise<Map<CoverRow, string>> {
   return found;
 }
 
+/** Downloads the missing covers chunk by chunk, top rows first, reporting each chunk. */
+export type CarPlayCoverRefresh = (onImages: (updates: CarPlayCoverUpdate[]) => void) => Promise<void>;
+
 /**
  * Sets `image` on rows whose cover is already on disk (no network), and returns a
  * follow-up that downloads the missing ones and reports them, or null when none
@@ -77,7 +85,7 @@ async function peekImages(rows: CoverRow[]): Promise<Map<CoverRow, string>> {
  */
 export async function attachCarPlayCovers(
   sections: ReadonlyArray<{ items: CoverTarget[] }>,
-): Promise<(() => Promise<CarPlayCoverUpdate[]>) | null> {
+): Promise<CarPlayCoverRefresh | null> {
   const pending: Array<Promise<CoverRow | null>> = [];
   sections.forEach((section, sectionIndex) => {
     section.items.slice(0, CARPLAY_COVER_ROWS).forEach((item, rowIndex) => {
@@ -93,9 +101,14 @@ export async function attachCarPlayCovers(
 
   const missing = rows.filter(row => !onDisk.has(row));
   if (missing.length === 0) return null;
-  return async () => {
-    await coverCacheEnsureBatch(missing.map(row => row.ref), CARPLAY_COVER_TIER).catch(() => {});
-    const fetched = await peekImages(missing);
-    return [...fetched].map(([row, image]) => ({ section: row.section, row: row.row, image }));
+  return async onImages => {
+    for (let start = 0; start < missing.length; start += COVER_CHUNK) {
+      const chunk = missing.slice(start, start + COVER_CHUNK);
+      await coverCacheEnsureBatch(chunk.map(row => row.ref), CARPLAY_COVER_TIER).catch(() => {});
+      const fetched = await peekImages(chunk);
+      if (fetched.size > 0) {
+        onImages([...fetched].map(([row, image]) => ({ section: row.section, row: row.row, image })));
+      }
+    }
   };
 }

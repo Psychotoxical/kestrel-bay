@@ -5,7 +5,7 @@
  * ("Play … on Psysonic") go through the same matching as Siri (`mobileShell/car/siriPlay`).
  * The player's shuffle, repeat, favourite and infinite queue buttons work as in CarPlay.
  */
-import { carPlayCommand, carPlayList, carPlayPlay, carPlayState, watchCarSongTabs } from '@/features/mobileShell/car/carplayContent';
+import { carPlayCommand, carPlayList, carPlayPlay, carPlayState, watchCarSongTabs, type CarPlayList } from '@/features/mobileShell/car/carplayContent';
 import { usePlayerStore } from '@/features/playback';
 import { useAuthStore } from '@/store/authStore';
 import { playSiriRequest, type SiriPlayRequest } from '@/features/mobileShell/car/siriPlay';
@@ -76,7 +76,15 @@ const AUTO_COVER_ROW_SIZE = 8;
 
 /** One car list as the native side reads it: sections of rows, covers as file paths. */
 export async function carListJson(node: string): Promise<string> {
-  const list = await carPlayList(node).catch(() => ({ sections: [] }));
+  const list: CarPlayList = await carPlayList(node).catch(() => ({ sections: [] }));
+  // Covers not on disk yet: once they are, the car asks for the list again and gets them
+  // (it showed rows without covers until the list was opened anew, car test 21.10.).
+  if (list.refreshCovers) {
+    let fetched = false;
+    void list.refreshCovers(() => { fetched = true; })
+      .catch(() => {})
+      .then(() => { if (fetched) host()?.carListsChanged?.(JSON.stringify([node])); });
+  }
   return JSON.stringify({
     sections: list.sections.map(section => ({
       header: section.header ?? '',

@@ -33,8 +33,7 @@ async function answerList({ requestId, node }: ListRequest): Promise<void> {
   const { refreshCovers, ...sent } = list as Awaited<ReturnType<typeof carPlayList>>;
   await emit('carplay:list-result', { requestId, ...sent });
   if (!refreshCovers) return;
-  const images = await refreshCovers().catch(() => []);
-  if (images.length > 0) await emit('carplay:list-images', { requestId, images });
+  await refreshCovers(images => { void emit('carplay:list-images', { requestId, images }); }).catch(() => {});
 }
 
 /**

@@ -45,7 +45,7 @@ import { useLibraryIndexStore } from '@/store/libraryIndexStore';
 import { useLocalPlaybackStore } from '@/store/localPlaybackStore';
 import { ownedOverrideValue } from '@/lib/util/ownedEntityKey';
 import { resolveServerIdForIndexKey } from '@/lib/server/serverLookup';
-import { attachCarPlayCovers, type CarPlayCoverSource, type CarPlayCoverUpdate } from './carplayCovers';
+import { attachCarPlayCovers, type CarPlayCoverRefresh, type CarPlayCoverSource } from './carplayCovers';
 
 /** Symbol a row shows when it has no cover; each car maps it to its own image. */
 export type CarPlayIcon =
@@ -74,7 +74,7 @@ export interface CarPlayList {
   sections: CarPlaySection[];
   emptyText?: string;
   /** Downloads covers that were not on disk yet; not sent to native. */
-  refreshCovers?: () => Promise<CarPlayCoverUpdate[]>;
+  refreshCovers?: CarPlayCoverRefresh;
 }
 
 /** What the now-playing buttons show. */
