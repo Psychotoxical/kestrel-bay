@@ -8,6 +8,9 @@ import { useUserMgmtActions } from '@/features/settings/hooks/useUserMgmtActions
 import { UserForm } from '@/features/settings/components/UserForm';
 import { UserMgmtRow } from '@/features/settings/components/userMgmt/UserMgmtRow';
 import { MagicStringModal } from '@/features/settings/components/userMgmt/MagicStringModal';
+import { UserMgmtTouchView } from '@/features/settings/components/userMgmt/UserMgmtTouchView';
+import { MobileSheet } from '@/features/mobileShell';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 export function UserManagementSection({
   serverUrl,
@@ -33,9 +36,12 @@ export function UserManagementSection({
         <Users size={18} />
         <h2>{t('settings.userMgmtTitle')}</h2>
       </div>
-      <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
-        {t('settings.userMgmtDesc')}
-      </div>
+      {/* The touch view shows this under its list. */}
+      {!IS_MOBILE_SHELL && (
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+          {t('settings.userMgmtDesc')}
+        </div>
+      )}
 
       {loading && (
         <div className="settings-card" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -72,7 +78,43 @@ export function UserManagementSection({
         </div>
       )}
 
-      {!loading && !loadError && (
+      {!loading && !loadError && IS_MOBILE_SHELL && (
+        <>
+          <UserMgmtTouchView
+            users={users}
+            libraries={libraries}
+            currentUsername={currentUsername}
+            busy={busy}
+            onAdd={() => setEditing('new')}
+            onEdit={setEditing}
+            onDelete={u => void performDelete(u)}
+            onRequestMagic={setMagicRowUser}
+            t={t}
+            i18n={i18n}
+          />
+          {editing && (
+            <MobileSheet
+              title={t(editing === 'new' ? 'settings.userMgmtAddUserTitle' : 'settings.userMgmtEditUserTitle')}
+              onClose={() => setEditing(null)}
+              className="mobile-sheet--server-form"
+            >
+              <UserForm
+                initial={editing === 'new' ? null : editing}
+                libraries={libraries}
+                shareServerUrl={serverUrl}
+                ndToken={token}
+                onUsersDirty={load}
+                onSave={handleSave}
+                onSaveAndGetMagic={editing === 'new' ? handleSaveAndGetMagic : undefined}
+                onCancel={() => setEditing(null)}
+                busy={busy}
+              />
+            </MobileSheet>
+          )}
+        </>
+      )}
+
+      {!loading && !loadError && !IS_MOBILE_SHELL && (
         <>
           {editing ? (
             <UserForm

@@ -15,7 +15,7 @@ import type {
   LinuxWaylandTextRenderProfile,
   LoggingMode,
 } from '@/store/authStoreTypes';
-import { IS_LINUX } from '@/lib/util/platform';
+import { IS_LINUX, IS_MOBILE_SHELL } from '@/lib/util/platform';
 import { showToast } from '@/lib/dom/toast';
 import { AboutPsysonicBrandHeader } from '@/features/settings/components/AboutPsysonicLol';
 import CustomSelect from '@/ui/CustomSelect';
@@ -26,6 +26,7 @@ import { SettingsGroup } from '@/features/settings/components/SettingsGroup';
 import { SettingsToggle } from '@/features/settings/components/SettingsToggle';
 import { SettingsSubCard, SettingsField } from '@/features/settings/components/SettingsSubCard';
 import { BackupSection } from '@/features/settings/components/BackupSection';
+import { SystemTouchView } from '@/features/settings/components/SystemTouchView';
 import { CONTRIBUTORS, MAINTAINERS, themeContributorsFromRegistry, type ThemeContributor } from '@/config/settingsCredits';
 import { revalidateRegistry } from '@/lib/themes/themeRegistry';
 
@@ -113,6 +114,69 @@ export function SystemTab() {
     </details>
   );
 
+  const languageOptions = [
+    { value: 'en', label: t('settings.languageEn') },
+    { value: 'de', label: t('settings.languageDe') },
+    { value: 'es', label: t('settings.languageEs') },
+    { value: 'fr', label: t('settings.languageFr') },
+    { value: 'it', label: t('settings.languageIt') },
+    { value: 'nl', label: t('settings.languageNl') },
+    { value: 'nb', label: t('settings.languageNb') },
+    { value: 'ru', label: t('settings.languageRu') },
+    { value: 'zh', label: t('settings.languageZh') },
+    { value: 'ro', label: t('settings.languageRo') },
+    { value: 'ja', label: t('settings.languageJa') },
+    { value: 'hu', label: t('settings.languageHu') },
+    { value: 'pl', label: t('settings.languagePl') },
+    { value: 'bg', label: t('settings.languageBg') },
+    { value: 'uk', label: t('settings.languageUk') },
+    { value: 'el', label: t('settings.languageEl') },
+  ];
+
+  const contributorsContent = (
+    <>
+      <div className="contributors-subsection-label">{t('settings.aboutContributorsApp')}</div>
+      <div className="contributors-grid">
+        {CONTRIBUTORS.map(c =>
+          renderContributorCard(
+            c.github,
+            <>
+              <span className="contributor-card-since">v{c.since}</span>
+              <span>·</span>
+              <span>{t('settings.aboutContributorsCount', { count: c.contributions.length })}</span>
+            </>,
+            c.contributions,
+          ),
+        )}
+      </div>
+
+      {themeContributors.length > 0 && (
+        <>
+          <div className="contributors-subsection-label">{t('settings.aboutContributorsThemes')}</div>
+          <div className="contributors-grid">
+            {themeContributors.map(c =>
+              renderContributorCard(
+                c.github,
+                <span>{t('settings.aboutThemeContributorsCount', { count: c.themes.length })}</span>,
+                c.themes,
+              ),
+            )}
+          </div>
+        </>
+      )}
+    </>
+  );
+
+  if (IS_MOBILE_SHELL) {
+    return (
+      <SystemTouchView
+        languageOptions={languageOptions}
+        contributors={contributorsContent}
+        onExportLogs={exportRuntimeLogs}
+      />
+    );
+  }
+
   return (
     <>
       <SettingsSubSection
@@ -126,24 +190,7 @@ export function SystemTab() {
                 <CustomSelect
                   value={i18n.language}
                   onChange={v => i18n.changeLanguage(v)}
-                  options={[
-                    { value: 'en', label: t('settings.languageEn') },
-                    { value: 'de', label: t('settings.languageDe') },
-                    { value: 'es', label: t('settings.languageEs') },
-                    { value: 'fr', label: t('settings.languageFr') },
-                    { value: 'it', label: t('settings.languageIt') },
-                    { value: 'nl', label: t('settings.languageNl') },
-                    { value: 'nb', label: t('settings.languageNb') },
-                    { value: 'ru', label: t('settings.languageRu') },
-                    { value: 'zh', label: t('settings.languageZh') },
-                    { value: 'ro', label: t('settings.languageRo') },
-                    { value: 'ja', label: t('settings.languageJa') },
-                    { value: 'hu', label: t('settings.languageHu') },
-                    { value: 'pl', label: t('settings.languagePl') },
-                    { value: 'bg', label: t('settings.languageBg') },
-                    { value: 'uk', label: t('settings.languageUk') },
-                    { value: 'el', label: t('settings.languageEl') },
-                  ]}
+                  options={languageOptions}
                 />
               </SettingsField>
             </SettingsSubCard>
@@ -403,35 +450,7 @@ export function SystemTab() {
         title={t('settings.aboutContributorsLabel')}
         icon={<Users size={16} />}
       >
-        <div className="contributors-subsection-label">{t('settings.aboutContributorsApp')}</div>
-        <div className="contributors-grid">
-          {CONTRIBUTORS.map(c =>
-            renderContributorCard(
-              c.github,
-              <>
-                <span className="contributor-card-since">v{c.since}</span>
-                <span>·</span>
-                <span>{t('settings.aboutContributorsCount', { count: c.contributions.length })}</span>
-              </>,
-              c.contributions,
-            ),
-          )}
-        </div>
-
-        {themeContributors.length > 0 && (
-          <>
-            <div className="contributors-subsection-label">{t('settings.aboutContributorsThemes')}</div>
-            <div className="contributors-grid">
-              {themeContributors.map(c =>
-                renderContributorCard(
-                  c.github,
-                  <span>{t('settings.aboutThemeContributorsCount', { count: c.themes.length })}</span>,
-                  c.themes,
-                ),
-              )}
-            </div>
-          </>
-        )}
+        {contributorsContent}
       </SettingsSubSection>
 
       <SettingsSubSection

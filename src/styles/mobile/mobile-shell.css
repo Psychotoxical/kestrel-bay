@@ -1147,6 +1147,15 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   white-space: normal;
 }
 
+/* Small second line under a row's label (an address, a role). */
+.mobile-list-row__sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .mobile-list-row__chevron {
   flex: none;
   color: var(--text-muted);
@@ -4247,6 +4256,46 @@ button.mobile-artist-bio__card:active {
 /* Server sheet: address, version and badges on top, then grouped actions. */
 .mobile-sheet--server .mobile-sheet__body {
   gap: 20px;
+}
+
+/* ─── Settings → Users (UserMgmtTouchView): rows reuse the server list's ─── */
+.user-touch-avatar {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.user-touch-badge {
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--text-on-accent, var(--bg-app));
+  font-size: 11px;
+  font-weight: 600;
+  vertical-align: 2px;
+}
+
+.user-touch-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 4px;
+}
+
+.user-touch-chip {
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 14px;
 }
 
 .server-touch-head {

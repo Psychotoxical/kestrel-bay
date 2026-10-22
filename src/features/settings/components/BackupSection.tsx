@@ -13,6 +13,7 @@ import {
 import { showToast } from '@/lib/dom/toast';
 import { offerExportFile } from '@/lib/util/exportFile';
 import { confirmChoice } from '@/features/settings/utils/confirmChoice';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 type BackupMode = 'full' | 'library' | 'config';
 type BackupAction = 'export' | 'import';
@@ -30,8 +31,7 @@ export function BackupSection() {
 
   const busy = exporting || importing;
 
-  const handleExport = async () => {
-    const exportMode = mode;
+  const exportAs = async (exportMode: BackupMode) => {
     const path = await pickBackupExportPath(exportMode);
     if (!path) return;
     setBusyAction('export');
@@ -48,7 +48,7 @@ export function BackupSection() {
       showToast(t(successKey), 3000, 'info');
     } catch (e) {
       console.error('Export failed', e);
-      const errorKey = mode === 'full'
+      const errorKey = exportMode === 'full'
         ? 'settings.backupFullImportError'
         : mode === 'library'
           ? 'settings.backupLibraryImportError'
@@ -59,6 +59,8 @@ export function BackupSection() {
       setBusyAction(null);
     }
   };
+
+  const handleExport = () => exportAs(mode);
 
   const handleImport = async () => {
     const confirmed = await confirmChoice({
@@ -157,6 +159,42 @@ export function BackupSection() {
       document.body,
     )
     : null;
+
+  // Touch shell: one row per backup kind instead of the mode switch.
+  if (IS_MOBILE_SHELL) {
+    const rows: { id: string; label: string; run: () => Promise<void> }[] = [
+      { id: 'full', label: t('settings.backupFullExport'), run: () => exportAs('full') },
+      { id: 'library', label: t('settings.backupLibraryExport'), run: () => exportAs('library') },
+      { id: 'config', label: t('settings.backupExport'), run: () => exportAs('config') },
+      { id: 'import', label: importLabel, run: handleImport },
+    ];
+    return (
+      <div className="touch-cache">
+        <div className="touch-cache__block">
+          <div className="mobile-list-group">
+            {rows.map(row => (
+              <button
+                key={row.id}
+                type="button"
+                className="mobile-list-row"
+                disabled={busy}
+                onClick={() => void row.run()}
+              >
+                <span className="mobile-list-row__icon" aria-hidden="true">
+                  {row.id === 'import' ? <Download size={18} /> : <Upload size={18} />}
+                </span>
+                <span className="mobile-list-row__label">{row.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="touch-cache__footer">
+            <AlertTriangle size={12} aria-hidden="true" /> {t('settings.backupCredentialsNoticeBody')}
+          </p>
+        </div>
+        {busyOverlay}
+      </div>
+    );
+  }
 
   return (
     <div className="settings-card">

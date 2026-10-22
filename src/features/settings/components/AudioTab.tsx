@@ -11,6 +11,8 @@ import { useAudioDevicesProbe } from '@/features/playback/hooks/useAudioDevicesP
 import { IS_MACOS } from '@/lib/util/platform';
 import { AudioOutputDeviceSection } from '@/features/settings/components/audio/AudioOutputDeviceSection';
 import DesktopOnly from '@/features/settings/components/DesktopOnly';
+import TouchOnly from '@/features/settings/components/TouchOnly';
+import { StreamQualityTouchSection } from '@/features/settings/components/audio/StreamQualityTouchSection';
 import { NormalizationBlock } from '@/features/settings/components/audio/NormalizationBlock';
 import { PlaybackRateBlock } from '@/features/settings/components/audio/PlaybackRateBlock';
 import { TrackTransitionsBlock } from '@/features/settings/components/audio/TrackTransitionsBlock';
@@ -55,6 +57,11 @@ export function AudioTab() {
           />
         </DesktopOnly>
       )}
+
+      {/* Streaming quality on the phone: the desktop edits it in the server form. */}
+      <TouchOnly>
+        <StreamQualityTouchSection t={t} />
+      </TouchOnly>
 
       {/* Normalization — loudness levelling (own category) */}
       <SettingsSubSection
