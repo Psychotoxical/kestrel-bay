@@ -82,6 +82,29 @@ describe('local playback eviction server scope', () => {
     expect(useLocalPlaybackStore.getState().entries[protectedKey]).toBeDefined();
   });
 
+  it('lists pinned groups fresh after every change and hands out copies', () => {
+    const add = (trackId: string, sourceId: string) => useLocalPlaybackStore.getState().upsertEntry({
+      serverIndexKey: 'a.test',
+      trackId,
+      localPath: `/media/library/a.test/${trackId}.flac`,
+      layoutFingerprint: 'fp',
+      sizeBytes: 1,
+      tier: 'library',
+      suffix: 'flac',
+      pinSource: { kind: 'playlist', sourceId },
+    });
+    add('t1', 'big');
+    add('t2', 'big');
+    const first = useLocalPlaybackStore.getState().listPinnedGroups();
+    expect(first).toEqual([expect.objectContaining({ trackIds: ['t1', 't2'] })]);
+    first.pop();
+    expect(useLocalPlaybackStore.getState().listPinnedGroups()).toHaveLength(1);
+    add('t3', 'big');
+    expect(useLocalPlaybackStore.getState().listPinnedGroups('a.test'))
+      .toEqual([expect.objectContaining({ trackIds: ['t1', 't2', 't3'] })]);
+    expect(useLocalPlaybackStore.getState().listPinnedGroups('b.test')).toEqual([]);
+  });
+
   it('keeps shared bytes until the last pin source is removed', async () => {
     const base = {
       serverIndexKey: 'a.test',

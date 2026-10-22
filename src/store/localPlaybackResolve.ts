@@ -23,6 +23,33 @@ function serverIndexKeysForServerId(serverId: string): string[] {
   return [...keys].filter(Boolean);
 }
 
+// The store replaces `entries` on every change, so an index keyed by that object
+// stays valid until the next change. Without it every lookup that missed the
+// direct keys scanned the whole store, once per track row.
+const entriesByTrackId = new WeakMap<Record<string, LocalPlaybackEntry>, Map<string, LocalPlaybackEntry[]>>();
+
+function entriesForTrackId(
+  entries: Record<string, LocalPlaybackEntry>,
+  trackId: string,
+): LocalPlaybackEntry[] {
+  let index = entriesByTrackId.get(entries);
+  if (!index) {
+    index = new Map();
+    for (const entry of Object.values(entries)) {
+      const list = index.get(entry.trackId);
+      if (list) list.push(entry);
+      else index.set(entry.trackId, [entry]);
+    }
+    entriesByTrackId.set(entries, index);
+  }
+  return index.get(trackId) ?? [];
+}
+
+/** Index keys of one server, for loops that test many entries against it. */
+export function serverIndexKeySet(serverId: string): Set<string> {
+  return new Set(serverIndexKeysForServerId(serverId));
+}
+
 export function entryBelongsToServer(entry: LocalPlaybackEntry, serverId: string): boolean {
   return serverIndexKeysForServerId(serverId).includes(entry.serverIndexKey);
 }
@@ -41,8 +68,8 @@ export function findLocalPlaybackEntry(
     const hit = lp.getEntry(trackId, key);
     if (hit?.tier === 'library') return hit;
   }
-  for (const entry of Object.values(lp.entries)) {
-    if (entry.trackId !== trackId || entry.tier !== 'library') continue;
+  for (const entry of entriesForTrackId(lp.entries, trackId)) {
+    if (entry.tier !== 'library') continue;
     if (entryBelongsToServer(entry, serverId)) return entry;
   }
   return null;
@@ -63,8 +90,8 @@ export function findFavoriteAutoEntry(
     const hit = lp.getEntry(trackId, key);
     if (hit?.tier === 'favorite-auto') return hit;
   }
-  for (const entry of Object.values(lp.entries)) {
-    if (entry.trackId !== trackId || entry.tier !== 'favorite-auto') continue;
+  for (const entry of entriesForTrackId(lp.entries, trackId)) {
+    if (entry.tier !== 'favorite-auto') continue;
     if (entryBelongsToServer(entry, serverId)) return entry;
   }
   return null;
@@ -84,8 +111,8 @@ export function findEphemeralEntry(
     const hit = lp.getEntry(trackId, key);
     if (hit?.tier === 'ephemeral') return hit;
   }
-  for (const entry of Object.values(lp.entries)) {
-    if (entry.trackId !== trackId || entry.tier !== 'ephemeral') continue;
+  for (const entry of entriesForTrackId(lp.entries, trackId)) {
+    if (entry.tier !== 'ephemeral') continue;
     if (entryBelongsToServer(entry, serverId)) return entry;
   }
   return null;

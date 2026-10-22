@@ -149,6 +149,8 @@ export function localPlaybackEntryHasPinSource(
   return localPlaybackPinSources(entry).some(source => samePinSource(source, pinSource));
 }
 
+const pinnedGroupsCache = new WeakMap<Record<string, LocalPlaybackEntry>, Map<string, PinnedGroup[]>>();
+
 export const useLocalPlaybackStore = create<LocalPlaybackState>()(
   persist(
     (set, get) => ({
@@ -294,25 +296,45 @@ export const useLocalPlaybackStore = create<LocalPlaybackState>()(
       },
 
       listPinnedGroups: (serverIndexKey) => {
+        // Every album card asks this on each render; built once per `entries`
+        // object (the store replaces it on every change), a copy per caller.
+        const entries = get().entries;
+        let byScope = pinnedGroupsCache.get(entries);
+        if (!byScope) {
+          byScope = new Map();
+          pinnedGroupsCache.set(entries, byScope);
+        }
+        const cached = byScope.get(serverIndexKey ?? '');
+        if (cached) return [...cached];
         const groups = new Map<string, PinnedGroup>();
-        for (const e of Object.values(get().entries)) {
+        // Membership per group as a Set: `trackIds.includes` made this quadratic,
+        // which froze the UI once one playlist held thousands of downloaded tracks.
+        const members = new Map<string, Set<string>>();
+        for (const e of Object.values(entries)) {
           if (e.tier !== 'library') continue;
           if (serverIndexKey && e.serverIndexKey !== serverIndexKey) continue;
           for (const pinSource of localPlaybackPinSources(e)) {
             const gk = pinGroupKey(e.serverIndexKey, pinSource);
             const existing = groups.get(gk);
             if (existing) {
-              if (!existing.trackIds.includes(e.trackId)) existing.trackIds.push(e.trackId);
+              const seen = members.get(gk)!;
+              if (!seen.has(e.trackId)) {
+                seen.add(e.trackId);
+                existing.trackIds.push(e.trackId);
+              }
             } else {
               groups.set(gk, {
                 serverIndexKey: e.serverIndexKey,
                 pinSource,
                 trackIds: [e.trackId],
               });
+              members.set(gk, new Set([e.trackId]));
             }
           }
         }
-        return [...groups.values()];
+        const built = [...groups.values()];
+        byScope.set(serverIndexKey ?? '', built);
+        return [...built];
       },
 
       ephemeralEntries: () => {

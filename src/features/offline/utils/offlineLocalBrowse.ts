@@ -35,7 +35,7 @@ import { isLosslessSuffix } from '@/lib/library/losslessFormats';
 import { hasBrowsableLocalPlaybackBytes } from '@/lib/localPlayback/browsablePlaybackTiers';
 import { offlineLocalLibrarySyncRevision } from '@/store/offlineLocalLibrarySyncRevision';
 import { resolveIndexKey } from '@/lib/server/serverIndexKey';
-import { entryBelongsToServer } from '@/store/localPlaybackResolve';
+import { serverIndexKeySet } from '@/store/localPlaybackResolve';
 
 function sortBrowsableSongs(songs: SubsonicSong[]): SubsonicSong[] {
   return [...songs].sort((a, b) => a.title.localeCompare(b.title));
@@ -46,8 +46,10 @@ function listBrowsableEntries(
   serverId: string,
   entries: Record<string, LocalPlaybackEntry> = useLocalPlaybackStore.getState().entries,
 ): LocalPlaybackEntry[] {
+  // Resolve the server's index keys once, not once per entry.
+  const keys = serverIndexKeySet(serverId);
   return Object.values(entries).filter(
-    e => hasBrowsableLocalPlaybackBytes(e) && entryBelongsToServer(e, serverId),
+    e => hasBrowsableLocalPlaybackBytes(e) && keys.has(e.serverIndexKey),
   );
 }
 

@@ -88,6 +88,28 @@ describe('hasLocalPlaybackUrl', () => {
     expect(hasLocalPlaybackUrl('other-track', INDEX_KEY)).toBe(false);
   });
 
+  it('finds a row stored under a legacy key, also when it arrives after a miss', () => {
+    // The fallback lookup is indexed per `entries` object; a store change must refresh it.
+    expect(hasLocalPlaybackUrl(TRACK, server.id)).toBe(false);
+    useLocalPlaybackStore.setState({
+      entries: {
+        [`legacy-key:${TRACK}`]: {
+          serverIndexKey: INDEX_KEY,
+          trackId: TRACK,
+          localPath: `/disk/${TRACK}.opus`,
+          layoutFingerprint: 'fp',
+          sizeBytes: 1,
+          suffix: 'opus',
+          tier: 'library',
+          cachedAt: 1,
+        },
+      },
+    });
+    expect(hasLocalPlaybackUrl(TRACK, server.id)).toBe(true);
+    useLocalPlaybackStore.setState({ entries: {} });
+    expect(hasLocalPlaybackUrl(TRACK, server.id)).toBe(false);
+  });
+
   it.each<LocalPlaybackTier | 'none'>(['library', 'favorite-auto', 'ephemeral', 'none'])(
     'agrees with resolvePlaybackUrl local branch (%s)',
     (tier) => {

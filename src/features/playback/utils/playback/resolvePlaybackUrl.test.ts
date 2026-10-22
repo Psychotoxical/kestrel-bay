@@ -15,7 +15,8 @@ vi.mock('@/store/localPlaybackStore', () => ({
       getLocalUrl: getLocalUrlMock,
       getEntry: (trackId: string, serverIndexKey: string) =>
         entriesMock[`${serverIndexKey}:${trackId}`] ?? null,
-      entries: entriesMock,
+      // A fresh object per read, like the real store, which replaces `entries` on every change.
+      entries: { ...entriesMock },
     }),
     subscribe: vi.fn(),
   },
