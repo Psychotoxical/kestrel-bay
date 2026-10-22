@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Comutați Coada',
   collapseQueueResize: 'Strânge coada, redimensionează',
   moreOptions: 'Mai multe opțiuni',
+  seek: 'Poziția în piesă',
   equalizer: 'Egalizator',
   playbackRate: 'Viteză',
   miniPlayer: 'Player Mini',

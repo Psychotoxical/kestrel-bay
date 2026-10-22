@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Veksle kø',
   collapseQueueResize: 'Skjul kø, endre bredde',
   moreOptions: 'Flere alternativer',
+  seek: 'Posisjon i sangen',
   equalizer: 'Equalizer',
   playbackRate: 'Hastighet',
   miniPlayer: 'Minispiller',

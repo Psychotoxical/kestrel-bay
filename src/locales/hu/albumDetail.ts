@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Vissza',
   orbitDoubleClickHint: 'Kattints duplán a szám Orbit-sorhoz adásához',
   playAll: 'Összes lejátszása',
+  shuffle: 'Keverés',
   shareAlbum: 'Album megosztása',
   enqueue: 'Sorba',
   enqueueTooltip: 'A teljes album hozzáadása a sorhoz',

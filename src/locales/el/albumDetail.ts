@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Πίσω',
   orbitDoubleClickHint: 'Διπλό κλικ για την προσθήκη κομματιού στην ουρά Orbit',
   playAll: 'Αναπαραγωγή όλων',
+  shuffle: 'Ανακάτεμα',
   shareAlbum: 'Κοινοποίηση',
   enqueue: 'Προσθήκη στην ουρά',
   enqueueTooltip: 'Προσθήκη άλμπουμ στην ουρά αναπαραγωγής',

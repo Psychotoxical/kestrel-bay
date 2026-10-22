@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: '切换队列',
   collapseQueueResize: '收起队列，调整宽度',
   moreOptions: '更多选项',
+  seek: '歌曲中的位置',
   equalizer: '均衡器',
   playbackRate: '速度',
   miniPlayer: '迷你播放器',

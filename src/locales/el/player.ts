@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Εναλλαγή ουράς',
   collapseQueueResize: 'Σύμπτυξη ουράς, αλλαγή μεγέθους',
   moreOptions: 'Περισσότερες επιλογές',
+  seek: 'Θέση στο κομμάτι',
   equalizer: 'Equalizer',
   playbackRate: 'Ταχύτητα αναπαραγωγής',
   miniPlayer: 'Λειτουργία μικρού παραθύρου',

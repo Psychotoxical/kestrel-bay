@@ -2,6 +2,7 @@ export const albumDetail = {
   back: '戻る',
   orbitDoubleClickHint: 'ダブルクリックでこのトラックを Orbit キューに追加',
   playAll: 'すべて再生',
+  shuffle: 'シャッフル',
   shareAlbum: 'アルバムを共有',
   enqueue: 'キューに追加',
   enqueueTooltip: 'アルバム全体をキューに追加',

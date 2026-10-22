@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Sor be/ki',
   collapseQueueResize: 'Sor összecsukása, átméretezés',
   moreOptions: 'További beállítások',
+  seek: 'Pozíció a dalban',
   equalizer: 'Hangszínszabályzó',
   playbackRate: 'Lejátszási sebesség',
   miniPlayer: 'Mini lejátszó',

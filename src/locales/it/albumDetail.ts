@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Indietro',
   orbitDoubleClickHint: 'Doppio-click per aggiungere questo brano alla coda Orbit',
   playAll: 'Riproduci tutto',
+  shuffle: 'Riproduzione casuale',
   shareAlbum: 'Condividi album',
   enqueue: 'Accoda',
   enqueueTooltip: 'Aggiungi l\'album alla coda',

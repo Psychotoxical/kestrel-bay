@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Înapoi',
   orbitDoubleClickHint: 'Apasă dublu-clic pentru a adăuga această piesă în coada Orbit',
   playAll: 'Redă tot',
+  shuffle: 'Amestecă',
   shareAlbum: 'Distribuie Albumul',
   enqueue: 'Adaugă în coadă',
   enqueueTooltip: 'Adaugă întregul album în coadă',

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The music alarm's notification (PsysonicAlarmService). -->
+<resources>
+  <string name="alarm_channel">Ébresztők</string>
+  <string name="alarm_title">Ébresztő</string>
+  <string name="alarm_snooze">Szundi</string>
+  <string name="alarm_stop">Leállítás</string>
+</resources>

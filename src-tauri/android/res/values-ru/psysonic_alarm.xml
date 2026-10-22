@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The music alarm's notification (PsysonicAlarmService). -->
+<resources>
+  <string name="alarm_channel">Будильники</string>
+  <string name="alarm_title">Будильник</string>
+  <string name="alarm_snooze">Отложить</string>
+  <string name="alarm_stop">Выключить</string>
+</resources>

@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Volver',
   orbitDoubleClickHint: 'Doble clic para añadir esta canción a la cola Orbit',
   playAll: 'Reproducir Todo',
+  shuffle: 'Aleatorio',
   shareAlbum: 'Compartir álbum',
   enqueue: 'Agregar a la Cola',
   enqueueTooltip: 'Agregar álbum completo a la cola',

@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Назад',
   orbitDoubleClickHint: 'Двойной клик, чтобы добавить этот трек в очередь Orbit',
   playAll: 'Воспроизвести всё',
+  shuffle: 'Перемешать',
   shareAlbum: 'Поделиться альбомом',
   enqueue: 'В очередь',
   enqueueTooltip: 'Добавить весь альбом в очередь',

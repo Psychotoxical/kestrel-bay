@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Retour',
   orbitDoubleClickHint: 'Double-clic pour ajouter ce morceau à la file Orbit',
   playAll: 'Tout lire',
+  shuffle: 'Aléatoire',
   shareAlbum: 'Partager l\'album',
   enqueue: 'Mettre en file',
   enqueueTooltip: 'Ajouter l\'album entier à la file d\'attente',

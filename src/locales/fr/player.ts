@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Afficher/masquer la file',
   collapseQueueResize: 'Réduire la file, redimensionner',
   moreOptions: 'Plus d’options',
+  seek: 'Position dans le titre',
   equalizer: 'Égaliseur',
   playbackRate: 'Vitesse',
   miniPlayer: 'Mini-lecteur',

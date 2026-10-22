@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Alternar Cola',
   collapseQueueResize: 'Contraer cola, cambiar ancho',
   moreOptions: 'Más opciones',
+  seek: 'Posición en la canción',
   equalizer: 'Ecualizador',
   playbackRate: 'Velocidad',
   miniPlayer: 'Mini reproductor',

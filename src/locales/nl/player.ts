@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Wachtrij in-/uitschakelen',
   collapseQueueResize: 'Wachtrij inklappen, breedte wijzigen',
   moreOptions: 'Meer opties',
+  seek: 'Positie in het nummer',
   equalizer: 'Equalizer',
   playbackRate: 'Snelheid',
   miniPlayer: 'Minispeler',

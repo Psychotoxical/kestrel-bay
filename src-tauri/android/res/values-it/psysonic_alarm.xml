@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The music alarm's notification (PsysonicAlarmService). -->
+<resources>
+  <string name="alarm_channel">Sveglie</string>
+  <string name="alarm_title">Sveglia</string>
+  <string name="alarm_snooze">Posticipa</string>
+  <string name="alarm_stop">Ferma</string>
+</resources>

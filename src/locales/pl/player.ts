@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Przełącz kolejkę',
   collapseQueueResize: 'Zwiń kolejkę i zmień rozmiar',
   moreOptions: 'Więcej opcji',
+  seek: 'Pozycja w utworze',
   equalizer: 'Korektor',
   playbackRate: 'Prędkość odtwarzania',
   miniPlayer: 'Miniodtwarzacz',

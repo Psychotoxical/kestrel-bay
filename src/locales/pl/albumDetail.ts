@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Powrót',
   orbitDoubleClickHint: 'Naciśnij dwukrotnie by dodać ten utwór do kolejki Orbit',
   playAll: 'Odtwórz wszystkie',
+  shuffle: 'Losowa kolejność',
   shareAlbum: 'Udostępnij album',
   enqueue: 'Dodaj do kolejki',
   enqueueTooltip: 'Dodaj cały album do kolejki',

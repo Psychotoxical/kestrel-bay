@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'キューを切り替え',
   collapseQueueResize: 'キューを折りたたんでリサイズ',
   moreOptions: 'その他のオプション',
+  seek: '曲の再生位置',
   equalizer: 'イコライザー',
   playbackRate: '再生速度',
   miniPlayer: 'ミニプレイヤー',

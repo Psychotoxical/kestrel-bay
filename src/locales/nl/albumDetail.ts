@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Terug',
   orbitDoubleClickHint: 'Dubbelklik om dit nummer aan de Orbit-wachtrij toe te voegen',
   playAll: 'Alles afspelen',
+  shuffle: 'Willekeurig',
   shareAlbum: 'Album delen',
   enqueue: 'In wachtrij',
   enqueueTooltip: 'Volledig album aan wachtrij toevoegen',

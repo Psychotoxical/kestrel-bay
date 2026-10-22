@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Mostra/nascondi coda',
   collapseQueueResize: 'Comprimi coda, ridimensiona',
   moreOptions: 'Altre opzioni',
+  seek: 'Posizione nel brano',
   equalizer: 'Equalizzatore',
   playbackRate: 'Velocità di riproduzione',
   miniPlayer: 'Mini player',

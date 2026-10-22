@@ -2,6 +2,7 @@ export const albumDetail = {
   back: '返回',
   orbitDoubleClickHint: '双击将此曲目添加到 Orbit 队列',
   playAll: '全部播放',
+  shuffle: '随机播放',
   shareAlbum: '分享专辑',
   enqueue: '加入队列',
   enqueueTooltip: '将整张专辑添加到播放队列',

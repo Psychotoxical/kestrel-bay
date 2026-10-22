@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Перемкнути чергу',
   collapseQueueResize: 'Згорнути чергу, змінити розмір',
   moreOptions: 'Більше параметрів',
+  seek: 'Позиція в треку',
   equalizer: 'Еквалайзер',
   playbackRate: 'Швидкість відтворення',
   miniPlayer: 'Мініплеєр',

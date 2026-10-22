@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Назад',
   orbitDoubleClickHint: 'Кликнете два пъти, за да добавите тази песен към опашката на Orbit',
   playAll: 'Пусни всички',
+  shuffle: 'Разбъркано',
   shareAlbum: 'Сподели албума',
   enqueue: 'Добави в опашката',
   enqueueTooltip: 'Добави целия албум в опашката',

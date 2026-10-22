@@ -2,6 +2,7 @@ export const albumDetail = {
   back: 'Tilbake',
   orbitDoubleClickHint: 'Dobbeltklikk for å legge dette sporet til Orbit-køen',
   playAll: 'Spill alt',
+  shuffle: 'Bland',
   shareAlbum: 'Del album',
   enqueue: 'Legg i kø',
   enqueueTooltip: 'Legg hele albumet i kø',

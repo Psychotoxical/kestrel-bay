@@ -53,6 +53,7 @@ export const player = {
   toggleQueue: 'Превключи опашката',
   collapseQueueResize: 'Свий опашката, преоразмери',
   moreOptions: 'Още опции',
+  seek: 'Позиция в песента',
   equalizer: 'Еквалайзер',
   playbackRate: 'Скорост на възпроизвеждане',
   miniPlayer: 'Мини плейър',
