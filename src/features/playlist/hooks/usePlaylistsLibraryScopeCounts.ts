@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { librarySelectionForServer } from '@/lib/api/subsonicClient';
 import { filterSongsToServerLibrary } from '@/lib/api/subsonicLibrary';
 import { getPlaylistForServer } from '@/lib/api/subsonicPlaylists';
 import type { SubsonicPlaylist } from '@/lib/api/subsonicTypes';
+import { getLuckyMixLibraryScopeOverride } from '@/lib/library/luckyMixScopeOverride';
 import { useOfflineBrowseContext } from '@/features/offline';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 
@@ -10,11 +12,36 @@ export interface PlaylistsLibraryScopeCountsResult {
   filteredDurationByPlaylist: Record<string, number>;
 }
 
+/** Same scope test as `filterSongsToServerLibrary`: without a selection it returns every song. */
+function libraryScopeActive(serverId: string): boolean {
+  return !!getLuckyMixLibraryScopeOverride() || librarySelectionForServer(serverId).length > 0;
+}
+
+// Scoped counts per playlist revision, so revisiting the page does not fetch
+// every playlist again. A playlist that changed on the server gets a new key.
+const scopedCountCache = new Map<string, readonly [number, number]>();
+
+function scopedCountKey(playlist: SubsonicPlaylist, scopeVersion: number): string {
+  return [
+    playlist.serverId,
+    playlist.id,
+    playlist.changed ?? '',
+    playlist.songCount,
+    scopeVersion,
+    librarySelectionForServer(playlist.serverId ?? '').join(','),
+  ].join('\u0000');
+}
+
+/** Test-only reset. */
+export function resetPlaylistsLibraryScopeCountsCacheForTests(): void {
+  scopedCountCache.clear();
+}
+
 /**
- * Recompute song count + total duration for each playlist under the current
- * library scope. Chunked into batches of 4 parallel fetches to avoid hammering
- * Navidrome on large playlists. Re-runs when the playlist list changes or
- * when the active library filter version bumps.
+ * Song count + total duration for each playlist under the current library
+ * scope. Without a library selection the server's own counts are right, so
+ * nothing is fetched (the card falls back to them). With a selection, each
+ * playlist is fetched once per revision, in batches of 4.
  */
 export function usePlaylistsLibraryScopeCounts(
   playlists: SubsonicPlaylist[],
@@ -50,8 +77,17 @@ export function usePlaylistsLibraryScopeCounts(
       }
       const next: Record<string, number> = {};
       const nextDuration: Record<string, number> = {};
-      for (let i = 0; i < playlists.length; i += 4) {
-        const chunk = playlists.slice(i, i + 4);
+      const toFetch = playlists.filter((playlist) => {
+        if (!playlist.serverId || !libraryScopeActive(playlist.serverId)) return false;
+        const hit = scopedCountCache.get(scopedCountKey(playlist, musicLibraryFilterVersion));
+        if (!hit) return true;
+        const key = ownedEntityKey(playlist);
+        next[key] = hit[0];
+        nextDuration[key] = hit[1];
+        return false;
+      });
+      for (let i = 0; i < toFetch.length; i += 4) {
+        const chunk = toFetch.slice(i, i + 4);
         const rows = await Promise.all(
           chunk.map(async (playlist) => {
             const key = ownedEntityKey(playlist);
@@ -60,6 +96,10 @@ export function usePlaylistsLibraryScopeCounts(
               const { songs } = await getPlaylistForServer(playlist.serverId, playlist.id);
               const filtered = await filterSongsToServerLibrary(songs, playlist.serverId);
               const duration = filtered.reduce((acc, s) => acc + (s.duration ?? 0), 0);
+              scopedCountCache.set(
+                scopedCountKey(playlist, musicLibraryFilterVersion),
+                [filtered.length, duration],
+              );
               return [key, filtered.length, duration] as const;
             } catch {
               return [key, -1, -1] as const;
