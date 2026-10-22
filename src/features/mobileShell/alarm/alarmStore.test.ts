@@ -38,6 +38,17 @@ describe('sanitizeAlarms', () => {
     expect(kept).toMatchObject({ id: 'x', hour: 23, minute: 0, days: [1, 3], maxVolume: 100, source: { kind: 'luckymix' } });
     expect(sanitizeAlarms([{ hour: 7 }])).toEqual([]);
   });
+
+  it('gives older alarms the old 10 minutes and keeps "never"', () => {
+    const [older, never, tooLong] = sanitizeAlarms([
+      { id: 'old' },
+      { id: 'never', silenceMin: 0 },
+      { id: 'long', silenceMin: 500 },
+    ]);
+    expect(older.silenceMin).toBe(10);
+    expect(never.silenceMin).toBe(0);
+    expect(tooLong.silenceMin).toBe(60);
+  });
 });
 
 describe('alarm texts', () => {

@@ -24,6 +24,8 @@ export interface Alarm {
   source: AlarmSource;
   shuffle: boolean;
   snoozeMin: number;
+  /** Minutes until an alarm nobody stops goes quiet; 0 = never (Asra 22.10.). */
+  silenceMin: number;
   /** Seconds from low to `maxVolume`; 0 = at once. */
   fadeSecs: number;
   /** Cap for the media volume while it rings, in percent. */
@@ -34,6 +36,8 @@ export interface Alarm {
 
 export const SNOOZE_CHOICES = [5, 9, 10, 15, 20] as const;
 export const FADE_CHOICES = [0, 30, 60, 120] as const;
+/** As the stock clock app offers them; 0 = never. */
+export const SILENCE_CHOICES = [1, 5, 10, 15, 20, 25, 30, 0] as const;
 
 export function newAlarm(id: string, now = new Date()): Alarm {
   return {
@@ -45,6 +49,7 @@ export function newAlarm(id: string, now = new Date()): Alarm {
     source: { kind: 'luckymix' },
     shuffle: true,
     snoozeMin: 9,
+    silenceMin: 10,
     fadeSecs: 30,
     maxVolume: 70,
     vibrate: true,
@@ -87,6 +92,7 @@ export function sanitizeAlarms(value: unknown): Alarm[] {
       source: sanitizeSource(a.source),
       shuffle: a.shuffle !== false,
       snoozeMin: clamp(a.snoozeMin, 1, 60, base.snoozeMin),
+      silenceMin: clamp(a.silenceMin, 0, 60, base.silenceMin),
       fadeSecs: clamp(a.fadeSecs, 0, 600, base.fadeSecs),
       maxVolume: clamp(a.maxVolume, 5, 100, base.maxVolume),
       vibrate: a.vibrate !== false,

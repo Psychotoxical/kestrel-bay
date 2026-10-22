@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';
 import { usePlaylistStore } from '@/features/playlist/store/playlistStore';
 import { useLuckyMixAvailable } from '@/features/randomMix';
-import { FADE_CHOICES, SNOOZE_CHOICES, type Alarm, type AlarmSource } from './alarmStore';
+import { FADE_CHOICES, SILENCE_CHOICES, SNOOZE_CHOICES, type Alarm, type AlarmSource } from './alarmStore';
 import { weekdayNames } from './alarmFormat';
 import AlarmTimeFields from './AlarmTimeFields';
 
@@ -23,7 +23,7 @@ export default function AlarmEditSheet({ alarm, isNew, onSave, onDelete, onClose
   const [draft, setDraft] = useState<Alarm>(alarm);
   const playlists = usePlaylistStore(s => s.playlists);
   const luckyAvailable = useLuckyMixAvailable();
-  const ids = { repeat: useId(), music: useId(), snooze: useId(), fade: useId(), volume: useId() };
+  const ids = { repeat: useId(), music: useId(), snooze: useId(), silence: useId(), fade: useId(), volume: useId() };
   const update = (patch: Partial<Alarm>) => setDraft(d => ({ ...d, ...patch }));
   const days = weekdayNames(i18n.language);
 
@@ -121,6 +121,24 @@ export default function AlarmEditSheet({ alarm, isNew, onSave, onDelete, onClose
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="alarm-edit__section" aria-labelledby={ids.silence}>
+          <h3 id={ids.silence} className="mobile-source-section__title">{t('alarm.silence')}</h3>
+          <div className="mobile-chips mobile-chips--wrap" role="group" aria-labelledby={ids.silence}>
+            {SILENCE_CHOICES.map(min => (
+              <button
+                key={min}
+                type="button"
+                className={`mobile-chip${draft.silenceMin === min ? ' is-active' : ''}`}
+                aria-pressed={draft.silenceMin === min}
+                onClick={() => update({ silenceMin: min })}
+              >
+                {min === 0 ? t('alarm.silenceNever') : t('alarm.snoozeMinutes', { count: min })}
+              </button>
+            ))}
+          </div>
+          {draft.silenceMin === 0 && <p className="alarm-edit__hint">{t('alarm.silenceNeverHint')}</p>}
         </section>
 
         <section className="alarm-edit__section" aria-labelledby={ids.fade}>

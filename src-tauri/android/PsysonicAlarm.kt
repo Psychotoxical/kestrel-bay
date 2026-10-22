@@ -58,7 +58,7 @@ object PsysonicAlarm {
   private const val FALLBACK_MS = 25_000L
   private const val FADE_STEP_MS = 250L
   /** An alarm nobody stops goes quiet after this long, as the clock app does. */
-  private const val AUTO_SILENCE_MS = 10 * 60_000L
+  private const val DEFAULT_SILENCE_MIN = 10
 
   private val main = Handler(Looper.getMainLooper())
   private var webView: WebView? = null
@@ -183,7 +183,7 @@ object PsysonicAlarm {
     appContextFallback = ctx.applicationContext
     ringing = alarm
     musicStarted = false
-    acquireWakeLock(ctx)
+    acquireWakeLock(ctx, silenceMs(alarm))
     PsysonicAlarmService.start(ctx, alarm)
     if (alarm.optBoolean("vibrate", true)) vibrate(ctx)
     startVolumeRamp(ctx, alarm)
@@ -197,8 +197,13 @@ object PsysonicAlarm {
     }
     main.postDelayed(fallback, FALLBACK_MS)
     main.removeCallbacks(autoSilence)
-    main.postDelayed(autoSilence, AUTO_SILENCE_MS)
+    val silenceMs = silenceMs(alarm)
+    if (silenceMs > 0) main.postDelayed(autoSilence, silenceMs)
   }
+
+  /** Per alarm since 22.10. (Asra); 0 = rings until stopped. Older alarms keep 10 minutes. */
+  private fun silenceMs(alarm: JSONObject): Long =
+    alarm.optInt("silenceMin", DEFAULT_SILENCE_MIN).coerceIn(0, 60) * 60_000L
 
   private val autoSilence = Runnable {
     val ctx = appContextFallback ?: return@Runnable
@@ -337,12 +342,13 @@ object PsysonicAlarm {
     }
   }
 
-  private fun acquireWakeLock(ctx: Context) {
+  private fun acquireWakeLock(ctx: Context, silenceMs: Long) {
     val lock = wakeLock ?: (ctx.getSystemService(Context.POWER_SERVICE) as PowerManager)
       .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "psysonic:alarm")
       .also { it.setReferenceCounted(false); wakeLock = it }
-    // Released when stopped or snoozed; at most 10 minutes of ringing.
-    lock.acquire(10 * 60_000L)
+    // Released when stopped or snoozed; otherwise held as long as the alarm may ring.
+    // "Never" still gets a ceiling, so a forgotten alarm cannot keep the phone awake for days.
+    lock.acquire(if (silenceMs > 0) silenceMs + 60_000L else 4 * 60 * 60_000L)
   }
 
   private fun releaseWakeLock() {
