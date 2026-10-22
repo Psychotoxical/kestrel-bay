@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Check, HardDriveDownload } from 'lucide-react';
+import { Check, HardDriveDownload, X } from 'lucide-react';
 import { useConfirmModalStore } from '@/store/confirmModalStore';
 import { useDownloadKeyHeldForWifi } from '@/features/offline';
 import { resolveHeldDownload, startTouchDownload } from '@/features/mobileShell/utils/meteredDownload';
@@ -24,9 +24,10 @@ const RING_LENGTH = 2 * Math.PI * RING_RADIUS;
 
 /**
  * Download toggle of the album and playlist pages: the desktop's offline icon,
- * a ring while it loads, a tick once it is on the device. The tick asks before
- * it removes the download; a running download cannot be stopped, as on the
- * desktop, but a queued one can. On mobile data a new download first asks
+ * a ring with a cross in it while it loads, a tick once it is on the device.
+ * The tick asks before it removes the download; the cross stops a running one
+ * at once (unlike the desktop, where a running download has no stop here), and
+ * a queued one can be taken back out of the queue. On mobile data a new download first asks
  * whether to load now or wait for Wi-Fi, and a waiting one offers both again.
  */
 export default function MobileDownloadButton({
@@ -42,7 +43,10 @@ export default function MobileDownloadButton({
       await resolveHeldDownload(downloadKey, onRemove);
       return;
     }
-    if (status === 'downloading') return;
+    if (status === 'downloading') {
+      onRemove();
+      return;
+    }
     if (status === 'none') {
       await startTouchDownload(downloadKey, onDownload);
       return;
@@ -66,7 +70,7 @@ export default function MobileDownloadButton({
     : heldForWifi
       ? t('connection.downloadWaitingForWifi')
       : status === 'downloading'
-        ? t('connection.downloadProgress', { done, total })
+        ? `${t('connection.downloadProgress', { done, total })}, ${t('common.cancel')}`
         : status === 'queued' ? t('connection.downloadQueued') : t('connection.download');
   const filled = status === 'downloading' && total > 0 ? done / total : 0;
 
@@ -76,7 +80,6 @@ export default function MobileDownloadButton({
       className={`mobile-round-btn mobile-download-btn${status === 'cached' ? ' is-active' : ''}`}
       data-status={heldForWifi ? 'held' : status}
       aria-label={label}
-      aria-disabled={(status === 'downloading' && !heldForWifi) || undefined}
       onClick={() => { void handleClick(); }}
     >
       {status === 'cached' ? (
@@ -95,6 +98,9 @@ export default function MobileDownloadButton({
             strokeDashoffset={status === 'queued' ? RING_LENGTH * 0.75 : RING_LENGTH * (1 - filled)}
           />
         </svg>
+      )}
+      {status === 'downloading' && !heldForWifi && (
+        <X className="mobile-download-btn__cancel" size={11} strokeWidth={2.8} aria-hidden="true" />
       )}
     </button>
   );

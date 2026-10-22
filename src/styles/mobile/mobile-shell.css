@@ -182,6 +182,18 @@ html[data-mobile-app] .mobile-search-overlay {
 }
 
 /* Download toggle (album / playlist page): drive icon, ring while loading, tick when done. */
+.mobile-download-btn {
+  position: relative;
+}
+
+/* Cross in the middle of the ring: tapping a running download stops it. */
+.mobile-download-btn__cancel {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  pointer-events: none;
+}
+
 .mobile-download-btn__ring {
   width: 24px;
   height: 24px;

@@ -121,11 +121,12 @@ describe('AlbumDetailMobile', () => {
     expect(props.onCacheOffline).toHaveBeenCalledTimes(1);
   });
 
-  it('shows the progress while downloading and ignores taps', () => {
+  it('shows the progress while downloading and stops the download on a tap', () => {
     const props = setup({ offlineStatus: 'downloading', offlineProgress: { done: 3, total: 10 } });
-    const button = screen.getByRole('button', { name: 'Downloading… 3 of 10' });
+    const button = screen.getByRole('button', { name: 'Downloading… 3 of 10, Cancel' });
     fireEvent.click(button);
     expect(props.onCacheOffline).not.toHaveBeenCalled();
+    expect(props.onRemoveOffline).toHaveBeenCalledTimes(1);
   });
 
   it('asks before it removes a download', async () => {
