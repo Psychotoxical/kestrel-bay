@@ -1,3 +1,4 @@
+import { largeAwareStorage } from '@/lib/util/largeStorage';
 import {
   AUTH_PERSISTENCE_KEY,
   readRawAuthServerProfileGroups,
@@ -73,7 +74,7 @@ function frontendScope(
 /** Normalize allowlisted backup stores in memory before any live localStorage write. */
 export function normalizeNavidromeCanonicalBackupStores(
   stores: Record<string, unknown>,
-  storage: Storage = localStorage,
+  storage: Storage = largeAwareStorage,
 ): Record<string, unknown> {
   const staged = new StagedBackupStorage(stores);
   const importedKeys = Object.keys(stores);
@@ -94,14 +95,14 @@ export function normalizeNavidromeCanonicalBackupStores(
   return staged.toStores(importedKeys);
 }
 
-export function armNavidromeCanonicalBackupImport(storage: Storage = localStorage): void {
+export function armNavidromeCanonicalBackupImport(storage: Storage = largeAwareStorage): void {
   storage.setItem(NAVIDROME_CANONICAL_BOOTSTRAP_LOCK_KEY, '1');
   if (storage.getItem(NAVIDROME_CANONICAL_BOOTSTRAP_LOCK_KEY) !== '1') {
     throw new Error('Could not persist canonical migration bootstrap lock for backup import');
   }
 }
 
-export function disarmNavidromeCanonicalBackupImport(storage: Storage = localStorage): void {
+export function disarmNavidromeCanonicalBackupImport(storage: Storage = largeAwareStorage): void {
   storage.removeItem(NAVIDROME_CANONICAL_BOOTSTRAP_LOCK_KEY);
   if (storage.getItem(NAVIDROME_CANONICAL_BOOTSTRAP_LOCK_KEY) !== null) {
     throw new Error('Could not clear canonical migration bootstrap lock after backup import failure');
@@ -109,7 +110,7 @@ export function disarmNavidromeCanonicalBackupImport(storage: Storage = localSto
 }
 
 export function captureNavidromeCanonicalBackupRecoveryState(
-  storage: Storage = localStorage,
+  storage: Storage = largeAwareStorage,
 ): Record<string, string | null> {
   return {
     [NAVIDROME_CANONICAL_MIGRATION_CHECKPOINT_KEY]: storage.getItem(
@@ -120,7 +121,7 @@ export function captureNavidromeCanonicalBackupRecoveryState(
 
 export function restoreNavidromeCanonicalBackupRecoveryState(
   snapshot: Record<string, string | null>,
-  storage: Storage = localStorage,
+  storage: Storage = largeAwareStorage,
 ): void {
   const previous = snapshot[NAVIDROME_CANONICAL_MIGRATION_CHECKPOINT_KEY] ?? null;
   if (previous === null) storage.removeItem(NAVIDROME_CANONICAL_MIGRATION_CHECKPOINT_KEY);
@@ -139,7 +140,7 @@ export type NavidromeCanonicalDatabaseImportPlan = {
 /** Remove stale ready records before an imported database can become active. */
 export function prepareNavidromeCanonicalDatabaseImport(
   importedStores?: Record<string, unknown>,
-  storage: Storage = localStorage,
+  storage: Storage = largeAwareStorage,
 ): NavidromeCanonicalDatabaseImportPlan {
   const previousRaw = storage.getItem(NAVIDROME_CANONICAL_MIGRATION_CHECKPOINT_KEY);
   const checkpoint = readNavidromeCanonicalMigrationCheckpoint(storage);

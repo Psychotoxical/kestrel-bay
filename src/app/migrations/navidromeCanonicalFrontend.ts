@@ -1,3 +1,4 @@
+import { largeAwareStorage } from '@/lib/util/largeStorage';
 import { canonicalNavidromeArtworkId, canonicalNavidromeId } from '@/lib/server/navidromeCanonicalId';
 
 const AUTH_KEY = 'psysonic-auth';
@@ -1204,7 +1205,7 @@ function hasLocalPlaybackPathCollision(
 /** Rewrite all declared identity-bearing frontend persistence before Zustand imports hydrate it. */
 export function rewriteNavidromeCanonicalFrontendState(
   scope: NavidromeCanonicalFrontendScope,
-  storage: NavidromeCanonicalFrontendStorage = localStorage,
+  storage: NavidromeCanonicalFrontendStorage = largeAwareStorage,
 ): void {
   // Retain exact pre-rewrite candidates outside the live store. A disconnected
   // disk is not evidence of data loss; never delete either collision path.

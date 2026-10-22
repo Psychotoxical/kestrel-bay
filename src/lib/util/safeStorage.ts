@@ -1,5 +1,6 @@
 import { createJSONStorage, type PersistStorage, type StateStorage } from 'zustand/middleware';
 import { navidromeCanonicalBootstrapIsActive } from '@/lib/server/navidromeCanonicalCheckpointStatus';
+import { largeAwareStorage } from '@/lib/util/largeStorage';
 
 /**
  * `localStorage` wrapped so a failed write never throws.
@@ -21,17 +22,19 @@ import { navidromeCanonicalBootstrapIsActive } from '@/lib/server/navidromeCanon
 // to that key next succeeds (queue shrank back under the quota).
 const quotaWarned = new Set<string>();
 
+// `largeAwareStorage` is plain localStorage except for the download index,
+// which lives in IndexedDB once `preloadLargeStorage()` has run (see there).
 const safeLocalStorage: StateStorage = {
   getItem: (name) => {
     try {
-      return localStorage.getItem(name);
+      return largeAwareStorage.getItem(name);
     } catch {
       return null;
     }
   },
   setItem: (name, value) => {
     try {
-      localStorage.setItem(name, value);
+      largeAwareStorage.setItem(name, value);
       quotaWarned.delete(name);
     } catch (e) {
       if (import.meta.env.DEV && !quotaWarned.has(name)) {
@@ -45,7 +48,7 @@ const safeLocalStorage: StateStorage = {
   },
   removeItem: (name) => {
     try {
-      localStorage.removeItem(name);
+      largeAwareStorage.removeItem(name);
     } catch {
       /* best-effort */
     }

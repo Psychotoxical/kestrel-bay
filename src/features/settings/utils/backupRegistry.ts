@@ -213,6 +213,8 @@ export const BACKUP_EXCLUSIONS: Readonly<Record<string, string>> = {
   'psysonic-offline': 'tracks downloaded to this machine',
   'psysonic-local-playback': 'local media paths on this machine',
   'psysonic-local-playback-collision-recovery-v1:': 'recovery copy of local media records on this machine',
+  // IndexedDB home of the two keys above on the phone (largeStorage.ts).
+  'psysonic-large-storage': 'local media records on this machine',
   'psysonic-hot-cache': 'cache contents on this disk',
   // Touch shell: restored on a phone without downloads, it would leave nothing to play.
   'psysonic-offline-only': 'offline switch of this device, follows its downloads',

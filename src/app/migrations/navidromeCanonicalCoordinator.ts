@@ -1,3 +1,4 @@
+import { flushLargeStorage, largeAwareStorage } from '@/lib/util/largeStorage';
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import type { MigrationBeginResultDto } from '@/generated/bindings';
@@ -694,7 +695,7 @@ async function canAdmitCanonicalServerWithoutMigration(args: {
   }
 }
 
-export function navidromeCanonicalCheckpointIsBlocking(storage: Storage = localStorage): boolean {
+export function navidromeCanonicalCheckpointIsBlocking(storage: Storage = largeAwareStorage): boolean {
   if (storage.getItem(NAVIDROME_CANONICAL_BOOTSTRAP_LOCK_KEY) !== null) return true;
   try {
     const checkpoint = readNavidromeCanonicalMigrationCheckpoint(storage);
@@ -717,7 +718,7 @@ async function observeNavidromeCanonicalSuccessfulPingNow(args: {
   isCurrent?: () => boolean;
   beforeAdmission?: () => void | Promise<void>;
 }): Promise<boolean> {
-  const storage = args.storage ?? localStorage;
+  const storage = args.storage ?? largeAwareStorage;
   const admissionIsCurrent = () => {
     if (args.isCurrent && !args.isCurrent()) return false;
     const currentProfile = readRawAuthServerProfileGroups(storage)
@@ -867,7 +868,7 @@ export function observeNavidromeCanonicalSuccessfulPing(args: {
 export async function runNavidromeCanonicalMigrationCoordinator(
   options: CoordinatorOptions,
 ): Promise<NavidromeCanonicalBootstrapResult> {
-  const storage = options.storage ?? localStorage;
+  const storage = options.storage ?? largeAwareStorage;
   const emit = (
     serverId: string | null,
     serverName: string | null,
@@ -1140,6 +1141,9 @@ export async function runNavidromeCanonicalMigrationCoordinator(
         progress('frontend', 'raw-persistence');
         rewriteNavidromeCanonicalFrontendState(scope, storage);
         rewriteNavidromeCanonicalHistoryForScope(scope, storage);
+        // The download index lives in IndexedDB; make its rewrite durable before
+        // the checkpoint moves past this phase.
+        await flushLargeStorage();
         await rewriteMountedDeviceSyncManifest({ generation, serverId, storage });
       }
 

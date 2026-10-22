@@ -31,6 +31,8 @@ import './styles/components/index.css';
 import './styles/tracks/index.css';
 import './styles/mobile/index.css';
 import { prepareTouchDocument } from '@/lib/dom/touchDocument';
+import { preloadLargeStorage } from '@/lib/util/largeStorage';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 prepareTouchDocument();
 
@@ -136,6 +138,10 @@ function freezeApplication(): void {
 }
 
 async function mountApplication(): Promise<void> {
+  // Before any migration or store reads storage: on the phone the download
+  // index lives in IndexedDB and is served from memory from here on (see
+  // largeStorage.ts). The desktop keeps it in localStorage, unchanged.
+  if (IS_MOBILE_SHELL) await preloadLargeStorage();
   const windowKind = getWindowKind();
   const windowGate = installNavidromeCanonicalWindowGate({
     onLock: () => {
