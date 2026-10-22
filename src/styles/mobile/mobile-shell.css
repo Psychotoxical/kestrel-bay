@@ -864,6 +864,18 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   pointer-events: none;
 }
 
+/* The shared fade-in also slides up 8px. The cover fills the card and the card does not clip
+   (the dots sit below it), so the slide let the new cover peek out square under the rounded
+   bottom edge on every album change (Frank 23.10.). Here it only fades. */
+.app-shell[data-mobile-app] .hero-cover-mobile.animate-fade-in {
+  animation-name: heroCoverFade;
+}
+
+@keyframes heroCoverFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 .app-shell[data-mobile-app] .hero-cover-mobile img {
   width: 100%;
   height: 100%;
