@@ -664,6 +664,8 @@ export const settings = {
   loggingExportSuccess: 'Log esportati ({{count}} righe).',
   loggingExportError: 'Impossibile esportare i log.',
   ratingsSectionTitle: 'Valutazioni',
+  ratingsShowTitle: 'Mostra valutazioni a stelle',
+  ratingsShowDesc: 'Disattiva se le valutazioni sono disabilitate sul tuo server. Nasconde le stelle e i controlli di valutazione in tutta l’app.',
   ratingsSkipStarTitle: 'Salta a 1 stella',
   ratingsSkipStarDesc:
     'Dopo diversi salti consecutivi, imposta il brano a 1★. Solo per i brani non ancora valutati.',
@@ -835,7 +837,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Mostra foto dell\'artista',
   fsShowArtistPortraitDesc: 'Mostra la foto dell\'artista (o la copertina dell\'album) sul lato destro del player a schermo intero.',
-  fsBackdropPointerDesc: 'La foto dell’artista dietro al lettore si attiva e disattiva in Integrazioni → Sfondi, separatamente per ogni superficie.',
+  fsBackdropPointerDesc: 'La foto dell’artista dietro al lettore si attiva e disattiva in Integrazioni → Recupero copertine esterne → Sfondi, separatamente per ogni superficie.',
   fsBackdropPointerAction: 'Apri Sfondi',
   fsPortraitDim: 'Attenuazione foto',
   fsAutoOpen: 'Apri automaticamente',

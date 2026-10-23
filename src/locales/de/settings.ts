@@ -652,6 +652,8 @@ export const settings = {
   loggingExportSuccess: 'Protokolle exportiert ({{count}} Zeilen).',
   loggingExportError: 'Protokolle konnten nicht exportiert werden.',
   ratingsSectionTitle: 'Bewertungen',
+  ratingsShowTitle: 'Sternbewertungen anzeigen',
+  ratingsShowDesc: 'Ausschalten, wenn Bewertungen auf deinem Server deaktiviert sind. Blendet die Sterne und Bewertungsfelder überall in der App aus.',
   ratingsSkipStarTitle: 'Skip → 1 Stern',
   ratingsSkipStarDesc:
     'Wird ein Titel mehrmals hintereinander übersprungen, bekommt er automatisch 1★. Nur für noch nicht bewertete Titel.',
@@ -768,7 +770,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Künstlerfoto anzeigen',
   fsShowArtistPortraitDesc: 'Künstlerfoto (oder Albumcover) auf der rechten Seite des Vollbild-Players anzeigen.',
-  fsBackdropPointerDesc: 'Das Künstlerfoto hinter dem Player wird unter Integrationen → Hintergründe ein- und ausgeschaltet, getrennt für jede Oberfläche.',
+  fsBackdropPointerDesc: 'Das Künstlerfoto hinter dem Player wird unter Integrationen → Externe Artwork Scraper → Hintergründe ein- und ausgeschaltet, getrennt für jede Oberfläche.',
   fsBackdropPointerAction: 'Hintergründe öffnen',
   fsPortraitDim: 'Abdunkelung des Fotos',
   fsAutoOpen: 'Automatisch öffnen',

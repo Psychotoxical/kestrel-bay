@@ -664,6 +664,8 @@ export const settings = {
   loggingExportSuccess: 'Logs exported ({{count}} lines).',
   loggingExportError: 'Could not export logs.',
   ratingsSectionTitle: 'Ratings',
+  ratingsShowTitle: 'Show star ratings',
+  ratingsShowDesc: 'Turn this off if ratings are disabled on your server. Hides the stars and rating controls everywhere in the app.',
   ratingsSkipStarTitle: 'Skip for 1 star',
   ratingsSkipStarDesc:
     'After several skips in a row, set the track to 1★. Only for tracks not yet rated.',
@@ -835,7 +837,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Show artist photo',
   fsShowArtistPortraitDesc: 'Display the artist photo (or album art) on the right side of the fullscreen player.',
-  fsBackdropPointerDesc: 'The artist photo behind the player is switched on and off under Integrations → Backgrounds, separately for each surface.',
+  fsBackdropPointerDesc: 'The artist photo behind the player is switched on and off under Integrations → External Artwork Scraper → Backgrounds, separately for each surface.',
   fsBackdropPointerAction: 'Open Backgrounds',
   fsPortraitDim: 'Photo dimming',
   fsAutoOpen: 'Open automatically',

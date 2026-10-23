@@ -664,6 +664,8 @@ export const settings = {
   loggingExportSuccess: 'Naplók exportálva ({{count}} sor).',
   loggingExportError: 'Nem sikerült exportálni a naplókat.',
   ratingsSectionTitle: 'Értékelések',
+  ratingsShowTitle: 'Csillagos értékelések megjelenítése',
+  ratingsShowDesc: 'Kapcsold ki, ha a szervereden ki vannak kapcsolva az értékelések. Elrejti a csillagokat és az értékelési vezérlőket az egész alkalmazásban.',
   ratingsSkipStarTitle: 'Átugrás 1 csillagért',
   ratingsSkipStarDesc:
     'Több egymás utáni átugrás után a szám 1★-ra állítódik. Csak a még nem értékelt számokra.',
@@ -835,7 +837,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Előadó fotójának megjelenítése',
   fsShowArtistPortraitDesc: 'Az előadó fotójának (vagy az albumborítónak) megjelenítése a teljes képernyős lejátszó jobb oldalán.',
-  fsBackdropPointerDesc: 'Az előadó fotója a lejátszó mögött az Integrációk → Hátterek menüpontban kapcsolható be és ki, felületenként külön.',
+  fsBackdropPointerDesc: 'Az előadó fotója a lejátszó mögött az Integrációk → Külső borítólehúzó → Hátterek menüpontban kapcsolható be és ki, felületenként külön.',
   fsBackdropPointerAction: 'Hátterek megnyitása',
   fsPortraitDim: 'Fotó sötétítése',
   fsAutoOpen: 'Automatikus megnyitás',

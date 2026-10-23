@@ -599,6 +599,8 @@ export const settings = {
   loggingExportSuccess: 'Logger eksportert ({{count}} linjer).',
   loggingExportError: 'Kunne ikke eksportere logger.',
   ratingsSectionTitle: 'Vurderinger',
+  ratingsShowTitle: 'Vis stjernevurderinger',
+  ratingsShowDesc: 'Slå av hvis vurderinger er deaktivert på serveren din. Skjuler stjernene og vurderingskontrollene overalt i appen.',
   ratingsSkipStarTitle: 'Hopp for 1 stjerne',
   ratingsSkipStarDesc:
     'Etter flere hopp på rad: sett sporet til 1 stjerne. Bare for spor som ikke var vurdert før.',
@@ -747,7 +749,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Vis artistbilde',
   fsShowArtistPortraitDesc: 'Vis artistbilde (eller albumomslag) på høyre side av fullskjermspilleren.',
-  fsBackdropPointerDesc: 'Artistbildet bak spilleren slås av og på under Integrasjoner → Bakgrunner, separat for hver flate.',
+  fsBackdropPointerDesc: 'Artistbildet bak spilleren slås av og på under Integrasjoner → Ekstern bildehenter → Bakgrunner, separat for hver flate.',
   fsBackdropPointerAction: 'Åpne Bakgrunner',
   fsPortraitDim: 'Mørklegging av bilde',
   fsAutoOpen: 'Åpne automatisk',

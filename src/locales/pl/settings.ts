@@ -664,6 +664,8 @@ export const settings = {
   loggingExportSuccess: 'Dzienniki zostały wyeksportowane ({{count}} linii).',
   loggingExportError: 'Nie można wyeksportować dzienników.',
   ratingsSectionTitle: 'Oceny',
+  ratingsShowTitle: 'Pokazuj oceny w gwiazdkach',
+  ratingsShowDesc: 'Wyłącz, jeśli oceny są wyłączone na Twoim serwerze. Ukrywa gwiazdki i elementy oceniania w całej aplikacji.',
   ratingsSkipStarTitle: 'Pomiń dla 1 gwiazdki',
   ratingsSkipStarDesc:
       'Po kilku pominięciach z rzędu ustaw ocenę utworu na 1★. Tylko dla utworów, które nie zostały jeszcze ocenione.',
@@ -835,7 +837,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Pokaż zdjęcie artysty',
   fsShowArtistPortraitDesc: 'Wyświetlaj zdjęcie artysty (lub okładkę albumu) po prawej stronie odtwarzacza pełnoekranowego.',
-  fsBackdropPointerDesc: 'Zdjęcie wykonawcy w tle odtwarzacza włącza się i wyłącza w Integracje → Tła, osobno dla każdej powierzchni.',
+  fsBackdropPointerDesc: 'Zdjęcie wykonawcy w tle odtwarzacza włącza się i wyłącza w Integracje → Zewnętrzny scraper grafik → Tła, osobno dla każdej powierzchni.',
   fsBackdropPointerAction: 'Otwórz Tła',
   fsPortraitDim: 'Przyciemnienie zdjęcia',
   fsAutoOpen: 'Otwieraj automatycznie',

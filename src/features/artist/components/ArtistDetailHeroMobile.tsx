@@ -16,6 +16,7 @@ import {
 } from '@/features/mobileShell';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { useAuthStore } from '@/store/authStore';
+import { useShowStarRatings } from '@/store/starRatings';
 import StarRating from '@/ui/StarRating';
 import EntitySourcePicker from '@/ui/EntitySourcePicker';
 import LastfmIcon from '@/ui/LastfmIcon';
@@ -50,6 +51,7 @@ export default function ArtistDetailHeroMobile({
     downloadKey, offlineStatus === 'downloading' || offlineStatus === 'queued',
   );
   const ratingSupport = useAuthStore(s => s.entityRatingSupportByServer[serverId] ?? 'unknown');
+  const showStarRatings = useShowStarRatings();
   const backdrop = useArtistHeaderBackdrop(artist, albums, coverRef);
   const fitNameRef = useFitTextToWidth(true, 34, 20);
 
@@ -169,15 +171,17 @@ export default function ArtistDetailHeroMobile({
           }))}
         />
 
-        <div className="mobile-artist__rating">
-          <span>{t('entityRating.artistShort')}</span>
-          <StarRating
-            value={artistEntityRating}
-            onChange={handleArtistEntityRating}
-            disabled={!policy.canRate || ratingSupport === 'track_only'}
-            labelKey="entityRating.artistAriaLabel"
-          />
-        </div>
+        {showStarRatings && (
+          <div className="mobile-artist__rating">
+            <span>{t('entityRating.artistShort')}</span>
+            <StarRating
+              value={artistEntityRating}
+              onChange={handleArtistEntityRating}
+              disabled={!policy.canRate || ratingSupport === 'track_only'}
+              labelKey="entityRating.artistAriaLabel"
+            />
+          </div>
+        )}
 
         {hasAlbums && (
           <div className="mobile-album__buttons">

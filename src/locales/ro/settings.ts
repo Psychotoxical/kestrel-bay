@@ -622,6 +622,8 @@ export const settings = {
   loggingExportSuccess: 'Log-uri exportate ({{count}} linii).',
   loggingExportError: 'Nu s-au putut exporta log-urile.',
   ratingsSectionTitle: 'Ratinguri',
+  ratingsShowTitle: 'Afișează evaluările cu stele',
+  ratingsShowDesc: 'Dezactivează dacă evaluările sunt dezactivate pe serverul tău. Ascunde stelele și controalele de evaluare în toată aplicația.',
   ratingsSkipStarTitle: 'Sari peste 1 stea',
   ratingsSkipStarDesc:
     'După mai multe salturi la rând, setează ratingul piesei la 1★. Doar pentru piesele care nu au fost deja evaluate.',
@@ -770,7 +772,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Arată poza artistului',
   fsShowArtistPortraitDesc: 'Arată poza artistului (sau arta albumului) în partea dreaptă a playerului pe ecran complet.',
-  fsBackdropPointerDesc: 'Fotografia artistului din spatele playerului se activează și se dezactivează în Integrări → Fundaluri, separat pentru fiecare suprafață.',
+  fsBackdropPointerDesc: 'Fotografia artistului din spatele playerului se activează și se dezactivează în Integrări → Scraper de imagini extern → Fundaluri, separat pentru fiecare suprafață.',
   fsBackdropPointerAction: 'Deschide Fundaluri',
   fsPortraitDim: 'Estomparea fotografiei',
   fsAutoOpen: 'Deschide automat',

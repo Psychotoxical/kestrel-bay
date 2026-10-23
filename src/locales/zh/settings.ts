@@ -599,6 +599,8 @@ export const settings = {
   loggingExportSuccess: '日志已导出（{{count}} 行）。',
   loggingExportError: '无法导出日志。',
   ratingsSectionTitle: '评分',
+  ratingsShowTitle: '显示星级评分',
+  ratingsShowDesc: '如果服务器已关闭评分，请关闭此项。将在整个应用中隐藏星星和评分控件。',
   ratingsSkipStarTitle: '跳过以评 1 星',
   ratingsSkipStarDesc:
     '连续多次跳过后将曲目设为 1 星。仅适用于此前未评分的曲目。',
@@ -747,7 +749,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: '显示艺术家照片',
   fsShowArtistPortraitDesc: '在全屏播放器右侧显示艺术家照片（或专辑封面）。',
-  fsBackdropPointerDesc: '播放器背后的艺人照片可在 集成 → 背景 中按界面分别开启或关闭。',
+  fsBackdropPointerDesc: '播放器背后的艺人照片可在 集成 → 外部封面采集器 → 背景 中按界面分别开启或关闭。',
   fsBackdropPointerAction: '打开背景',
   fsPortraitDim: '照片暗化',
   fsAutoOpen: '自动打开',

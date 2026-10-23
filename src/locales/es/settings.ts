@@ -619,6 +619,8 @@ export const settings = {
   loggingExportSuccess: 'Logs exportados ({{count}} líneas).',
   loggingExportError: 'No se pudieron exportar los logs.',
   ratingsSectionTitle: 'Calificaciones',
+  ratingsShowTitle: 'Mostrar valoraciones con estrellas',
+  ratingsShowDesc: 'Desactívalo si las valoraciones están desactivadas en tu servidor. Oculta las estrellas y los controles de valoración en toda la aplicación.',
   ratingsSkipStarTitle: 'Saltar para 1 estrella',
   ratingsSkipStarDesc:
     'Después de varios saltos seguidos, asigna 1 estrella a la pista. Solo para pistas aún no calificadas.',
@@ -767,7 +769,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Mostrar foto del artista',
   fsShowArtistPortraitDesc: 'Muestra la foto del artista (o portada del álbum) en el lado derecho del reproductor pantalla completa.',
-  fsBackdropPointerDesc: 'La foto del artista detrás del reproductor se activa y desactiva en Integraciones → Fondos, por separado para cada superficie.',
+  fsBackdropPointerDesc: 'La foto del artista detrás del reproductor se activa y desactiva en Integraciones → Buscador de imágenes externo → Fondos, por separado para cada superficie.',
   fsBackdropPointerAction: 'Abrir Fondos',
   fsPortraitDim: 'Oscurecimiento de foto',
   fsAutoOpen: 'Abrir automáticamente',

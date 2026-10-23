@@ -680,6 +680,8 @@ export const settings = {
   loggingExportSuccess: 'Логи экспортированы ({{count}} строк).',
   loggingExportError: 'Не удалось экспортировать логи.',
   ratingsSectionTitle: 'Рейтинги',
+  ratingsShowTitle: 'Показывать оценки звёздами',
+  ratingsShowDesc: 'Отключите, если оценки выключены на вашем сервере. Скрывает звёзды и элементы оценки во всём приложении.',
   ratingsSkipStarTitle: 'Скипнуть для 1 звезды',
   ratingsSkipStarDesc:
     'При N скипов подряд ставить 1★ треку. Только для не оцененных ранее.',
@@ -857,7 +859,7 @@ export const settings = {
   fullscreenPlayerPrism: 'Prism',
   fsShowArtistPortrait: 'Отображать фото артиста',
   fsShowArtistPortraitDesc: 'Показывать фото артиста (или обложку альбома) в правой части полноэкранного плеера.',
-  fsBackdropPointerDesc: 'Фото исполнителя за плеером включается и отключается в разделе Интеграции → Фоны, отдельно для каждой поверхности.',
+  fsBackdropPointerDesc: 'Фото исполнителя за плеером включается и отключается в разделе Интеграции → Внешний сборщик обложек → Фоны, отдельно для каждой поверхности.',
   fsBackdropPointerAction: 'Открыть «Фоны»',
   fsPortraitDim: 'Затемнение фото',
   fsAutoOpen: 'Открывать автоматически',

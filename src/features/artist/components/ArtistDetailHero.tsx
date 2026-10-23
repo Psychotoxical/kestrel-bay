@@ -26,6 +26,7 @@ import type { MusicFolder, ServerProfile } from '@/store/authStoreTypes';
 import { useLocation, useNavigate } from 'react-router';
 import { buildArtistDetailPath } from '@/lib/navigation/detailServerScope';
 import { ShareMethodMenuButton } from '@/features/share';
+import { useShowStarRatings } from '@/store/starRatings';
 
 export interface ArtistDetailHeroProps {
   artist: SubsonicArtist;
@@ -115,6 +116,7 @@ export default function ArtistDetailHero({
 }: ArtistDetailHeroProps) {
   const policy = actionPolicy ?? offlineActionPolicy('artistDetail', false);
   const { t } = useTranslation();
+  const showStarRatings = useShowStarRatings();
   const goBack = useAlbumDetailBack();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -221,15 +223,17 @@ export default function ArtistDetailHero({
             }))}
           />
 
-          <div className="artist-detail-entity-rating">
-            <span className="artist-detail-entity-rating-label">{t('entityRating.artistShort')}</span>
-            <StarRating
-              value={artistEntityRating}
-              onChange={handleArtistEntityRating}
-              disabled={!policy.canRate || artistEntityRatingSupport === 'track_only'}
-              labelKey="entityRating.artistAriaLabel"
-            />
-          </div>
+          {showStarRatings && (
+            <div className="artist-detail-entity-rating">
+              <span className="artist-detail-entity-rating-label">{t('entityRating.artistShort')}</span>
+              <StarRating
+                value={artistEntityRating}
+                onChange={handleArtistEntityRating}
+                disabled={!policy.canRate || artistEntityRatingSupport === 'track_only'}
+                labelKey="entityRating.artistAriaLabel"
+              />
+            </div>
+          )}
 
           <div className="compact-action-bar" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {(lastFmUrl || artist.name) && (

@@ -55,6 +55,7 @@ import { usePlaylistDetailScrollRestore } from '@/features/playlist/hooks/usePla
 import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 import PlaylistSongSearchSheet from '@/features/playlist/components/PlaylistSongSearchSheet';
 import { moveBlockToGap } from '@/lib/util/listReorder';
+import { useShowStarRatings, withoutRatingColumn } from '@/store/starRatings';
 
 // ── Column configuration ──────────────────────────────────────────────────────
 const PL_COLUMNS: readonly ColDef[] = [
@@ -194,9 +195,13 @@ export default function PlaylistDetail() {
 
   // ── Column resize/visibility ──────────────────────────────────────────────
   const tracksReadOnly = playlist ? playlistDetailControls(playlist).tracksReadOnly : false;
+  const showStarRatings = useShowStarRatings();
   const detailColumns = useMemo(
-    () => (tracksReadOnly ? PL_COLUMNS.filter(col => col.key !== 'delete') : PL_COLUMNS),
-    [tracksReadOnly],
+    () => withoutRatingColumn(
+      tracksReadOnly ? PL_COLUMNS.filter(col => col.key !== 'delete') : PL_COLUMNS,
+      showStarRatings,
+    ),
+    [tracksReadOnly, showStarRatings],
   );
   const {
     colVisible, visibleCols, gridStyle,
