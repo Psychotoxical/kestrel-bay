@@ -55,6 +55,8 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
       <MobilePullToRefresh />
       <div className="mobile-mainstage-header__brand">
         <PsysonicLogo className="mobile-mainstage-header__logo" gradientIdSuffix="mobile-mainstage" />
+        {/* Two spacers: the chip sits centred between the logo and the round buttons. */}
+        <span className="mobile-mainstage-header__spacer" />
         {serverName && (downloadsOnly ? (
           <button
             type="button"
