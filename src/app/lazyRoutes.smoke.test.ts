@@ -46,6 +46,7 @@ const ROUTE_LOADERS: Array<[string, () => Promise<{ default: unknown }>]> = [
   ['@/features/search/pages/SearchBrowsePage', () => import('@/features/search/pages/SearchBrowsePage')],
   ['@/features/search/pages/TracksTouchPage', () => import('@/features/search/pages/TracksTouchPage')],
   ['@/features/folderBrowser/pages/FolderBrowser', () => import('@/features/folderBrowser/pages/FolderBrowser')],
+  ['@/features/folderBrowser/components/FolderBrowserTouch', () => import('@/features/folderBrowser/components/FolderBrowserTouch')],
   ['@/features/radio/pages/InternetRadio', () => import('@/features/radio/pages/InternetRadio')],
   ['@/features/genre/pages/Genres', () => import('@/features/genre/pages/Genres')],
   ['@/features/genre/pages/GenreDetail', () => import('@/features/genre/pages/GenreDetail')],

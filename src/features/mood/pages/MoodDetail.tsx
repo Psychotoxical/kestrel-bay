@@ -42,6 +42,7 @@ import { readAlbumBrowseRestore } from '@/lib/navigation/albumDetailNavigation';
 import { useMoodAlbumBrowse } from '../hooks/useMoodAlbumBrowse';
 import { useMoodDetailBrowse } from '../hooks/useMoodDetailBrowse';
 import { useMoodTrackBrowse } from '../hooks/useMoodTrackBrowse';
+import MoodTracksTouchList from '../components/MoodTracksTouchList';
 
 type MoodDetailView = 'albums' | 'tracks';
 
@@ -807,12 +808,16 @@ export default function MoodDetail() {
                   visibility: isScrollRestorePending ? 'hidden' : 'visible',
                 }}
               >
+                {IS_MOBILE_SHELL ? (
+                  <MoodTracksTouchList songs={songs} />
+                ) : (
                 <PagedSongList
                   songs={songs}
                   hasMore={false}
                   loadingMore={false}
                   onLoadMore={loadMoreTracks}
                 />
+                )}
 
                 {tracksHasMore && (
                   <InpageScrollSentinel

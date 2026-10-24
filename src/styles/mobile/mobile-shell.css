@@ -5935,3 +5935,16 @@ html[data-mobile-reordering] .playlist-reorder-hint {
 .touch-cache__danger:disabled {
   opacity: 0.5;
 }
+
+/* ─── Folder browser (FolderBrowserTouch): one level per screen ─── */
+.mobile-folder-browser__filter {
+  width: 100%;
+  margin: 12px 0 8px;
+}
+
+.mobile-folder-browser__status {
+  display: flex;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--text-secondary);
+}

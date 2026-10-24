@@ -47,6 +47,7 @@ const LabelDetail = lazy(() => import('@/features/label/pages/LabelDetail'));
 const SearchBrowsePage = lazy(() => import('@/features/search/pages/SearchBrowsePage'));
 const TracksTouchPage = lazy(() => import('@/features/search/pages/TracksTouchPage'));
 const FolderBrowser = lazy(() => import('@/features/folderBrowser/pages/FolderBrowser'));
+const FolderBrowserTouch = lazy(() => import('@/features/folderBrowser/components/FolderBrowserTouch'));
 const InternetRadio = lazy(() => import('@/features/radio/pages/InternetRadio'));
 const Genres = lazy(() => import('@/features/genre/pages/Genres'));
 const GenreDetail = lazy(() => import('@/features/genre/pages/GenreDetail'));
@@ -144,7 +145,7 @@ export default function AppRoutes() {
       <Route path="/playlists/:id" element={<PlaylistDetail />} />
       <Route path="/shared" element={<Shared />} />
       <Route path="/radio" element={<InternetRadio />} />
-      <Route path="/folders" element={<FolderBrowser />} />
+      <Route path="/folders" element={IS_MOBILE_SHELL ? <FolderBrowserTouch /> : <FolderBrowser />} />
       <Route path="/device-sync" element={<DeviceSync />} />
       <Route path="/burn" element={<Burner />} />
       <Route path="/__benchmark-transition" element={null} />
