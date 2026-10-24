@@ -1,13 +1,16 @@
 //! Album browse helpers: favorites reconcile and catalog year bounds.
 
+use std::sync::Arc;
+
 use rusqlite::{params, OptionalExtension};
 use serde_json::{Map, Value};
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, State};
 
 use crate::album_compilation_filter::pick_album_group_artist_id;
+use crate::commands::{library_spawn_blocking, library_spawn_blocking_with_runtime};
 use crate::dto::CatalogYearBoundsDto;
 use crate::dto::LibraryAlbumDto;
-use crate::dto::{GenreAlbumCountDto, MoodAlbumCountDto};
+use crate::dto::{GenreAlbumCountDto, LabelAlbumCountDto, MoodAlbumCountDto};
 use crate::runtime::LibraryRuntime;
 use crate::search::{
     library_scope_in_sql, library_scope_sargable_equals_sql, normalized_library_scopes,
@@ -39,9 +42,8 @@ pub async fn library_reconcile_album_stars(
     server_id: String,
     starred_albums: Vec<StarredAlbumReconcileItem>,
 ) -> Result<(), String> {
-    on_library_worker(move || {
-        let runtime = app.state::<LibraryRuntime>();
-        reconcile_album_stars(&runtime, &server_id, &starred_albums)
+    library_spawn_blocking_with_runtime(app, move |runtime| {
+        reconcile_album_stars(runtime, &server_id, &starred_albums)
     })
     .await
 }
@@ -54,9 +56,8 @@ pub async fn library_reconcile_artist_stars(
     server_id: String,
     starred_artists: Vec<StarredArtistReconcileItem>,
 ) -> Result<(), String> {
-    on_library_worker(move || {
-        let runtime = app.state::<LibraryRuntime>();
-        reconcile_artist_stars(&runtime, &server_id, &starred_artists)
+    library_spawn_blocking_with_runtime(app, move |runtime| {
+        reconcile_artist_stars(runtime, &server_id, &starred_artists)
     })
     .await
 }
@@ -330,24 +331,10 @@ pub async fn library_patch_album(
     album_id: String,
     patch: Value,
 ) -> Result<(), String> {
-    on_library_worker(move || {
-        let runtime = app.state::<LibraryRuntime>();
-        apply_album_patch(&runtime, &server_id, &album_id, &patch)
+    library_spawn_blocking_with_runtime(app, move |runtime| {
+        apply_album_patch(runtime, &server_id, &album_id, &patch)
     })
     .await
-}
-
-/// Database writes leave Tauri's main thread: a sync command waits there for the writer
-/// lock, and a long maintenance write (identity rebuild after an interrupted sync) froze
-/// the whole UI, startup included, until it finished.
-async fn on_library_worker<F, R>(f: F) -> Result<R, String>
-where
-    F: FnOnce() -> Result<R, String> + Send + 'static,
-    R: Send + 'static,
-{
-    tauri::async_runtime::spawn_blocking(f)
-        .await
-        .map_err(|e| format!("library blocking worker failed: {e}"))?
 }
 
 pub(crate) fn reconcile_album_stars(
@@ -462,13 +449,17 @@ pub(crate) fn catalog_year_bounds_for_server(
 /// Min/max album years from the local track catalog (for Albums browse filter spinners).
 #[tauri::command]
 #[specta::specta]
-pub fn library_get_catalog_year_bounds(
+pub async fn library_get_catalog_year_bounds(
     runtime: State<'_, LibraryRuntime>,
     server_id: String,
 ) -> Result<CatalogYearBoundsDto, String> {
     let trace = psysonic_core::logging::should_log_albums_browse_trace();
     let t0 = std::time::Instant::now();
-    let result = catalog_year_bounds_for_server(&runtime.store, &server_id);
+    let store = Arc::clone(&runtime.store);
+    let query_server_id = server_id.clone();
+    let result =
+        library_spawn_blocking(move || catalog_year_bounds_for_server(&store, &query_server_id))
+            .await;
     if trace {
         let step_ms = t0.elapsed().as_millis();
         let (min_year, max_year) = result
@@ -618,10 +609,78 @@ pub(crate) fn mood_album_counts_for_server(
         .map_err(|e| e.to_string())
 }
 
+pub(crate) fn label_album_counts_query(
+    server_id: &str,
+    library_scopes: &[String],
+) -> (String, Vec<rusqlite::types::Value>) {
+    let scopes = normalized_library_scopes(library_scopes);
+
+    // The projection primary key permits one row per track and
+    // case-insensitive label, so COUNT(*) is the song count without
+    // requiring a DISTINCT temp B-tree or a join back to track.
+    let mut sql = String::from(
+        "SELECT MIN(tl.label), COUNT(DISTINCT tl.album_id) AS album_count, \
+                COUNT(*) AS song_count \
+         FROM track_label tl INDEXED BY idx_track_label_key_browse \
+         WHERE tl.server_id = ?1 \
+           AND tl.album_id IS NOT NULL AND tl.album_id != ''",
+    );
+
+    let mut params: Vec<rusqlite::types::Value> =
+        vec![rusqlite::types::Value::Text(server_id.to_string())];
+
+    if scopes.len() == 1 {
+        sql.push_str(&format!(" AND {}", library_scope_sargable_equals_sql("tl")));
+
+        push_library_scope_binds(&mut params, &scopes);
+    } else if scopes.len() > 1 {
+        sql.push_str(&format!(
+            " AND {}",
+            library_scope_in_sql("tl", scopes.len())
+        ));
+
+        push_library_scope_binds(&mut params, &scopes);
+    }
+
+    sql.push_str(
+        " GROUP BY tl.label_key \
+         HAVING album_count > 0 \
+         ORDER BY album_count DESC, tl.label COLLATE NOCASE ASC",
+    );
+
+    (sql, params)
+}
+
+pub(crate) fn label_album_counts_for_server(
+    store: &LibraryStore,
+    server_id: &str,
+    library_scopes: &[String],
+) -> Result<Vec<LabelAlbumCountDto>, String> {
+    let (sql, params) = label_album_counts_query(server_id, library_scopes);
+
+    store
+        .with_read_conn(|conn| {
+            let mut stmt = conn.prepare(&sql)?;
+
+            let rows = stmt
+                .query_map(rusqlite::params_from_iter(params.iter()), |r| {
+                    Ok(LabelAlbumCountDto {
+                        value: r.get::<_, String>(0)?,
+                        album_count: r.get::<_, i64>(1)?.max(0) as u32,
+                        song_count: r.get::<_, i64>(2)?.max(0) as u32,
+                    })
+                })?
+                .collect::<rusqlite::Result<Vec<_>>>()?;
+
+            Ok(rows)
+        })
+        .map_err(|e| e.to_string())
+}
+
 /// Distinct album counts per track genre — same grouping as genre album browse.
 #[tauri::command]
 #[specta::specta]
-pub fn library_get_genre_album_counts(
+pub async fn library_get_genre_album_counts(
     runtime: State<'_, LibraryRuntime>,
     server_id: String,
     library_scope: Option<String>,
@@ -637,7 +696,12 @@ pub fn library_get_genre_album_counts(
     };
     let trace_scopes = scopes.clone();
     let t0 = std::time::Instant::now();
-    let result = genre_album_counts_for_server(&runtime.store, &server_id, &scopes);
+    let store = Arc::clone(&runtime.store);
+    let query_server_id = server_id.clone();
+    let result = library_spawn_blocking(move || {
+        genre_album_counts_for_server(&store, &query_server_id, &scopes)
+    })
+    .await;
     if trace {
         let step_ms = t0.elapsed().as_millis();
         let genre_count = result.as_ref().map(|rows| rows.len()).unwrap_or(0);
@@ -661,7 +725,7 @@ pub fn library_get_genre_album_counts(
 
 #[tauri::command]
 #[specta::specta]
-pub fn library_get_mood_album_counts(
+pub async fn library_get_mood_album_counts(
     runtime: State<'_, LibraryRuntime>,
     server_id: String,
     library_scope: Option<String>,
@@ -675,7 +739,28 @@ pub fn library_get_mood_album_counts(
         vec![]
     };
 
-    mood_album_counts_for_server(&runtime.store, &server_id, &scopes)
+    let store = Arc::clone(&runtime.store);
+    library_spawn_blocking(move || mood_album_counts_for_server(&store, &server_id, &scopes)).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn library_get_label_album_counts(
+    runtime: State<'_, LibraryRuntime>,
+    server_id: String,
+    library_scope: Option<String>,
+    library_scopes: Option<Vec<String>>,
+) -> Result<Vec<LabelAlbumCountDto>, String> {
+    let scopes = if let Some(scopes) = library_scopes {
+        normalized_library_scopes(&scopes)
+    } else if let Some(scope) = library_scope.as_deref().filter(|s| !s.trim().is_empty()) {
+        vec![scope.to_string()]
+    } else {
+        vec![]
+    };
+
+    let store = Arc::clone(&runtime.store);
+    library_spawn_blocking(move || label_album_counts_for_server(&store, &server_id, &scopes)).await
 }
 
 #[cfg(test)]

@@ -37,11 +37,6 @@ const PREPARED_DRAIN_PER_POLL: usize = 8;
 // prepared seek is matched by its exact id and a position within one full f32
 // ulp of the larger value, never less than this floor.
 const SEEK_POS_TOLERANCE_NANOS: u64 = 2_000_000;
-// iOS only, until the busy wait is fixed for every platform (Psysonic #1760):
-// iOS kills a background app that keeps a core busy, so there the passthrough
-// loop waits while the ring holds enough PCM and resets the pitch state only
-// when it was used. The desktop keeps its loop unchanged.
-const PASSTHROUGH_WAITS: bool = cfg!(target_os = "ios");
 
 mod seek;
 mod streaming;
@@ -580,7 +575,9 @@ fn worker_main<S: Source<Item = f32> + Send>(
             && is_effect_active(&env.atomics);
 
         if !use_preserve {
-            if !PASSTHROUGH_WAITS || !preserve.is_reset(env.channels) {
+            // Without pitch work there is nothing to reset; a reset per pass rebuilt
+            // the zeroed shifter buffers on every iteration (#1760).
+            if !preserve.is_reset(env.channels) {
                 preserve.reset(env.channels);
             }
             push_pending(&mut prod, &mut preserve.pending, &env.stop);
@@ -610,7 +607,10 @@ fn worker_main<S: Source<Item = f32> + Send>(
                 }
                 env.done.store(true, Ordering::Release);
                 std::thread::sleep(WORKER_IDLE_SLEEP);
-            } else if PASSTHROUGH_WAITS && ring_at_passthrough_target(&prod, env.capacity) {
+            } else if ring_at_passthrough_target(&prod, env.capacity) {
+                // `forward_passthrough` stops at RB_TARGET_FILL but the wait above only
+                // starts at RB_FILL_HIGH: without this the loop spins a core between
+                // the two marks for the whole track (#1760).
                 std::thread::sleep(WORKER_IDLE_SLEEP);
             }
             continue;

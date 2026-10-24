@@ -14,6 +14,8 @@ describe('activeMobileTab', () => {
     expect(activeMobileTab('/artist/abc')).toBe('library');
     expect(activeMobileTab('/genres/Rock')).toBe('library');
     expect(activeMobileTab('/random/mix')).toBe('library');
+    expect(activeMobileTab('/labels')).toBe('library');
+    expect(activeMobileTab('/label/abc')).toBe('library');
     expect(activeMobileTab('/playlists/42')).toBe('playlists');
   });
 

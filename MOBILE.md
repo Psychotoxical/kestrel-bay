@@ -120,9 +120,7 @@ when changing the files involved. Pure layout swaps (touch components, `DesktopO
 | Tray, window state, shortcuts, single instance, mini player and window APIs are `cfg(desktop)`; tray commands have mobile stubs. | They do not exist on phones; the frontend calls them unconditionally. | `src-tauri/src/lib.rs`, `src-tauri/src/lib_commands/sync/tray_mobile.rs`, `lib_commands/ui/mini.rs`, `lib_commands/app_api/integration.rs` | New plugins, tray commands or window calls need a gate (and a stub), or the mobile build breaks. |
 | Cover URLs for the iOS media controls are reduced to local file paths; no desktop notifications on iOS. | souvlaki's iOS backend aborts the app on remote URLs. | `src-tauri/src/lib_commands/app_api/integration.rs`, `src-tauri/Cargo.toml` | |
 | External links open through the `open_external_url` command. | The JS shell `open` spawns a process, which iOS forbids. | `src/lib/api/externalLink.ts` | Never import `open` from `@tauri-apps/plugin-shell` in the UI. |
-| The streaming preserve worker sleeps instead of spinning when its buffer is full (iOS). | iOS kills background apps that busy-loop a core (#1760). | `src-tauri/crates/psysonic-audio/src/preserve_worker.rs` | When `main` reworks this file (#1788), take `main`'s version if it fixes the spin for every platform. |
 | Android reopens the audio output when the route is lost; `power_resume` is built for both phones. | Android Auto and Bluetooth disconnect AAudio and the car stayed silent. | `src-tauri/crates/psysonic-audio/src/output_lost.rs`, `engine/output_stream.rs`, `power_resume.rs` | |
-| Library database write commands run off the main thread. | Synchronous commands blocked the UI on the writer lock. | `src-tauri/crates/psysonic-library/src/commands.rs`, `browse_support.rs` | Keep them `async` + `spawn_blocking` when merging. |
 
 ### Network and downloads
 

@@ -1,0 +1,15 @@
+export const labels = {
+  title: 'Δισκογραφικές',
+  labelCount: 'Δισκογραφικές',
+  labelCount_one: 'Δισκογραφική',
+  albumCount_one: '{{count}} άλμπουμ',
+  albumCount_other: '{{count}} άλμπουμ',
+  loading: 'Φόρτωση δισκογραφικών…',
+  empty: 'Δεν βρέθηκαν δισκογραφικές.',
+  noMatches: 'Καμία δισκογραφική δεν ταιριάζει με το φίλτρο σας.',
+  albumsEmpty: 'Δεν βρέθηκαν άλμπουμ για αυτή τη δισκογραφική.',
+  back: 'Πίσω',
+  filterPlaceholder: 'Φιλτράρισμα δισκογραφικών',
+  jumpTo: 'Μετάβαση σε γράμμα',
+  other: 'Άλλα',
+};

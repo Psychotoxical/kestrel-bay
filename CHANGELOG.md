@@ -84,6 +84,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Settings → Personalisation → Home** now lets you choose where the "Because you listened" row finds its albums: **Similar artists**, as before, or **AudioMuse**, which suggests albums that sound like the one you listened to. The row is then titled "If you like the sound of …".
 * AudioMuse can only be chosen once a server with Navidrome 0.62 or newer and the AudioMuse plugin is detected. Servers without it keep using similar artists.
 
+### Browse by record label
+
+**By [@circle3451](https://github.com/circle3451), PR [#1682](https://github.com/Psysonic/psysonic/pull/1682)**
+
+* A new **Labels** entry in the sidebar lists the record labels in your library, A–Z, with a filter box, a letter jump bar and the album count of each label. It covers every server and library you browse, like Genres and Moods. It is hidden by default; turn it on under **Settings → Personalisation → Sidebar**.
+* Opening a label — from this list or from the label link on an album page — shows exactly the albums tagged with it, loading more as you scroll. After upgrading, the app builds the label index once before opening the library, with progress shown while it works.
+
+### Browse individual tracks by mood
+
+**By [@Puppies-On-Acid](https://github.com/Puppies-On-Acid), PR [#1685](https://github.com/Psysonic/psysonic/pull/1685)**
+
+* Mood detail now has **Albums** and **Tracks** tabs. Albums remains the default; Tracks pages through songs carrying that exact mood, using the standard song-list controls.
+* Switching tabs or returning from an album or artist preserves the loaded results and scroll position. Track browsing uses the local library index and does not require a new server endpoint.
+
+### Touchpad gestures: swipe to go back, pinch to zoom covers
+
+**By [@circle3451](https://github.com/circle3451), PR [#1695](https://github.com/Psysonic/psysonic/pull/1695)**
+
+* Swipe left or right with two fingers on a touchpad to go back or forward, like in a web browser. Sideways scrolling in carousels and lists is not affected, and **Settings → Input → Touchpad** can turn it off.
+* In the full-size cover view, pinch or use Ctrl/⌘ + scroll to zoom in around the pointer, drag to move around, and double-click to zoom in or back out. With a keyboard, use +/− to zoom, the arrow keys to move around, and 0 to reset.
+
 ### Shuffle spreads artists and albums over the list
 
 **By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1698](https://github.com/Psysonic/psysonic/pull/1698)**
@@ -183,12 +204,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Blur explicit covers** hides the cover art of those songs behind a soft blur; clicking an album cover still shows it in full. It is off by default; both options are in **Settings → Appearance → Visual Options**.
 * Works with servers that report explicit tags through OpenSubsonic, such as Navidrome.
 
-### Greek translation
+### Find genres and moods in large catalogs
 
-**By [@stefnto](https://github.com/stefnto), PR [#1737](https://github.com/Psysonic/psysonic/pull/1737)**
+**By [@Puppies-On-Acid](https://github.com/Puppies-On-Acid), PR [#1733](https://github.com/Psysonic/psysonic/pull/1733)**
 
-* Full Greek (Ελληνικά) UI translation — selectable from the language picker on the Settings and Login screens.
-* Library matching now ignores Greek accents (tonos, dialytika) and the final sigma, so `Μάνος`, `Μανος` and `ΜΑΝΟΣ` resolve to the same entry. The first sync after the update rebuilds the library keys once.
+* **Genres** and **Moods** now have a search box and popularity or alphabetical sorting. Filtering happens locally, without extra server requests, and pill sizes still reflect popularity.
+* Returning from a detail page restores the search and scroll position; the selected sort is remembered for the current session.
 
 ### Open Settings with a keyboard shortcut
 
@@ -196,6 +217,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * ⌘, on macOS and Ctrl+, on Windows and Linux open Settings from any view. The shortcut can be changed or cleared under **Settings → Input → Keyboard shortcuts**.
 * If one of your shortcuts already uses that key combination, it keeps it, and **Open settings** starts unassigned.
+
+### Greek translation
+
+**By [@stefnto](https://github.com/stefnto), PR [#1737](https://github.com/Psysonic/psysonic/pull/1737)**
+
+* Full Greek (Ελληνικά) UI translation — selectable from the language picker on the Settings and Login screens.
+* Library matching now ignores Greek accents (tonos, dialytika) and the final sigma, so `Μάνος`, `Μανος` and `ΜΑΝΟΣ` resolve to the same entry. The first sync after the update rebuilds the library keys once.
 
 ### Settings search finds every option
 
@@ -319,6 +347,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1708](https://github.com/Psysonic/psysonic/pull/1708)**
 
 * The short notices at the bottom of the window, such as confirmations, warnings and errors, were never read out by screen readers. They are now announced: notices politely, errors right away.
+
+### Mood tags survive unrelated metadata updates
+
+**By [@Puppies-On-Acid](https://github.com/Puppies-On-Acid), PR [#1712](https://github.com/Psysonic/psysonic/pull/1712)**
+
+* Valid file moods are no longer hidden when an unrelated Navidrome tag snapshot is cached beside them. Explicit mood removal still clears the old value.
+* Existing ambiguous entries are checked against current Navidrome metadata while playback is idle and the server is available; cached values are not guessed while offline.
 
 ### Bandcamp playback now includes waveform, loudness and BPM analysis
 
@@ -489,6 +524,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **By [@cucadmuh](https://github.com/cucadmuh), PR [#1791](https://github.com/Psysonic/psysonic/pull/1791)**
 
 * After upgrading Navidrome, migration could fail repeatedly when two distinct tracks had stale aliases pointing at each other. They now migrate separately, keeping their listening history, ratings and offline copies, without manual database edits.
+
+### Linux playback follows the system output rate
+
+**By [@cucadmuh](https://github.com/cucadmuh), PR [#1793](https://github.com/Psysonic/psysonic/pull/1793)**
+
+* With Native Hi-Res Playback off, PipeWire output now uses the system clock instead of an artificial 44.1 kHz default. If the system rate cannot be discovered, Psysonic prefers supported 48 kHz; latency hints follow the actual output rate.
+
+### Gapless playback repeats the same song without restarting
+
+**By [@cucadmuh](https://github.com/cucadmuh), PR [#1794](https://github.com/Psysonic/psysonic/pull/1794)**
+
+* With gapless playback enabled, repeat-one, a one-song repeat-all queue and consecutive copies of the same song now prepare the next playback in advance instead of pausing to restart. Changing repeat mode also cancels an already prepared successor.
+
+### The app stays responsive while the library is busy
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1743](https://github.com/Psysonic/psysonic/pull/1743)**
+
+* While the library held a long write — for example the one-time rebuild of the album list after an update — some library requests waited for it on the app's main thread, and everything else that needs that thread waited with them, for up to about 20 seconds. At startup this could also make part of the window setup time out. These requests now wait in the background.
+* Root cause: these requests were set up to run on the main thread, which keeps them in order but blocks it while they wait. Their order is now kept separately, so starring and unstarring quickly still ends in the right state.
+
+### More consistent Greek translations
+
+**By [@stefnto](https://github.com/stefnto), PR [#1795](https://github.com/Psysonic/psysonic/pull/1795)**
+
+* Greek labels for record labels and their index update now use consistent, shorter wording, with a small correction to the empty mood track list message.
+
+### An original and its reissue are two albums again
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), reported by netherguy4 on GitHub, PR [#1744](https://github.com/Psysonic/psysonic/pull/1744)**
+
+* When one library held two albums with the same artist and title but different years — an original and its remaster, or two self-titled albums — Psysonic showed them as one album with both track lists. They now appear as separate albums with their own pages. Copies on other servers or in other libraries join the release with the same year.
+* Existing libraries are updated once in the background after the update.
+
+### Streaming playback no longer keeps a CPU core busy
+
+**By [@Psychotoxical](https://github.com/Psychotoxical), PR [#1788](https://github.com/Psysonic/psysonic/pull/1788)**
+
+* Since 1.55, the decoder thread for streamed tracks ran in a tight loop for the whole track and kept one CPU core at nearly 100 %. It now waits while enough audio is buffered; on Windows its load dropped from about 98 % to about 2 % of one core. Local and downloaded files were not affected.
 
 ## [1.55.0]
 
