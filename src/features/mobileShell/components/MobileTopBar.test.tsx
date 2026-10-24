@@ -49,6 +49,13 @@ describe('MobileTopBar server chip', () => {
     });
   });
 
+  it('shows symbols only; the server name is the chip\'s label', () => {
+    renderHeader();
+    expect(chip()).toHaveAccessibleName('Home');
+    expect(chip().textContent).toBe('');
+    expect(chip().querySelector('.mobile-status-dot')).not.toBeNull();
+  });
+
   it('one server with one library: the chip leads to the server settings, as on desktop', () => {
     renderHeader();
     expect(chip()).not.toHaveAttribute('aria-haspopup');
@@ -66,7 +73,7 @@ describe('MobileTopBar server chip', () => {
   it('several servers in the scope: the chip counts them, like the desktop', () => {
     useAuthStore.setState({ servers: [HOME, ASRA], libraryBrowseServerIds: ['home', 'asra'] });
     renderHeader();
-    expect(chip()).toHaveTextContent('2 servers');
+    expect(chip()).toHaveAccessibleName('2 servers');
   });
 
   it('the Live button sits right before the account button', () => {

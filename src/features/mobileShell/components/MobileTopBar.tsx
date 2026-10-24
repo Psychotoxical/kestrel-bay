@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { Trans, useTranslation } from 'react-i18next';
-import { ChevronDown, CloudOff, EyeOff, Music2, Shuffle, TrendingUp, UserRound } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { CloudOff, EyeOff, Music2, Server, Shuffle, TrendingUp, UserRound } from 'lucide-react';
 import PsysonicLogo from '@/ui/PsysonicLogo';
 import { useAuthStore } from '@/store/authStore';
 import { usePrivateModeStore } from '@/features/privateMode';
@@ -40,13 +40,13 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
     else if (canChoose) setSourceOpen(true);
     else navigate('/settings', { state: { tab: 'servers' } });
   };
-  const chipLabel = !scope.multiScope ? serverName : scope.unavailableSelection ? (
-    <Trans
-      i18nKey="sidebar.serverAvailabilityCount"
-      values={{ total: scope.selectedServerIds.length, available: scope.effectiveServerIds.length }}
-      components={{ unavailable: <del className="mobile-server-chip__unavailable" /> }}
-    />
-  ) : t('sidebar.serverSelectionCount', { count: scope.selectedServerIds.length });
+  // The chip shows only symbols (Frank 24.10.: the name was cut off anyway); the name stays its label.
+  const chipLabel = !scope.multiScope ? serverName : scope.unavailableSelection
+    ? t('sidebar.serverAvailabilityCount', {
+        total: scope.selectedServerIds.length,
+        available: scope.effectiveServerIds.length,
+      }).replace(/<\/?unavailable>/g, '')
+    : t('sidebar.serverSelectionCount', { count: scope.selectedServerIds.length });
   const mixHub = randomNavMode === 'hub';
   const mixRoute = mixHub ? '/random' : '/random/mix';
 
@@ -68,14 +68,14 @@ function MainstageHeader({ serverName, connStatus, isLan }: Props) {
         ) : (
           <button
             type="button"
-            className="mobile-server-chip"
+            className="mobile-server-chip mobile-server-chip--compact"
             aria-haspopup={canChoose ? 'dialog' : undefined}
+            aria-label={scope.hasLibrarySelection ? `${chipLabel} · ${t('sidebar.libraryScope')}` : chipLabel}
             onClick={openSource}
           >
+            <Server size={14} className="mobile-server-chip__icon" aria-hidden="true" />
+            {scope.hasLibrarySelection && <Music2 size={13} className="mobile-server-chip__icon" aria-label={t('sidebar.libraryScope')} />}
             <span className="mobile-status-dot" data-status={connStatus} aria-hidden="true" />
-            <span className="mobile-server-chip__name">{chipLabel}</span>
-            {scope.hasLibrarySelection && <Music2 size={12} className="mobile-server-chip__icon" aria-label={t('sidebar.libraryScope')} />}
-            {canChoose && <ChevronDown size={13} className="mobile-server-chip__icon" aria-hidden="true" />}
           </button>
         ))}
         <span className="mobile-mainstage-header__spacer" />

@@ -641,6 +641,12 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   inset: -8px -4px;
 }
 
+/* Symbols only: server, library filter, status. The name is the button's label. */
+.mobile-server-chip--compact {
+  gap: 7px;
+  padding: 6px 10px;
+}
+
 .mobile-server-chip__name {
   overflow: hidden;
   text-overflow: ellipsis;
