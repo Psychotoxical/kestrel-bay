@@ -1,6 +1,8 @@
 import { createJSONStorage, type PersistStorage, type StateStorage } from 'zustand/middleware';
 import { navidromeCanonicalBootstrapIsActive } from '@/lib/server/navidromeCanonicalCheckpointStatus';
 import { largeAwareStorage } from '@/lib/util/largeStorage';
+import { createDeferredPersistStorage } from '@/lib/util/deferredPersistStorage';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 /**
  * `localStorage` wrapped so a failed write never throws.
@@ -91,4 +93,16 @@ export const createNavidromeCanonicalMigrationAwareJSONStorage = <S>() => (
     createJSONStorage<S>(() => safeLocalStorage),
     () => !navidromeCanonicalBootstrapIsActive(),
   )
+);
+
+/**
+ * {@link createNavidromeCanonicalMigrationAwareJSONStorage} for the offline
+ * stores that grow with every download. The touch shell writes them at most
+ * every two seconds (see `createDeferredPersistStorage`); the desktop keeps
+ * writing on every change.
+ */
+export const createOfflineIndexPersistStorage = <S>() => (
+  IS_MOBILE_SHELL
+    ? createDeferredPersistStorage(createNavidromeCanonicalMigrationAwareJSONStorage<S>())
+    : createNavidromeCanonicalMigrationAwareJSONStorage<S>()
 );

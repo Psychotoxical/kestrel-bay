@@ -5,7 +5,9 @@
  * A WebView gives one origin about 5 M characters of `localStorage`. The
  * download index (`psysonic-local-playback`) needs ~650 characters per track,
  * so at roughly 7900 downloaded tracks every write failed and new downloads
- * were forgotten on the next start.
+ * were forgotten on the next start. The offline source list
+ * (`psysonic-offline`, ~2 KB per downloaded album) moves along, since a
+ * whole downloaded library would outgrow the quota the same way.
  *
  * Callers stay synchronous: `preloadLargeStorage()` runs once before any store
  * or migration touches storage and loads the large keys into memory. After
@@ -15,11 +17,11 @@
  * open) everything stays in `localStorage`, exactly as before.
  */
 
-const LARGE_KEY = 'psysonic-local-playback';
+const LARGE_KEYS = new Set(['psysonic-local-playback', 'psysonic-offline']);
 const LARGE_KEY_PREFIX = 'psysonic-local-playback-collision-recovery-v1:';
 
 export function isLargeStorageKey(key: string): boolean {
-  return key === LARGE_KEY || key.startsWith(LARGE_KEY_PREFIX);
+  return LARGE_KEYS.has(key) || key.startsWith(LARGE_KEY_PREFIX);
 }
 
 /** Where the large keys live; IndexedDB in the app, injectable for tests. */
