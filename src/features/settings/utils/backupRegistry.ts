@@ -211,9 +211,10 @@ export const BACKUP_EXCLUSIONS: Readonly<Record<string, string>> = {
   // Describe files on this disk or rows in the library databases. Restoring the
   // metadata without the files would claim downloads that are not there.
   'psysonic-offline': 'tracks downloaded to this machine',
+  'psysonic-offline-libraries': 'whole libraries downloaded to this machine',
   'psysonic-local-playback': 'local media paths on this machine',
   'psysonic-local-playback-collision-recovery-v1:': 'recovery copy of local media records on this machine',
-  // IndexedDB home of the two keys above on the phone (largeStorage.ts).
+  // IndexedDB home of the offline and local-media keys above on the phone (largeStorage.ts).
   'psysonic-large-storage': 'local media records on this machine',
   'psysonic-hot-cache': 'cache contents on this disk',
   // Touch shell: restored on a phone without downloads, it would leave nothing to play.

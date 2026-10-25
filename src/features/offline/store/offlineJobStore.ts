@@ -18,7 +18,7 @@ export interface DownloadJob {
 export interface OfflinePinQueueEntry {
   albumId: string;
   albumName: string;
-  pinKind: 'album' | 'playlist' | 'artist' | 'track';
+  pinKind: 'album' | 'playlist' | 'artist' | 'track' | 'library';
   status: 'queued' | 'downloading';
   queuedAt: number;
   serverId?: string;

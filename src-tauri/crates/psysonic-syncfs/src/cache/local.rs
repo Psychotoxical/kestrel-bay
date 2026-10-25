@@ -213,6 +213,17 @@ pub async fn get_media_tier_size(tier: String, media_dir: Option<String>, app: A
     eviction::get_media_tier_size(tier, media_dir, app).await
 }
 
+/// Bytes still free for offline downloads under the media root, after the
+/// reserve every download leaves on the disk.
+#[tauri::command]
+#[specta::specta]
+pub async fn get_media_free_space(
+    media_dir: Option<String>,
+    app: AppHandle,
+) -> Result<u64, String> {
+    eviction::get_media_free_space(media_dir, app).await
+}
+
 /// Deletes the entire `{cache|library}/` subtree under the media root.
 #[tauri::command]
 #[specta::specta]

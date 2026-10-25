@@ -242,6 +242,8 @@ html[data-mobile-app] .mobile-search-overlay {
   font-size: 15px;
   line-height: 1.4;
   color: var(--text-secondary);
+  /* Longer questions (the whole-library warning) come in paragraphs. */
+  white-space: pre-line;
 }
 
 .mobile-action-sheet__actions {

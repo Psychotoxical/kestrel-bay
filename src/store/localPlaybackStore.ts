@@ -12,7 +12,7 @@ import {
   legacyMigrationAlreadyDone,
   markLegacyMigrationDone,
 } from './localPlaybackMigration';
-import { createNavidromeCanonicalMigrationAwareJSONStorage } from '@/lib/util/safeStorage';
+import { createOfflineIndexPersistStorage } from '@/lib/util/safeStorage';
 import {
   evictEphemeralOrphansToFit,
   getEphemeralDiskBytes,
@@ -23,7 +23,7 @@ import { canonicalQueueServerKey } from '@/lib/server/serverIndexKey';
 export type LocalPlaybackTier = 'ephemeral' | 'library' | 'favorite-auto';
 
 export interface PinSource {
-  kind: 'album' | 'playlist' | 'artist' | 'track';
+  kind: 'album' | 'playlist' | 'artist' | 'track' | 'library';
   sourceId: string;
   displayName?: string;
 }
@@ -489,7 +489,7 @@ export const useLocalPlaybackStore = create<LocalPlaybackState>()(
     }),
     {
       name: 'psysonic-local-playback',
-      storage: createNavidromeCanonicalMigrationAwareJSONStorage(),
+      storage: createOfflineIndexPersistStorage(),
       version: 1,
       migrate: (persisted, version) => {
         const state = persisted as { entries?: Record<string, LocalPlaybackEntry> };

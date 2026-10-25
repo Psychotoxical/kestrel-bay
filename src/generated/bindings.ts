@@ -322,6 +322,11 @@ export const commands = {
 	probeMediaFiles: (localPaths: string[]) => __TAURI_INVOKE<boolean[]>("probe_media_files", { localPaths }),
 	/**  Recursive byte size under `{media}/{cache|library}/`. */
 	getMediaTierSize: (tier: string, mediaDir: string | null) => __TAURI_INVOKE<number>("get_media_tier_size", { tier, mediaDir }),
+	/**
+	 *  Bytes still free for offline downloads under the media root, after the
+	 *  reserve every download leaves on the disk.
+	 */
+	getMediaFreeSpace: (mediaDir: string | null) => typedError<number, string>(__TAURI_INVOKE("get_media_free_space", { mediaDir })),
 	/**  Deletes the entire `{cache|library}/` subtree under the media root. */
 	purgeMediaTier: (tier: string, mediaDir: string | null) => typedError<null, string>(__TAURI_INVOKE("purge_media_tier", { tier, mediaDir })),
 	/**  Deletes one media file and prunes empty parents up to the tier root. */

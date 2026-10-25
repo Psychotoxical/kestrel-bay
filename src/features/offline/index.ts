@@ -23,6 +23,7 @@ export * from '@/store/devOfflineBrowseStore';
 export * from './store/downloadModalStore';
 export * from './store/favoritesOfflineSyncStore';
 export * from './store/offlineJobStore';
+export * from './store/offlineLibraryPinStore';
 export * from './store/offlineStore';
 export * from './store/zipDownloadStore';
 export * from './utils/favoritesOfflineBrowse';

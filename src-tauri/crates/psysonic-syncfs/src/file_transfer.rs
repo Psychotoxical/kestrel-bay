@@ -13,6 +13,7 @@ pub use resumable::{
     is_protected_download_artifact, prepare_resumable_download,
     prepare_resumable_download_cancellable, promote_completed_partial, ResumableDownloadResponse,
 };
+pub use space::usable_download_space;
 pub use streaming::{finalize_streamed_download, stream_to_file};
 
 const DOWNLOAD_CONNECT_TIMEOUT: Duration = Duration::from_secs(30);

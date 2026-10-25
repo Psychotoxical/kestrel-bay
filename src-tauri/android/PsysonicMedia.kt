@@ -57,6 +57,16 @@ object PsysonicMedia {
   var cover: Bitmap? = null
     private set
 
+  // ── A whole library downloading (libraryDownloadKeepAwake.ts): the web view drives the
+  // download queue, so it stays running as while music plays, with its own wake lock and a
+  // data-sync foreground service that keeps the process from being stopped.
+  private var downloading = false
+  private var downloadLock: PowerManager.WakeLock? = null
+  var downloadTitle = ""
+    private set
+  var downloadText = ""
+    private set
+
   fun attach(activity: MainActivity, view: WebView) {
     appContext = activity.applicationContext
     webView = view
@@ -234,7 +244,7 @@ object PsysonicMedia {
     }
   }
 
-  private fun keepWebAwake() = playing || carConnected
+  private fun keepWebAwake() = playing || carConnected || downloading
 
   // ── Android Auto player buttons: shuffle, repeat, favourite and the infinite queue, as
   // custom actions. Only while a car is connected, so the phone's media notification keeps
@@ -498,6 +508,34 @@ object PsysonicMedia {
     wakeLock?.let { if (it.isHeld) it.release() }
   }
 
+  private fun setBackgroundWork(active: Boolean, title: String, text: String) {
+    val ctx = appContext ?: return
+    downloadTitle = title
+    downloadText = text
+    if (active == downloading) {
+      PsysonicDownloadService.refresh(ctx)
+      return
+    }
+    downloading = active
+    if (activityPaused) {
+      if (keepWebAwake()) webView?.onResume() else webView?.onPause()
+    }
+    if (active) {
+      val lock = downloadLock ?: (ctx.getSystemService(Context.POWER_SERVICE) as PowerManager)
+        .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Psysonic:download")
+        .also { it.setReferenceCounted(false); downloadLock = it }
+      if (!lock.isHeld) lock.acquire()
+      // Refused from the background (e.g. a pass after a library sync with the app hidden);
+      // the download then runs as a background app until the app is in front again.
+      runCatching {
+        ContextCompat.startForegroundService(ctx, Intent(ctx, PsysonicDownloadService::class.java))
+      }
+    } else {
+      downloadLock?.let { if (it.isHeld) it.release() }
+      PsysonicDownloadService.stop()
+    }
+  }
+
   /** Called from the web view's JavaScript thread; everything else runs on the main thread. */
   private object JsBridge {
     @JavascriptInterface
@@ -523,6 +561,11 @@ object PsysonicMedia {
           PsysonicAutoService.listsChanged((0 until nodes.length()).map(nodes::getString))
         }
       }
+    }
+
+    @JavascriptInterface
+    fun setBackgroundWork(active: Boolean, title: String, text: String) {
+      main.post { runCatching { PsysonicMedia.setBackgroundWork(active, title, text) } }
     }
 
     @JavascriptInterface

@@ -55,6 +55,9 @@ export async function resumeIncompleteOfflinePins(): Promise<void> {
 
   for (const meta of metas) {
     if (!meta.trackIds?.length) continue;
+    // Whole-library pins resume through their own pass (libraryOfflinePin),
+    // which keeps the queue short and respects a pin stopped for a full disk.
+    if (meta.type === 'library') continue;
     const profileServerId = resolveServerIdForIndexKey(meta.serverId) || meta.serverId;
     if (offline.isAlbumDownloading(meta.id, profileServerId)) continue;
     if (isOfflinePinComplete(

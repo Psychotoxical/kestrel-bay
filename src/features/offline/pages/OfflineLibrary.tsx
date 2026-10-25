@@ -76,7 +76,8 @@ export default function OfflineLibrary() {
     null, null, null, null,
   ]);
   const pinRefreshKey = useLocalPlaybackStore(s => {
-    const groups = s.listPinnedGroups();
+    // Whole-library pins have their own row; their thousands of albums stay out.
+    const groups = s.listPinnedGroups().filter(g => g.pinSource.kind !== 'library');
     return groups
       .map(g => `${g.serverIndexKey}\0${g.pinSource.kind}\0${g.pinSource.sourceId}\0${g.trackIds.join(',')}`)
       .sort()
@@ -127,7 +128,8 @@ export default function OfflineLibrary() {
     await Promise.all([reconcileAllLibraryTiersFromDisk(), refreshOfflineDiskSizes()]);
     restoreOfflineLibraryPinSources();
     await inferPinSourcesFromLibraryIndex();
-    const groups = useLocalPlaybackStore.getState().listPinnedGroups();
+    const groups = useLocalPlaybackStore.getState().listPinnedGroups()
+      .filter(group => group.pinSource.kind !== 'library');
     const hydrated = await hydrateOfflineLibraryCards(groups);
     return hydrated.filter(card => offlineTrackCount(card) > 0);
   }, [refreshOfflineDiskSizes]);

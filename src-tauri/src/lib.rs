@@ -247,6 +247,7 @@ fn specta_builder() -> tauri_specta::Builder<tauri::Wry> {
             psysonic_syncfs::cache::local::evict_ephemeral_cache_orphans_to_fit,
             psysonic_syncfs::cache::local::probe_media_files,
             psysonic_syncfs::cache::local::get_media_tier_size,
+            psysonic_syncfs::cache::local::get_media_free_space,
             psysonic_syncfs::cache::local::purge_media_tier,
             psysonic_syncfs::cache::local::delete_media_file,
             psysonic_syncfs::cache::local::prune_empty_media_tier_dirs,
@@ -554,11 +555,12 @@ pub fn run() {
             startup::services::initialize(app)?;
 
             // iOS: pause / resume around calls and lost headphones, and the
-            // player-only landscape lock.
+            // player-only landscape lock, and the screen kept on for library downloads.
             #[cfg(target_os = "ios")]
             {
                 ios::audio_session::observe_interruptions(app.handle());
                 ios::orientation::listen(app.handle());
+                ios::screen::listen(app.handle());
                 ios::carplay::listen(app.handle());
                 ios::siri::listen(app.handle());
                 ios::network::observe(app.handle());
@@ -914,6 +916,7 @@ pub fn run() {
             psysonic_syncfs::cache::local::evict_ephemeral_cache_orphans_to_fit,
             psysonic_syncfs::cache::local::probe_media_files,
             psysonic_syncfs::cache::local::get_media_tier_size,
+            psysonic_syncfs::cache::local::get_media_free_space,
             psysonic_syncfs::cache::local::purge_media_tier,
             psysonic_syncfs::cache::local::delete_media_file,
             psysonic_syncfs::cache::local::prune_empty_media_tier_dirs,

@@ -7,6 +7,7 @@ import { watchMeteredNetwork } from '@/lib/network/meteredNetwork';
 import { startLocalPlaybackPathRebase } from '@/features/mobileShell/ios/rebaseLocalPlaybackPaths';
 import { pinFullAppVolume } from '@/features/mobileShell/utils/fullAppVolume';
 import { watchInfiniteQueue } from '@/features/mobileShell/utils/infiniteQueueWatch';
+import { keepScreenOnForLibraryDownloads } from '@/features/mobileShell/ios/libraryDownloadScreenOn';
 
 /**
  * Touch shell plumbing to the native iOS side: calls / lost headphones pause the
@@ -15,6 +16,7 @@ import { watchInfiniteQueue } from '@/features/mobileShell/utils/infiniteQueueWa
  * After an app update the stored hot-cache and download paths are moved onto the new
  * app container before anything checks them. The app's own volume stays at full: the
  * iPhone's buttons set the loudness. The infinite queue tops up whenever a song starts.
+ * While a whole library downloads, the screen stays on (the download needs the app open).
  */
 export default function MobileIosBridge() {
   useIosAudioInterruptions();
@@ -24,6 +26,7 @@ export default function MobileIosBridge() {
   useEffect(() => { startLocalPlaybackPathRebase(); }, []);
   useEffect(() => { pinFullAppVolume(); }, []);
   useEffect(() => watchInfiniteQueue(), []);
+  useEffect(() => keepScreenOnForLibraryDownloads(), []);
   useEffect(() => {
     let off: (() => void) | undefined;
     let unmounted = false;

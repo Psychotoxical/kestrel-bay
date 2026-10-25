@@ -151,6 +151,16 @@ pub(super) async fn get_media_tier_size(
         .unwrap_or(0)
 }
 
+pub(super) async fn get_media_free_space(
+    media_dir: Option<String>,
+    app: AppHandle,
+) -> Result<u64, String> {
+    let root = resolve_media_tier_root(LocalTier::Library, media_dir.as_deref(), &app)?;
+    tokio::task::spawn_blocking(move || crate::file_transfer::usable_download_space(&root))
+        .await
+        .map_err(|error| format!("free-space task failed: {error}"))?
+}
+
 pub(super) async fn purge_media_tier(
     tier: String,
     media_dir: Option<String>,

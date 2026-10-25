@@ -6,7 +6,7 @@ import type { SubsonicSong } from '@/lib/api/subsonicTypes';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { invoke } from '@tauri-apps/api/core';
-import { createNavidromeCanonicalMigrationAwareJSONStorage } from '@/lib/util/safeStorage';
+import { createOfflineIndexPersistStorage } from '@/lib/util/safeStorage';
 import { useAuthStore } from '@/store/authStore';
 import { showToast } from '@/lib/dom/toast';
 import {
@@ -89,7 +89,7 @@ export interface OfflineAlbumMeta {
   coverArt?: string;
   year?: number;
   trackIds: string[];
-  type?: 'album' | 'playlist' | 'artist' | 'track';
+  type?: PinSource['kind'];
 }
 
 export type { DownloadJob } from '@/features/offline/store/offlineJobStore';
@@ -148,6 +148,14 @@ function activeOfflineServerId(
 }
 
 const OFFLINE_TRACK_CONCURRENCY = 2;
+/** Native download error when the disk reserve would be touched (syncfs `file_transfer/space.rs`). */
+const DISK_FULL_ERROR = 'not enough free disk space';
+let offlineDiskFullHandler: ((serverId: string) => void) | null = null;
+
+/** Called once per library download that hits a full disk (whole-library pins only). */
+export function registerOfflineDiskFullHandler(handler: (serverId: string) => void): void {
+  offlineDiskFullHandler = handler;
+}
 const offlineDeletionBarriers = new Map<string, Promise<void>>();
 const activeOfflineAlbumGenerations = new Map<string, string>();
 const activeArtistPreparations = new Map<
@@ -273,7 +281,16 @@ async function runOfflinePinDownloadWithServerLease(
     }
   }
 
+  // A whole-library pin joins an album that is already pinned on its own; that
+  // pin keeps its metadata (and its kind), the library pin only adds itself to
+  // the tracks.
+  const keepsOtherPinMeta = (albums: Record<string, OfflineAlbumMeta>) => type === 'library'
+    && offlineServerAliases(serverId, serverIndexKey).some(alias => {
+      const meta = albums[`${alias}:${albumId}`];
+      return !!meta && (meta.type ?? 'album') !== 'library';
+    });
   useOfflineStore.setState(state => {
+    if (keepsOtherPinMeta(state.albums)) return state;
     const albums = { ...state.albums };
     for (const alias of offlineServerAliases(serverId, serverIndexKey)) {
       delete albums[`${alias}:${albumId}`];
@@ -318,6 +335,7 @@ async function runOfflinePinDownloadWithServerLease(
       );
       if (!hasCompletedEntries) {
         useOfflineStore.setState(state => {
+          if (keepsOtherPinMeta(state.albums)) return state;
           const albums = { ...state.albums };
           for (const alias of completedEntryAliases) delete albums[`${alias}:${albumId}`];
           return { albums };
@@ -572,6 +590,15 @@ async function runOfflinePinDownloadWithServerLease(
             if (error === 'VOLUME_NOT_FOUND' && !isCancelled()) {
               markOfflineDownloadCancelled(cancelKey);
               showToast('Speichermedium nicht gefunden. Bitte Verzeichnis in den Einstellungen prüfen.', 6000, 'error');
+            } else if (
+              type === 'library'
+              && error.includes(DISK_FULL_ERROR)
+              && !isCancelled()
+            ) {
+              // Every further album would fail the same way: stop the library
+              // pin once instead of one failure toast per album.
+              markOfflineDownloadCancelled(cancelKey);
+              offlineDiskFullHandler?.(serverId);
             } else if (error !== 'CANCELLED') {
               console.error('[offline] track download failed', {
                 serverId,
@@ -650,7 +677,7 @@ interface OfflineState {
     year: number | undefined,
     songs: SubsonicSong[],
     serverId: string,
-    type?: 'album' | 'playlist' | 'artist' | 'track',
+    type?: PinSource['kind'],
   ) => Promise<void>;
   downloadPlaylist: (
     playlistId: string,
@@ -951,7 +978,7 @@ export const useOfflineStore = create<OfflineState>()(
     }),
     {
       name: 'psysonic-offline',
-      storage: createNavidromeCanonicalMigrationAwareJSONStorage(),
+      storage: createOfflineIndexPersistStorage(),
       partialize: state => ({ albums: state.albums }),
     },
   ),

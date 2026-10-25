@@ -13,6 +13,7 @@ export { default as MobileSheet } from './components/MobileSheet';
 export { default as MobileSongRow } from './components/MobileSongRow';
 export { default as MobileTrackCheck } from './components/MobileTrackCheck';
 export { useMobileTrackSelection } from './store/mobileSelectionStore';
+export { useMobileActionSheetStore } from './store/mobileActionSheetStore';
 export { default as MobileVirtualSongList } from './components/MobileVirtualSongList';
 export { default as TransitionModeChips } from './components/TransitionModeChips';
 export { default as CrossfadeLengthSlider } from './components/CrossfadeLengthSlider';

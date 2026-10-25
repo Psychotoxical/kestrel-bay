@@ -110,6 +110,19 @@ fn disk_space_for_path(path: &Path) -> Result<(FilesystemId, u64), String> {
     Ok((filesystem_id, available))
 }
 
+/// Bytes downloads into `dir` may still use: the free space of its filesystem
+/// minus the reserve every download leaves free. `dir` need not exist yet; the
+/// nearest existing ancestor is measured.
+pub fn usable_download_space(dir: &Path) -> Result<u64, String> {
+    let existing = dir
+        .ancestors()
+        .find(|candidate| candidate.is_dir())
+        .ok_or_else(|| format!("no existing directory above {}", dir.display()))?;
+    let available = fs4::available_space(existing)
+        .map_err(|error| format!("could not query free disk space: {error}"))?;
+    Ok(available.saturating_sub(DOWNLOAD_DISK_RESERVE_BYTES))
+}
+
 fn reservations() -> &'static Mutex<HashMap<FilesystemId, u64>> {
     RESERVED_DOWNLOAD_BYTES.get_or_init(|| Mutex::new(HashMap::new()))
 }
@@ -215,6 +228,15 @@ mod tests {
         reserve_in_map(&mut reserved, first, 80, available).unwrap();
         assert!(reserve_in_map(&mut reserved, first, 30, available).is_err());
         reserve_in_map(&mut reserved, second, 80, available).unwrap();
+    }
+
+    #[test]
+    fn usable_space_is_measured_on_the_nearest_existing_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        let missing = dir.path().join("media").join("library");
+        let usable = usable_download_space(&missing).unwrap();
+        let available = fs4::available_space(dir.path()).unwrap();
+        assert!(usable <= available.saturating_sub(DOWNLOAD_DISK_RESERVE_BYTES));
     }
 
     #[test]

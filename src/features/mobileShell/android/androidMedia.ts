@@ -16,6 +16,8 @@ interface AndroidMediaHost {
   setPlayback(playing: boolean, positionSecs: number): void;
   /** Older app builds lack it. */
   setRadio?(radio: boolean): void;
+  /** Keeps the web view and the process running while a whole library downloads. */
+  setBackgroundWork?(active: boolean, title: string, text: string): void;
 }
 
 declare global {
@@ -57,6 +59,10 @@ export function androidMediaSetMetadata(args: {
 
 export function androidMediaSetPlayback(args: { playing: boolean; positionSecs: number | null }): void {
   host()?.setPlayback(args.playing, args.positionSecs ?? 0);
+}
+
+export function androidSetBackgroundWork(active: boolean, title: string, text: string): void {
+  host()?.setBackgroundWork?.(active, title, text);
 }
 
 const COMMAND_EVENTS: Record<string, string> = {

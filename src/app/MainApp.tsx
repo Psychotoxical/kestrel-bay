@@ -17,6 +17,7 @@ import { initHotCachePrefetch } from '../hotCachePrefetch';
 import { initLocalPlaybackInvalidation } from '../localPlaybackInvalidation';
 import { initFavoritesOfflineSync } from '@/features/offline/utils/favoritesOfflineSync';
 import { initPinnedOfflineSync } from '@/features/offline/utils/pinnedOfflineSync';
+import { initLibraryOfflinePins } from '@/features/offline/utils/libraryOfflinePin';
 import {
   initResumeIncompleteOfflinePins,
   scheduleResumeIncompleteOfflinePins,
@@ -159,12 +160,15 @@ export default function MainApp() {
     const stopInvalidation = initLocalPlaybackInvalidation();
     const stopFavoritesSync = initFavoritesOfflineSync();
     const stopPinnedOfflineSync = initPinnedOfflineSync();
+    // Whole-library downloads exist only in the touch shell.
+    const stopLibraryPins = IS_MOBILE_SHELL ? initLibraryOfflinePins() : null;
     const stopOfflineResume = initResumeIncompleteOfflinePins();
     return () => {
       disposed = true;
       stopInvalidation();
       stopFavoritesSync();
       stopPinnedOfflineSync();
+      stopLibraryPins?.();
       stopOfflineResume();
     };
   }, [migrationReady, serverIdsKey]);

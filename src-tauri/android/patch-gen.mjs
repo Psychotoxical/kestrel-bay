@@ -4,7 +4,8 @@
 //
 // - every `*.kt` in this folder into the app's package (our MainActivity replaces the
 //   template's; PsysonicMedia + PsysonicMediaService: lock screen and background play;
-//   PsysonicAutoService: Android Auto), and everything under `res/` into the app's res/;
+//   PsysonicAutoService: Android Auto; PsysonicDownloadService: whole-library downloads
+//   in the background), and everything under `res/` into the app's res/;
 // - the manifest entries those need (services, Android Auto, permissions);
 // - Gradle dependencies: `androidx.media` (MediaSession, media notification) and the
 //   Kotlin half of `rustls-platform-verifier` (reqwest checks certificates through
@@ -44,6 +45,7 @@ for (const folder of readdirSync(resSource)) {
 const PERMISSIONS = [
   'android.permission.FOREGROUND_SERVICE',
   'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+  'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
   'android.permission.WAKE_LOCK',
   'android.permission.ACCESS_NETWORK_STATE',
   // The music alarm (PsysonicAlarm): exact alarms (granted to alarm clocks, Android 13+), set
@@ -105,6 +107,16 @@ if (!manifest.includes(alarmMarker)) {
             android:foregroundServiceType="mediaPlayback" />
 $1`);
   console.log('[patch-gen] manifest: alarm');
+}
+const downloadMarker = '<!-- psysonic: download service -->';
+if (!manifest.includes(downloadMarker)) {
+  manifest = manifest.replace(appClose, `        ${downloadMarker}
+        <service
+            android:name=".PsysonicDownloadService"
+            android:exported="false"
+            android:foregroundServiceType="dataSync" />
+$1`);
+  console.log('[patch-gen] manifest: download service');
 }
 const autoMarker = '<!-- psysonic: android auto -->';
 if (!manifest.includes(autoMarker)) {

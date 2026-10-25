@@ -154,6 +154,13 @@ export async function pruneEmptyMediaTierDirs(args: { tier: string; mediaDir: st
   if (res.status === 'error') throw new Error(res.error);
 }
 
+/** Bytes still free for offline downloads (the download reserve already taken off). */
+export async function getMediaFreeSpace(args: { mediaDir: string | null }): Promise<number> {
+  const res = await commands.getMediaFreeSpace(args.mediaDir);
+  if (res.status === 'error') throw new Error(res.error);
+  return res.data;
+}
+
 export async function purgeMediaTier(args: { tier: string; mediaDir: string | null }): Promise<void> {
   const res = await commands.purgeMediaTier(args.tier, args.mediaDir);
   if (res.status === 'error') throw new Error(res.error);

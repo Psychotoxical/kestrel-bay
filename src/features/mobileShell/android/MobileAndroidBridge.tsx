@@ -7,6 +7,7 @@ import { watchAndroidMeteredNetwork } from '@/features/mobileShell/android/andro
 import { pinFullAppVolume } from '@/features/mobileShell/utils/fullAppVolume';
 import { watchInfiniteQueue } from '@/features/mobileShell/utils/infiniteQueueWatch';
 import { installAndroidAlarm } from '@/features/mobileShell/alarm/androidAlarm';
+import { keepAwakeForLibraryDownloads } from '@/features/mobileShell/android/libraryDownloadKeepAwake';
 import AlarmRingingScreen from '@/features/mobileShell/alarm/AlarmRingingScreen';
 
 /**
@@ -14,7 +15,7 @@ import AlarmRingingScreen from '@/features/mobileShell/alarm/AlarmRingingScreen'
  * Mounted only in the Android build. Keeps the app's own volume at full (the phone's
  * buttons set the loudness) and routes the lock screen / notification / headset buttons
  * into the player, answers Android Auto, lets the back key close sheets and menus first, and
- * tops up the infinite queue whenever a song starts. Also the music alarm and its ringing screen.
+ * tops up the infinite queue whenever a song starts, keeps a whole-library download running in the background. Also the music alarm and its ringing screen.
  */
 export default function MobileAndroidBridge() {
   useEffect(() => { pinFullAppVolume(); }, []);
@@ -25,5 +26,6 @@ export default function MobileAndroidBridge() {
   useEffect(() => installAndroidBack(), []);
   useEffect(() => watchInfiniteQueue(), []);
   useEffect(() => installAndroidAlarm(), []);
+  useEffect(() => keepAwakeForLibraryDownloads(), []);
   return <AlarmRingingScreen />;
 }
