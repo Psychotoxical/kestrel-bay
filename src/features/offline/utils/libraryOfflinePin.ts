@@ -137,6 +137,19 @@ export function pinnedLibraryAlbumIds(serverId: string, libraryId: string): Set<
 }
 
 /**
+ * Drop one album's library download. A failure is logged and does not stop
+ * the caller's loop: one album that cannot be deleted must not leave all the
+ * later ones on the disk.
+ */
+async function deleteLibraryAlbum(albumId: string, serverId: string, pin: PinSource): Promise<void> {
+  try {
+    await useOfflineStore.getState().deleteAlbum(albumId, serverId, pin);
+  } catch (error) {
+    console.error('[offline] removing a library album failed', { serverId, albumId, error });
+  }
+}
+
+/**
  * One pass over a pinned library: queue every album that is not complete yet,
  * at most {@link LIBRARY_QUEUE_DEPTH} at a time, and drop downloads of albums
  * that left the library. A newer pass for the same library stops this one.
@@ -179,12 +192,11 @@ async function runLibraryPass(serverId: string, libraryId: string): Promise<void
   const otherPins = Object.values(useOfflineLibraryPinStore.getState().libraries)
     .filter(other => other.serverId === serverId && other.libraryId !== libraryId);
   if (otherPins.length > 0) return;
-  const { deleteAlbum } = useOfflineStore.getState();
   for (const group of useLocalPlaybackStore.getState().listPinnedGroups()) {
     if (!isCurrent()) return;
     if (group.pinSource.kind !== 'library' || seen.has(group.pinSource.sourceId)) continue;
     if ((resolveServerIdForIndexKey(group.serverIndexKey) || group.serverIndexKey) !== serverId) continue;
-    await deleteAlbum(group.pinSource.sourceId, serverId, group.pinSource);
+    await deleteLibraryAlbum(group.pinSource.sourceId, serverId, group.pinSource);
   }
 }
 
@@ -216,7 +228,12 @@ export async function unpinLibraryOffline(serverId: string, libraryId: string): 
   passGenerations.delete(key);
 
   const albumIds = new Set(libraryAlbumIds.get(key) ?? []);
-  for await (const album of libraryAlbums(serverId, libraryId)) albumIds.add(album.id);
+  try {
+    for await (const album of libraryAlbums(serverId, libraryId)) albumIds.add(album.id);
+  } catch (error) {
+    // The orphan sweep below still removes what the album list missed.
+    console.error('[offline] listing a removed library failed', { serverId, libraryId, error });
+  }
   libraryAlbumIds.delete(key);
 
   for (const entry of useOfflineJobStore.getState().pinQueue) {
@@ -225,12 +242,14 @@ export async function unpinLibraryOffline(serverId: string, libraryId: string): 
       removeOfflinePinTask(entry.albumId, serverId, 'library');
     }
   }
-  const { deleteAlbum } = useOfflineStore.getState();
   for (const group of useLocalPlaybackStore.getState().listPinnedGroups()) {
     if (group.pinSource.kind !== 'library' || !albumIds.has(group.pinSource.sourceId)) continue;
     if ((resolveServerIdForIndexKey(group.serverIndexKey) || group.serverIndexKey) !== serverId) continue;
-    await deleteAlbum(group.pinSource.sourceId, serverId, group.pinSource);
+    await deleteLibraryAlbum(group.pinSource.sourceId, serverId, group.pinSource);
   }
+  // A removal that stopped half-way (S22, 25.10.: 157 of ~460 files, cause not
+  // reproduced) left the rest until the next start; sweep right away instead.
+  await removeOrphanLibraryDownloads();
 }
 
 /**
@@ -260,12 +279,11 @@ async function removeOrphanLibraryDownloads(): Promise<void> {
   const pinnedServers = new Set(
     Object.values(useOfflineLibraryPinStore.getState().libraries).map(pin => pin.serverId),
   );
-  const { deleteAlbum } = useOfflineStore.getState();
   for (const group of useLocalPlaybackStore.getState().listPinnedGroups()) {
     if (group.pinSource.kind !== 'library') continue;
     const serverId = resolveServerIdForIndexKey(group.serverIndexKey) || group.serverIndexKey;
     if (pinnedServers.has(serverId)) continue;
-    await deleteAlbum(group.pinSource.sourceId, serverId, group.pinSource);
+    await deleteLibraryAlbum(group.pinSource.sourceId, serverId, group.pinSource);
   }
 }
 

@@ -187,7 +187,32 @@ describe('whole-library offline pins', () => {
     await unpinLibraryOffline('srv', 'lib');
 
     expect(useOfflineLibraryPinStore.getState().libraries).toEqual({});
-    expect(deleteAlbum).toHaveBeenCalledTimes(1);
+    // The mock leaves the entries in place, so the sweep after the removal meets a1 again.
     expect(deleteAlbum).toHaveBeenCalledWith('a1', 'srv', { kind: 'library', sourceId: 'a1' });
+    expect(deleteAlbum.mock.calls.every(call => (call as unknown[])[0] === 'a1')).toBe(true);
+  });
+  it('keeps removing after one album fails and sweeps what the album list missed', async () => {
+    albumsByLibrary.set('lib', ['a1', 'a2'].map(album));
+    useOfflineLibraryPinStore.getState().addLibrary({
+      serverId: 'srv', libraryId: 'lib', name: 'Music', pinnedAt: 0, trackCount: 3, totalBytes: 3, pausedForSpace: true,
+    });
+    const entry = (trackId: string, sourceId: string) => ({
+      serverIndexKey: 'srv', trackId, localPath: `/m/${trackId}`, tier: 'library' as const,
+      pinSource: { kind: 'library' as const, sourceId }, suffix: 'flac', cachedAt: 0, sizeBytes: 1, layoutFingerprint: 'v2',
+    });
+    useLocalPlaybackStore.setState({
+      entries: { 'srv:t1': entry('t1', 'a1'), 'srv:t2': entry('t2', 'a2'), 'srv:t3': entry('t3', 'gone') },
+    });
+    const deleteAlbum = vi.fn(async (albumId: string) => {
+      if (albumId === 'a1') throw new Error('stuck');
+    });
+    useOfflineStore.setState({ deleteAlbum });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await unpinLibraryOffline('srv', 'lib');
+
+    const removed = deleteAlbum.mock.calls.map(call => call[0]);
+    expect(removed).toContain('a2');
+    expect(removed).toContain('gone');
   });
 });
