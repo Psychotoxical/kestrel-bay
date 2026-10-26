@@ -11,6 +11,12 @@ import { useMeteredNetworkStore } from '@/lib/network/meteredNetwork';
 import { useMobileActionSheetStore } from '@/features/mobileShell/store/mobileActionSheetStore';
 import AlbumDetailMobile from './AlbumDetailMobile';
 
+vi.mock('@/lib/library/albumRecordLabels', () => ({
+  fetchAlbumRecordLabels: vi.fn(async () => []),
+}));
+
+import { fetchAlbumRecordLabels } from '@/lib/library/albumRecordLabels';
+
 const album = {
   id: 'al1',
   name: 'Taken by Storm',
@@ -60,11 +66,33 @@ function setup(overrides: Partial<React.ComponentProps<typeof AlbumDetailMobile>
 describe('AlbumDetailMobile', () => {
   beforeEach(() => { resetAllStores(); });
 
-  it('shows title, artist and the meta line', () => {
+  it('shows title, artist and the meta line with the album length', () => {
     setup();
     expect(screen.getByRole('heading', { name: 'Taken by Storm' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Stormwind' })).toBeInTheDocument();
-    expect(screen.getByText('Metal · 1999 · FLAC 900 kbps')).toBeInTheDocument();
+    expect(screen.getByText('Metal · FLAC 900 kbps · 10:00')).toBeInTheDocument();
+  });
+
+  it('shows year and record label below the track list', () => {
+    setup({ info: { ...album, recordLabel: 'Northern Press' } });
+    const release = document.querySelector('.mobile-album__release');
+    expect(release?.textContent).toBe('1999Northern Press');
+    expect(document.querySelector('.mobile-tracklist')?.compareDocumentPosition(release as Node))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(screen.queryByText(/· 1999/)).not.toBeInTheDocument();
+  });
+
+  it('takes the record label from the local index when the album row has none', async () => {
+    vi.mocked(fetchAlbumRecordLabels).mockResolvedValueOnce(['Atlantic']);
+    setup();
+    expect(await screen.findByText('Atlantic')).toBeInTheDocument();
+    expect(fetchAlbumRecordLabels).toHaveBeenCalledWith('srv', 'al1');
+    expect(document.querySelector('.mobile-album__release')?.textContent).toBe('1999Atlantic');
+  });
+
+  it('leaves the release block out without year and label', () => {
+    setup({ info: { ...album, year: undefined } as SubsonicAlbum });
+    expect(document.querySelector('.mobile-album__release')).toBeNull();
   });
 
   it('play and shuffle start the album', () => {

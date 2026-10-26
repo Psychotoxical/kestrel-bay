@@ -1933,6 +1933,17 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   color: var(--text-primary);
 }
 
+.mobile-album__release {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 14px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--text-muted);
+  text-align: left;
+}
+
 .mobile-album__related {
   padding-top: 28px;
 }

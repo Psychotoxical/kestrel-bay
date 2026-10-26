@@ -1,17 +1,18 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Heart, MoreHorizontal, Play, Shuffle } from 'lucide-react';
 import type { SubsonicAlbum, SubsonicOpenArtistRef, SubsonicSong } from '@/lib/api/subsonicTypes';
 import type { Track } from '@/lib/media/trackTypes';
 import { songToTrack } from '@/lib/media/songToTrack';
-import { formatTrackTime } from '@/lib/format/formatDuration';
+import { formatLongDuration, formatTrackTime } from '@/lib/format/formatDuration';
 import { ownedEntityKey } from '@/lib/util/ownedEntityKey';
 import { buildArtistDetailPath } from '@/lib/navigation/detailServerScope';
 import { sameQueueTrack, usePlayerStore } from '@/features/playback';
 import { prepareTransientUiOpen } from '@/lib/dom/transientUi';
 import { MobileBackButton, MobileDownloadButton, MobileTrackCheck, useMobileTrackSelection, type MobileDownloadStatus } from '@/features/mobileShell';
 import { meteredPinKey } from '@/features/offline';
+import { fetchAlbumRecordLabels } from '@/lib/library/albumRecordLabels';
 import AlbumCard from '@/features/album/components/AlbumCard';
 
 interface Props {
@@ -128,7 +129,23 @@ export default function AlbumDetailMobile({
   const format = firstSong?.suffix
     ? `${firstSong.suffix.toUpperCase()}${firstSong.bitRate ? ` ${firstSong.bitRate} kbps` : ''}`
     : null;
-  const meta = [info.genre, info.year, format].filter(Boolean).join(' · ');
+  const totalDuration = songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
+  const meta = [info.genre, format, totalDuration > 0 ? formatLongDuration(totalDuration) : null]
+    .filter(Boolean).join(' · ');
+
+  // Album rows from the index carry no label; `track_label` does.
+  const labelServerId = info.serverId ?? serverId;
+  const labelKey = `${labelServerId}\u001f${info.id}`;
+  const [indexedLabels, setIndexedLabels] = useState<{ key: string; labels: string[] } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    void fetchAlbumRecordLabels(labelServerId, info.id).then(labels => {
+      if (!cancelled) setIndexedLabels({ key: labelKey, labels });
+    });
+    return () => { cancelled = true; };
+  }, [labelServerId, info.id, labelKey]);
+  const recordLabel = info.recordLabel
+    || (indexedLabels?.key === labelKey ? indexedLabels.labels.join(', ') : '');
 
   const openMenu = (e: React.MouseEvent<HTMLButtonElement>, item: unknown, type: 'album' | 'album-song') => {
     e.stopPropagation();
@@ -224,6 +241,13 @@ export default function AlbumDetailMobile({
           </ol>
         </section>
       ))}
+
+      {(info.year || recordLabel) && (
+        <div className="mobile-album__release">
+          {info.year ? <span>{info.year}</span> : null}
+          {recordLabel ? <span>{recordLabel}</span> : null}
+        </div>
+      )}
 
       {relatedAlbums.length > 0 && (
         <section className="mobile-album__related">
