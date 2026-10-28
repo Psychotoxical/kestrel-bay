@@ -7,7 +7,8 @@ import { installAndroidSystemBars } from '@/features/mobileShell/android/android
 import { watchAndroidMeteredNetwork } from '@/features/mobileShell/android/androidNetwork';
 import { pinFullAppVolume } from '@/features/mobileShell/utils/fullAppVolume';
 import { watchInfiniteQueue } from '@/features/mobileShell/utils/infiniteQueueWatch';
-import { installAndroidAlarm } from '@/features/mobileShell/alarm/androidAlarm';
+import { installAndroidAlarm, retireAndroidAlarms } from '@/features/mobileShell/alarm/androidAlarm';
+import { ANDROID_ALARM_AVAILABLE } from '@/features/mobileShell/alarm/alarmAvailability';
 import { keepAwakeForLibraryDownloads } from '@/features/mobileShell/android/libraryDownloadKeepAwake';
 import AlarmRingingScreen from '@/features/mobileShell/alarm/AlarmRingingScreen';
 
@@ -27,7 +28,8 @@ export default function MobileAndroidBridge() {
   useEffect(() => installAndroidAutoSnapshot(), []);
   useEffect(() => installAndroidBack(), []);
   useEffect(() => watchInfiniteQueue(), []);
-  useEffect(() => installAndroidAlarm(), []);
+  // The alarm is off for now (alarmAvailability); alarms an older build set are withdrawn.
+  useEffect(() => (ANDROID_ALARM_AVAILABLE ? installAndroidAlarm() : retireAndroidAlarms()), []);
   useEffect(() => keepAwakeForLibraryDownloads(), []);
-  return <AlarmRingingScreen />;
+  return ANDROID_ALARM_AVAILABLE ? <AlarmRingingScreen /> : null;
 }

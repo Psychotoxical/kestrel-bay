@@ -5,6 +5,7 @@ import { useMobileNavItems } from '@/features/sidebar';
 import { requestOpenSearch } from '@/lib/dom/openSearch';
 import { NOT_IN_TOUCH_LIBRARY as NOT_IN_LIBRARY } from '@/config/navItems';
 import { IS_ANDROID } from '@/lib/util/platform';
+import { ANDROID_ALARM_AVAILABLE } from '@/features/mobileShell/alarm/alarmAvailability';
 import { nextAlarmTime, useAlarmStore } from '@/features/mobileShell/alarm/alarmStore';
 import { alarmClock } from '@/features/mobileShell/alarm/alarmFormat';
 
@@ -44,7 +45,7 @@ export default function MobileLibraryHub() {
       </button>
       <nav className="mobile-hub-list" aria-label={t('sidebar.library')}>
         <HubRow icon={HardDriveDownload} label={t('connection.downloaded')} onClick={() => navigate('/offline')} />
-        {IS_ANDROID && (
+        {IS_ANDROID && ANDROID_ALARM_AVAILABLE && (
           <HubRow
             icon={AlarmClock}
             label={t('alarm.titlePlural')}

@@ -125,6 +125,16 @@ const STARTUP_SETTLE_MS = 6000;
 const RETRY_MS = 8000;
 
 /** Wires the store to the native side. Returns the cleanup. */
+/**
+ * The alarm is off (alarmAvailability): the alarms an older build set in the system are
+ * withdrawn, so none rings without its screen. The alarms themselves stay in the page's
+ * storage for when the alarm comes back. Returns the (empty) cleanup.
+ */
+export function retireAndroidAlarms(): () => void {
+  host()?.setAlarms('[]');
+  return () => {};
+}
+
 export function installAndroidAlarm(): () => void {
   const alarmHost = host();
   if (!alarmHost) return () => {};

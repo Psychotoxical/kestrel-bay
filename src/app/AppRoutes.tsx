@@ -5,6 +5,7 @@ import { lazyLoadArtistsPage } from '@/features/artist/utils/artistBrowseRoutePr
 import MobilePlayerView from '@/features/nowPlaying/components/MobilePlayerView';
 import { MobilePlayer } from '@/features/mobileShell/shell';
 import { IS_ANDROID, IS_MOBILE_SHELL } from '@/lib/util/platform';
+import { ANDROID_ALARM_AVAILABLE } from '@/features/mobileShell/alarm/alarmAvailability';
 import { useIsMobile } from '@/lib/hooks/useIsMobile';
 import { useSidebarStore } from '@/features/sidebar';
 import { useAuthStore } from '../store/authStore';
@@ -132,7 +133,7 @@ export default function AppRoutes() {
       />
       {IS_MOBILE_SHELL && <Route path="/library" element={<MobileLibraryHub />} />}
       {IS_MOBILE_SHELL && <Route path="/orbit" element={<MobileOrbitHub />} />}
-      {IS_ANDROID && <Route path="/alarm" element={<MobileAlarmPage />} />}
+      {IS_ANDROID && ANDROID_ALARM_AVAILABLE && <Route path="/alarm" element={<MobileAlarmPage />} />}
       <Route path="/settings" element={<Settings />} />
       <Route path="/whats-new" element={<WhatsNew />} />
       <Route path="/help" element={<Help />} />

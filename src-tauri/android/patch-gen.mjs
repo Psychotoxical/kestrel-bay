@@ -50,14 +50,20 @@ const PERMISSIONS = [
   'android.permission.FOREGROUND_SERVICE_DATA_SYNC',
   'android.permission.WAKE_LOCK',
   'android.permission.ACCESS_NETWORK_STATE',
-  // The music alarm (PsysonicAlarm): exact alarms (granted to alarm clocks, Android 13+), set
-  // again after a reboot, shown over the lock screen, with a notification and vibration.
-  'android.permission.USE_EXACT_ALARM',
-  'android.permission.RECEIVE_BOOT_COMPLETED',
-  'android.permission.USE_FULL_SCREEN_INTENT',
   'android.permission.POST_NOTIFICATIONS',
   'android.permission.VIBRATE',
-  // Opening the alarm over an unlocked phone (a start from the background, see PsysonicAlarm).
+];
+// The music alarm's permissions (PsysonicAlarm): exact alarms, set again after a reboot,
+// shown over the lock screen, opened over a phone in use, exempt from battery saving. Play
+// Protect blocks a sideloaded APK that asks for them as a harmful app; measured on a Honor
+// 28.10., any set that keeps the alarm working was blocked, the build without all of them
+// passed as safe. The alarm is off on Android until Psysonic ships through the Play Store
+// (`ANDROID_ALARM_AVAILABLE`), and an older generated manifest loses them here.
+const RETIRED_PERMISSIONS = [
+  'android.permission.USE_EXACT_ALARM',
+  'android.permission.SCHEDULE_EXACT_ALARM',
+  'android.permission.RECEIVE_BOOT_COMPLETED',
+  'android.permission.USE_FULL_SCREEN_INTENT',
   'android.permission.SYSTEM_ALERT_WINDOW',
   'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
 ];
@@ -84,11 +90,12 @@ if (!manifest.includes(serviceMarker)) {
 $1`);
   console.log('[patch-gen] manifest: media service');
 }
-// Android 12 asks the user for exact alarms; from 13 on USE_EXACT_ALARM covers them.
-const exactAlarmBefore13 = 'android.permission.SCHEDULE_EXACT_ALARM';
-if (!manifest.includes(`android:name="${exactAlarmBefore13}"`)) {
-  manifest = manifest.replace(internet, `$1    <uses-permission android:name="${exactAlarmBefore13}" android:maxSdkVersion="32" />
-`);
+for (const p of RETIRED_PERMISSIONS) {
+  const line = new RegExp(`^[ \t]*<uses-permission android:name="${p.replaceAll('.', '\\.')}"[^>]*/>\r?\n`, 'm');
+  if (line.test(manifest)) {
+    manifest = manifest.replace(line, '');
+    console.log(`[patch-gen] manifest: removed ${p}`);
+  }
 }
 const alarmMarker = '<!-- psysonic: alarm -->';
 if (!manifest.includes(alarmMarker)) {
