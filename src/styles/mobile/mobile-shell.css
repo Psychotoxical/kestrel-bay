@@ -101,6 +101,16 @@ html[data-mobile-app] #login-connect-btn {
   padding-top: 0;
 }
 
+/* Offline in the full-screen player: the banner keeps the status bar clear itself (it sat
+   under the clock, TestFlight 23.10.), and the player below it needs no second gap. */
+.app-shell[data-mobile-app][data-mobile-player] .offline-banner {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+}
+
+.app-shell[data-mobile-app] .offline-banner + .content-body .mobile-player {
+  padding-top: 0;
+}
+
 /* Like an iOS navigation bar, the page starts right below the status bar. */
 .app-shell[data-mobile-app] .content-body.app-shell-route-host {
   padding-top: 4px !important;
