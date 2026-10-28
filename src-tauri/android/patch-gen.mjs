@@ -201,4 +201,34 @@ if (gradle.includes(cleartextOff)) {
   gradle = gradle.replace(cleartextOff, 'manifestPlaceholders["usesCleartextTraffic"] = "true"');
   console.log('[patch-gen] gradle: plain http allowed in release (car player)');
 }
+// Our own signing key for tester and store builds, in place of the debug key: Play Protect
+// started to block every new APK signed with the debug key as a harmful app (Honor,
+// 28.10.: even an unchanged APK 122 repacked as a new file). The key stays outside the
+// repository; PSYSONIC_ANDROID_SIGNING names a properties file with storeFile,
+// storePassword, keyAlias and keyPassword. Without it (CI) the build signs as before.
+const signingMarker = '// psysonic: signing';
+if (!gradle.includes(signingMarker)) {
+  const namespaceLine = /^( *)namespace = "dev\.psysonic\.player"\r?\n/m;
+  if (!namespaceLine.test(gradle)) throw new Error('no namespace line in build.gradle.kts');
+  gradle = gradle.replace(namespaceLine, match => `${match}    ${signingMarker}
+    System.getenv("PSYSONIC_ANDROID_SIGNING")?.let { path ->
+        val signing = Properties().apply { file(path).inputStream().use { load(it) } }
+        signingConfigs {
+            create("psysonic") {
+                storeFile = file(signing.getProperty("storeFile"))
+                storePassword = signing.getProperty("storePassword")
+                keyAlias = signing.getProperty("keyAlias")
+                keyPassword = signing.getProperty("keyPassword")
+            }
+        }
+    }
+`);
+  for (const type of ['debug', 'release']) {
+    const open = `getByName("${type}") {`;
+    if (!gradle.includes(open)) throw new Error(`no ${type} build type in build.gradle.kts`);
+    gradle = gradle.replace(open, `${open}
+            signingConfigs.findByName("psysonic")?.let { signingConfig = it }`);
+  }
+  console.log('[patch-gen] gradle: own signing key when PSYSONIC_ANDROID_SIGNING is set');
+}
 writeFileSync(gradleFile, gradle);
