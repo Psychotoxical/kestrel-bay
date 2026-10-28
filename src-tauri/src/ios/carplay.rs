@@ -16,8 +16,9 @@
 //! On a cold start from the car the web layer may not listen yet: requests wait here
 //! and are sent again when it reports `carplay:ready`. If it has not reported after a few
 //! seconds (Psysonic was closed on the phone and iOS started only the car), the loading
-//! screen asks to open Psysonic on the iPhone instead of showing "…" forever. tao is left
-//! out entirely; the phone scene starts exactly as before.
+//! screen asks to open Psysonic on the iPhone instead of showing "…" forever. When the car
+//! connects first, its scene also starts the app (`ios::scene::start_app_from_car`): tao
+//! otherwise only starts on the phone scene, so Psysonic never ran behind the car.
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -182,6 +183,13 @@ define_class!(
     struct CarPlaySceneDelegate;
 
     impl CarPlaySceneDelegate {
+        /// Comes before `didConnectInterfaceController`. A car-only start has no phone
+        /// scene, so this is the only scene that can start the app.
+        #[unsafe(method(scene:willConnectToSession:options:))]
+        fn will_connect(&self, scene: &AnyObject, session: &AnyObject, options: &AnyObject) {
+            crate::ios::scene::start_app_from_car(scene, session, options);
+        }
+
         #[unsafe(method(templateApplicationScene:didConnectInterfaceController:))]
         fn did_connect(&self, _scene: &AnyObject, controller: &AnyObject) {
             crate::app_eprintln!("[carplay] connected");
