@@ -7,6 +7,8 @@ interface AlbumNotesProps {
   comment: string | null;
   /** The server's album description / review. May contain markup. */
   description: string | null;
+  /** Touch: a tap anywhere on the text opens or closes it, not only on the small toggle. */
+  expandOnTap?: boolean;
 }
 
 /** Lines of the description shown before it is clamped. Mirrors `--album-notes-lines`. */
@@ -22,7 +24,7 @@ const CLAMPED_LINES = 2;
  * The description is clamped to two lines with an inline expander rather than a
  * modal, so reading it never takes the album off screen.
  */
-export default function AlbumNotes({ comment, description }: AlbumNotesProps) {
+export default function AlbumNotes({ comment, description, expandOnTap = false }: AlbumNotesProps) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [clamps, setClamps] = useState(false);
@@ -62,6 +64,11 @@ export default function AlbumNotes({ comment, description }: AlbumNotesProps) {
             className={`album-notes-text${expanded ? ' is-expanded' : ''}`}
             style={{ ['--album-notes-lines' as string]: String(CLAMPED_LINES) }}
             data-selectable
+            // The toggle below stays the keyboard and screen-reader path; this only
+            // widens the touch target. Links in the description keep their own tap.
+            onClick={expandOnTap && (clamps || expanded)
+              ? e => { if (!(e.target as HTMLElement).closest('a')) setExpanded(v => !v); }
+              : undefined}
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
           />
           {(clamps || expanded) && (

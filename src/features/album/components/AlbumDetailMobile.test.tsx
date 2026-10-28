@@ -48,6 +48,7 @@ function setup(overrides: Partial<React.ComponentProps<typeof AlbumDetailMobile>
     isPlaying: false,
     relatedAlbums: [],
     relatedTitle: 'More by Stormwind',
+    description: null,
     canPinOffline: true,
     offlineStatus: 'none' as const,
     offlineProgress: null,
@@ -93,6 +94,25 @@ describe('AlbumDetailMobile', () => {
   it('leaves the release block out without year and label', () => {
     setup({ info: { ...album, year: undefined } as SubsonicAlbum });
     expect(document.querySelector('.mobile-album__release')).toBeNull();
+  });
+
+  it('puts comment and description between the meta line and play / shuffle', () => {
+    setup({
+      description: 'Third studio album.',
+      songs: songs().map(s => ({ ...s, comment: 'Remaster 2024' })),
+    });
+    const notes = document.querySelector('.album-notes');
+    expect(notes?.textContent).toContain('Remaster 2024');
+    expect(notes?.textContent).toContain('Third studio album.');
+    expect(screen.getByText('Metal · FLAC 900 kbps · 10:00').compareDocumentPosition(notes as Node))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(notes?.compareDocumentPosition(screen.getByRole('button', { name: 'Play' })))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('shows no notes block without comment and description', () => {
+    setup();
+    expect(document.querySelector('.album-notes')).toBeNull();
   });
 
   it('play and shuffle start the album', () => {

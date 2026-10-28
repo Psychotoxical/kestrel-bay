@@ -77,4 +77,53 @@ describe('AlbumNotes', () => {
     await user.click(toggle);
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
+
+  it('with expandOnTap a tap on the text opens it and a second tap closes it', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <AlbumNotes comment={null} description={'A long description. '.repeat(40)} expandOnTap />,
+    );
+    const el = stageClipping(true);
+    await screen.findByRole('button');
+    await user.click(el);
+    expect(el.classList.contains('is-expanded')).toBe(true);
+    expect(screen.getByRole('button').getAttribute('aria-expanded')).toBe('true');
+    await user.click(el);
+    expect(el.classList.contains('is-expanded')).toBe(false);
+    expect(screen.getByRole('button').getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('with expandOnTap a tap does nothing while the text fits', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AlbumNotes comment={null} description="Short." expandOnTap />);
+    const el = stageClipping(false);
+    await user.click(el);
+    expect(el.classList.contains('is-expanded')).toBe(false);
+  });
+
+  it('without expandOnTap a tap on the text leaves it clipped', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <AlbumNotes comment={null} description={'A long description. '.repeat(40)} />,
+    );
+    const el = stageClipping(true);
+    await screen.findByRole('button');
+    await user.click(el);
+    expect(el.classList.contains('is-expanded')).toBe(false);
+  });
+
+  it('a link in the text keeps its own tap and does not open the text', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <AlbumNotes
+        comment={null}
+        description={`${'A long description. '.repeat(40)}<a href="#source">Source</a>`}
+        expandOnTap
+      />,
+    );
+    const el = stageClipping(true);
+    await screen.findByRole('button');
+    await user.click(screen.getByText('Source'));
+    expect(el.classList.contains('is-expanded')).toBe(false);
+  });
 });

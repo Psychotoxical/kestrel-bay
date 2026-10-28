@@ -14,6 +14,8 @@ import { MobileBackButton, MobileDownloadButton, MobileTrackCheck, useMobileTrac
 import { meteredPinKey } from '@/features/offline';
 import { fetchAlbumRecordLabels } from '@/lib/library/albumRecordLabels';
 import AlbumCard from '@/features/album/components/AlbumCard';
+import AlbumNotes from '@/features/album/components/AlbumNotes';
+import { deriveAlbumComment } from '@/features/album/utils/albumComment';
 
 interface Props {
   info: SubsonicAlbum;
@@ -26,6 +28,8 @@ interface Props {
   isPlaying: boolean;
   relatedAlbums: SubsonicAlbum[];
   relatedTitle: string;
+  /** The server's album description, fetched by the page; null until known or when there is none. */
+  description: string | null;
   /** Whether a download can start here (online); a finished one stays removable offline. */
   canPinOffline: boolean;
   offlineStatus: MobileDownloadStatus;
@@ -101,7 +105,7 @@ function AlbumTouchTrackRow({ song, track, active, isPlaying, showArtist, onPlay
 /** Album page in the touch shell: big cover, play / shuffle, plain track list. */
 export default function AlbumDetailMobile({
   info, serverId, artistRefs, songs, coverUrl, isStarred, currentTrack, isPlaying,
-  relatedAlbums, relatedTitle, canPinOffline, offlineStatus, offlineProgress,
+  relatedAlbums, relatedTitle, description, canPinOffline, offlineStatus, offlineProgress,
   onToggleStar, onPlayAll, onShuffleAll, onPlaySong, onCacheOffline, onRemoveOffline,
 }: Props) {
   const { t } = useTranslation();
@@ -132,6 +136,7 @@ export default function AlbumDetailMobile({
   const totalDuration = songs.reduce((acc, s) => acc + (s.duration ?? 0), 0);
   const meta = [info.genre, format, totalDuration > 0 ? formatLongDuration(totalDuration) : null]
     .filter(Boolean).join(' · ');
+  const comment = useMemo(() => deriveAlbumComment(songs), [songs]);
 
   // Album rows from the index carry no label; `track_label` does.
   const labelServerId = info.serverId ?? serverId;
@@ -206,6 +211,8 @@ export default function AlbumDetailMobile({
         )}
         {meta && <span className="mobile-album__meta">{meta}</span>}
       </div>
+
+      <AlbumNotes comment={comment} description={description} expandOnTap />
 
       <div className="mobile-album__buttons">
         <button type="button" className="mobile-album__btn mobile-album__btn--primary" onClick={onPlayAll}>

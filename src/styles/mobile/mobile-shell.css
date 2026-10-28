@@ -1764,6 +1764,27 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   color: var(--text-secondary);
 }
 
+/* Album comment + description between the header and play / shuffle. Prose reads
+   left-aligned across the full width, unlike the centred header lines above it. */
+.mobile-album .album-notes {
+  max-width: none;
+  margin: 14px 0 0;
+  text-align: left;
+}
+
+.mobile-album .album-notes-comment {
+  font-size: 14px;
+}
+
+.mobile-album .album-notes-text {
+  font-size: 14px;
+}
+
+.mobile-album .album-notes-toggle {
+  font-size: 14px;
+  padding: 4px 0;
+}
+
 .mobile-album__buttons {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
