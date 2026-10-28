@@ -1236,7 +1236,9 @@ html[data-mobile-bars='collapsed'] .mobile-miniplayer__subtitle {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   box-sizing: border-box;
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
-  animation: mobile-sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  /* `backwards`, not `both`: a filled-forward animation outranks the inline transform, and
+     the sheet ignored the finger while it was dragged (TestFlight 22.10.). */
+  animation: mobile-sheet-up 0.28s cubic-bezier(0.2, 0.9, 0.3, 1) backwards;
   transition: transform 0.2s ease;
 }
 

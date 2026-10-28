@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import type { SubsonicSong } from '@/lib/api/subsonicTypes';
 import { makeSubsonicSong } from '@/test/helpers/factories';
 import { renderWithProviders } from '@/test/helpers/renderWithProviders';
@@ -51,9 +51,10 @@ describe('PlaylistSongSearchSheet', () => {
     expect(within(sheet()).getByText('No results.')).toBeInTheDocument();
   });
 
-  it('closing the sheet closes the search', () => {
+  it('closing the sheet closes the search', async () => {
     const props = renderSheet();
     fireEvent.click(within(sheet()).getByRole('button', { name: 'Close' }));
-    expect(props.onClose).toHaveBeenCalled();
+    // The sheet slides out before it reports the close.
+    await waitFor(() => expect(props.onClose).toHaveBeenCalled());
   });
 });
