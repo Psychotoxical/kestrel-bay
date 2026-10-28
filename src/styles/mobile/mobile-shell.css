@@ -3018,6 +3018,20 @@ html[data-mobile-app] .mobile-sheet .lyrics-status {
   padding-top: 0;
 }
 
+/* Artist row: labelled play, then square shuffle and radio buttons. */
+.mobile-artist__buttons {
+  grid-template-columns: minmax(0, 1fr) 50px 50px;
+}
+
+.mobile-artist__buttons--radio-only {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.mobile-artist__icon-btn {
+  width: 50px;
+  padding: 0;
+}
+
 .app-shell[data-mobile-app] .mobile-artist-page .section-title {
   font-size: 22px;
   font-weight: 700;

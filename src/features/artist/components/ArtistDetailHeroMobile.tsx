@@ -61,11 +61,8 @@ export default function ArtistDetailHeroMobile({
   const hasAlbums = albums.length > 0;
 
   const menuIcon = (Icon: typeof Radio) => <Icon size={19} aria-hidden="true" />;
+  const radioLabel = radioLoading ? t('artistDetail.loading') : t('artistDetail.radio');
   const menuItems: MobileMoreMenuItem[] = [
-    {
-      id: 'radio', label: radioLoading ? t('artistDetail.loading') : t('artistDetail.radio'),
-      icon: menuIcon(Radio), disabled: radioLoading, onSelect: handleStartRadio,
-    },
     ...(hasAlbums ? [{
       id: 'enqueue', label: t('artistDetail.enqueue'), icon: menuIcon(ListPlus),
       disabled: playAllLoading, onSelect: handleEnqueueAll,
@@ -183,8 +180,11 @@ export default function ArtistDetailHeroMobile({
           </div>
         )}
 
-        {hasAlbums && (
-          <div className="mobile-album__buttons">
+        {/* Play keeps its label; shuffle and radio are icon buttons beside it, so the
+            row holds three actions without squeezing a label in any language. Radio
+            needs no albums, so an artist without any still gets it, labelled. */}
+        {hasAlbums ? (
+          <div className="mobile-album__buttons mobile-artist__buttons">
             <button
               type="button"
               className="mobile-album__btn mobile-album__btn--primary"
@@ -194,9 +194,31 @@ export default function ArtistDetailHeroMobile({
               <Play size={18} fill="currentColor" aria-hidden="true" />
               {t('common.play')}
             </button>
-            <button type="button" className="mobile-album__btn" onClick={handleShuffle} disabled={playAllLoading}>
-              <Shuffle size={19} aria-hidden="true" />
-              {t('albumDetail.shuffle')}
+            <button
+              type="button"
+              className="mobile-album__btn mobile-artist__icon-btn"
+              onClick={handleShuffle}
+              disabled={playAllLoading}
+              aria-label={t('albumDetail.shuffle')}
+            >
+              <Shuffle size={22} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="mobile-album__btn mobile-artist__icon-btn"
+              onClick={handleStartRadio}
+              disabled={radioLoading}
+              aria-busy={radioLoading || undefined}
+              aria-label={radioLabel}
+            >
+              <Radio size={22} aria-hidden="true" />
+            </button>
+          </div>
+        ) : (
+          <div className="mobile-album__buttons mobile-artist__buttons mobile-artist__buttons--radio-only">
+            <button type="button" className="mobile-album__btn" onClick={handleStartRadio} disabled={radioLoading}>
+              <Radio size={19} aria-hidden="true" />
+              {radioLabel}
             </button>
           </div>
         )}
