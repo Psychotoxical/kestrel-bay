@@ -6,7 +6,7 @@ import { linuxWaylandTextRenderSettingsAvailable } from '@/lib/api/platformShell
 import { offerExportFile, pickExportPath } from '@/lib/util/exportFile';
 import { openExternalUrl as openUrl } from '@/lib/api/externalLink';
 import { AppWindow, ChevronDown, Download, ExternalLink, Globe, HardDrive, Info, Scale, Sliders, Users } from 'lucide-react';
-import { version as appVersion } from '@/../package.json';
+import { APP_VERSION_LABEL } from '@/lib/util/appVersionLabel';
 import i18n from '@/lib/i18n';
 import { useAuthStore } from '@/store/authStore';
 import type {
@@ -371,7 +371,7 @@ export function SystemTab() {
         icon={<Info size={16} />}
       >
         <div className="settings-card settings-about">
-          <AboutPsysonicBrandHeader appVersion={appVersion} aboutVersionLabel={t('settings.aboutVersion')} />
+          <AboutPsysonicBrandHeader appVersion={APP_VERSION_LABEL} aboutVersionLabel={t('settings.aboutVersion')} />
 
           <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: '1rem 0 0.5rem' }}>
             {t('settings.aboutDesc')}

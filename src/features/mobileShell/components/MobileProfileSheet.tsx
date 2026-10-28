@@ -9,7 +9,7 @@ import { usePrivateModeStore } from '@/features/privateMode';
 import { useDevOfflineBrowseStore } from '@/features/offline';
 import { useReactiveOfflineBrowseContext } from '@/features/sidebar';
 import type { ConnectionStatus } from '@/lib/hooks/useConnectionStatus';
-import { version as appVersion } from '@/../package.json';
+import { APP_VERSION_LABEL } from '@/lib/util/appVersionLabel';
 import MobileSheet from '@/features/mobileShell/components/MobileSheet';
 
 interface Props {
@@ -111,7 +111,7 @@ export default function MobileProfileSheet({ serverName, connStatus, isLan, onCl
 
       <div className="mobile-profile-brand">
         <PsysonicLogo className="mobile-profile-brand__logo" gradientIdSuffix="mobile-profile" />
-        <span className="mobile-profile-brand__version">{appVersion}</span>
+        <span className="mobile-profile-brand__version">{APP_VERSION_LABEL}</span>
       </div>
     </MobileSheet>
   );

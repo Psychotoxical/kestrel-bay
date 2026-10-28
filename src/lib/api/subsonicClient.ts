@@ -2,6 +2,7 @@ import axios from 'axios';
 import { getLuckyMixLibraryScopeOverride } from '@/lib/library/luckyMixScopeOverride';
 import md5 from 'md5';
 import { SUBSONIC_CLIENT_ID } from '@/generated/appVersion';
+import { MOBILE_PLATFORM_NAME } from '@/lib/util/appVersionLabel';
 import { commands } from '@/generated/bindings';
 import { useAuthStore } from '@/store/authStore';
 import type { ServerProfile } from '@/store/authStoreTypes';
@@ -10,7 +11,14 @@ import { headersForServerRequest, serverHttpContextWireForProbe } from '@/lib/se
 import { findServerByIdOrIndexKey, resolveServerIdForIndexKey } from '@/lib/server/serverLookup';
 import { nativeTransportRequiredFor } from '@/lib/server/nativeTransportFallback';
 
-export const SUBSONIC_CLIENT = SUBSONIC_CLIENT_ID;
+/**
+ * The `c` param: servers show it as the player (Navidrome's players, who is listening). The
+ * phone apps name their platform (`psysonic-android/<version>`, `psysonic-ios/<version>`) so
+ * they can be told apart from the desktop app there.
+ */
+export const SUBSONIC_CLIENT = MOBILE_PLATFORM_NAME
+  ? SUBSONIC_CLIENT_ID.replace(/^psysonic\//, `psysonic-${MOBILE_PLATFORM_NAME.toLowerCase()}/`)
+  : SUBSONIC_CLIENT_ID;
 
 /** Subset of `ServerProfile` needed to attach gate headers on credential-based REST calls. */
 export type ServerHttpHeaderProfile = Pick<

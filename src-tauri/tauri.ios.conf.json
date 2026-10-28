@@ -1,6 +1,6 @@
 {
   "identifier": "dev.psysonic.player",
-  "version": "1.56.0",
+  "version": "1.57.0",
   "bundle": {
     "iOS": {
       "minimumSystemVersion": "15.0",
