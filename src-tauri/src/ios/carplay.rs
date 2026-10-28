@@ -14,11 +14,10 @@
 //! full list; rows without a cover can show a symbol (`icon`).
 //!
 //! On a cold start from the car the web layer may not listen yet: requests wait here
-//! and are sent again when it reports `carplay:ready`. If it has not reported after a few
-//! seconds (Psysonic was closed on the phone and iOS started only the car), the loading
-//! screen asks to open Psysonic on the iPhone instead of showing "…" forever. When the car
-//! connects first, its scene also starts the app (`ios::scene::start_app_from_car`): tao
-//! otherwise only starts on the phone scene, so Psysonic never ran behind the car.
+//! and are sent again when it reports `carplay:ready`. When the car connects first, its
+//! scene also starts the app (`ios::scene::start_app_from_car`): tao otherwise only starts
+//! on the phone scene, so Psysonic never ran behind the car (it asked to be opened on the
+//! iPhone until build 127 started it this way).
 
 use std::cell::{Cell, RefCell};
 use std::collections::HashMap;
@@ -28,7 +27,7 @@ use std::sync::OnceLock;
 use block2::{Block, RcBlock};
 use objc2::rc::{Allocated, Retained};
 use objc2::runtime::{AnyClass, AnyObject, Bool, NSObject};
-use objc2::{class, define_class, ffi, msg_send, sel, ClassType, MainThreadMarker, MainThreadOnly};
+use objc2::{class, define_class, ffi, msg_send, ClassType, MainThreadMarker, MainThreadOnly};
 use objc2_foundation::NSString;
 use tauri::{AppHandle, Emitter, Listener};
 
@@ -41,8 +40,6 @@ const NODE_TABS: &str = "tabs";
 const ACCESSORY_DISCLOSURE: isize = 1;
 /// CarPlay shows at most this many tabs for an audio app.
 const MAX_TABS: usize = 4;
-/// Seconds without `carplay:ready` before the loading screen asks to open the app.
-const OPEN_ON_PHONE_DELAY: f64 = 6.0;
 
 #[link(name = "CarPlay", kind = "framework")]
 unsafe extern "C" {
@@ -83,8 +80,6 @@ thread_local! {
     /// The heart and ∞ states the now-playing buttons were last built with; rebuilding them
     /// on every shuffle / repeat change made the buttons flash twice.
     static BUTTONS_BUILT: Cell<Option<(bool, bool)>> = const { Cell::new(None) };
-    /// The web layer has reported `carplay:ready`, so it answers list requests.
-    static WEB_READY: Cell<bool> = const { Cell::new(false) };
 }
 
 /// The rows of one shown section, kept so covers that arrive later find their place.
@@ -203,34 +198,7 @@ define_class!(
             unsafe {
                 setup_now_playing();
                 show_loading_root(controller);
-                let () = msg_send![
-                    self,
-                    performSelector: sel!(psyShowOpenOnPhoneHint),
-                    withObject: std::ptr::null::<AnyObject>(),
-                    afterDelay: OPEN_ON_PHONE_DELAY
-                ];
             }
-        }
-
-        /// Psysonic did not start behind the car: ask to open it on the phone.
-        #[unsafe(method(psyShowOpenOnPhoneHint))]
-        fn show_open_on_phone_hint(&self) {
-            if WEB_READY.with(Cell::get) {
-                return;
-            }
-            crate::app_eprintln!("[carplay] web layer not ready, asking to open the app");
-            PENDING.with(|pending| {
-                for (node, template) in pending.borrow().values() {
-                    if node == NODE_TABS {
-                        // SAFETY: main thread (performSelector on the main run loop). CarPlay
-                        // only redraws a shown list's empty text when its sections change.
-                        unsafe {
-                            set_empty_text(template, &open_on_phone_text());
-                            let () = msg_send![&**template, updateSections: &*mutable_array()];
-                        }
-                    }
-                }
-            });
         }
 
         #[unsafe(method(templateApplicationScene:didDisconnectInterfaceController:))]
@@ -336,7 +304,6 @@ pub(crate) fn listen(app: &AppHandle) {
     let ready = app.clone();
     app.listen_any("carplay:ready", move |_| {
         let _ = ready.run_on_main_thread(|| {
-            WEB_READY.with(|ready| ready.set(true));
             resend_pending();
         });
     });
@@ -404,26 +371,6 @@ fn request_list(node: &str, template: Retained<AnyObject>) {
 
 fn ns(text: &str) -> Retained<NSString> {
     NSString::from_str(text)
-}
-
-/// The car's text before the web layer (and its translations) exists: German or English,
-/// after the phone's first language.
-fn open_on_phone_text() -> String {
-    // SAFETY: plain Foundation reads.
-    let german = unsafe {
-        let languages: *mut AnyObject = msg_send![class!(NSLocale), preferredLanguages];
-        let first: *mut AnyObject = if languages.is_null() {
-            std::ptr::null_mut()
-        } else {
-            msg_send![languages, firstObject]
-        };
-        !first.is_null() && (*(first as *const NSString)).to_string().starts_with("de")
-    };
-    if german {
-        "Bitte Psysonic einmal auf dem iPhone öffnen".to_string()
-    } else {
-        "Open Psysonic on your iPhone once".to_string()
-    }
 }
 
 /// SF Symbol for a row or tab symbol sent by the web layer.
