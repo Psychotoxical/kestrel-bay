@@ -116,6 +116,7 @@ import {
   shouldAutoAdvanceAfterUnavailableFailure,
 } from '@/features/playback/store/playbackAlternativeStore';
 import type { StreamProvenance } from '@/lib/media/streamFormat';
+import { IS_MOBILE_SHELL } from '@/lib/util/platform';
 
 // Silence-aware crossfade (A-tail): guards the early advance to once per play
 // generation so a single playback instance triggers at most one trim-advance
@@ -643,7 +644,7 @@ export function handleAudioEnded(): void {
   });
   // The track ran out before its sleep pause landed: stop here, don't move on.
   if (consumeSleepBoundaryAtTrackEnd(storeBeforeAdvance)) return;
-  setTimeout(() => {
+  const advance = () => {
     void (async () => {
       if (repeatMode === 'one' && currentTrack) {
         const authState = useAuthStore.getState();
@@ -664,7 +665,13 @@ export function handleAudioEnded(): void {
         usePlayerStore.getState().next(false);
       }
     })();
-  }, 150);
+  };
+  // On the phone the page is hidden while the screen is off, and the web view holds back
+  // its timers after a few minutes: the next song only started once the app was opened
+  // again (S22 and a OnePlus, transitions off). This event is the engine's own, so the
+  // next song starts from it at once there.
+  if (IS_MOBILE_SHELL) advance();
+  else setTimeout(advance, 150);
 }
 
 /**
