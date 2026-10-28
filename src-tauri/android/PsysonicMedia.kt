@@ -61,6 +61,8 @@ object PsysonicMedia {
   // download queue, so it stays running as while music plays, with its own wake lock and a
   // data-sync foreground service that keeps the process from being stopped.
   private var downloading = false
+  /** For the notification permission prompt; the activity can go away while the app lives on. */
+  private var activity: java.lang.ref.WeakReference<MainActivity>? = null
   private var downloadLock: PowerManager.WakeLock? = null
   var downloadTitle = ""
     private set
@@ -69,6 +71,7 @@ object PsysonicMedia {
 
   fun attach(activity: MainActivity, view: WebView) {
     appContext = activity.applicationContext
+    this.activity = java.lang.ref.WeakReference(activity)
     webView = view
     view.addJavascriptInterface(JsBridge, "PsysonicAndroidMedia")
     // The queue lives in this web view. By default Android demotes its renderer process
@@ -303,7 +306,26 @@ object PsysonicMedia {
 
   fun onActivityResumed() {
     activityPaused = false
+    // Back from the notification permission prompt: a notification posted before the grant
+    // stays hidden until it is posted again.
+    appContext?.let { if (downloading) PsysonicDownloadService.refresh(it) }
   }
+
+  /**
+   * Android 13+ shows an app's notifications only once the user allowed them, and nothing
+   * else in the app asks for that since the music alarm is off (alarmAvailability.ts): a
+   * library download ran without its progress notification (Honor, 29.10.). Asked when such
+   * a download starts. The media notification does not need it.
+   */
+  private fun askForNotifications(ctx: Context) {
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.TIRAMISU) return
+    if (ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) ==
+      android.content.pm.PackageManager.PERMISSION_GRANTED
+    ) return
+    activity?.get()?.requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), NOTIFICATION_REQUEST)
+  }
+
+  private const val NOTIFICATION_REQUEST = 43
 
   /**
    * Android Auto starts playback as it connects ("start music automatically"), before a
@@ -568,6 +590,7 @@ object PsysonicMedia {
       runCatching {
         ContextCompat.startForegroundService(ctx, Intent(ctx, PsysonicDownloadService::class.java))
       }
+      if (!activityPaused) askForNotifications(ctx)
     } else {
       downloadLock?.let { if (it.isHeld) it.release() }
       PsysonicDownloadService.stop()
