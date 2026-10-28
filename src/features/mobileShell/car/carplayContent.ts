@@ -540,18 +540,15 @@ function playShown(listNode: string, index: number, shuffle: boolean): void {
 }
 
 /** Songs in the playing song's genre; without a genre, or with too few songs, any songs. */
-async function playRandomMix(): Promise<void> {
+export async function carPlayRandomMixTracks(): Promise<Track[]> {
   const serverId = browseServerId();
-  if (!serverId) return;
+  if (!serverId) return [];
   const genre = usePlayerStore.getState().currentTrack?.genre?.trim();
   if (genre) {
     const inGenre = await fetchGenreTracksForPlayback(serverId, genre, {
       shuffle: true, cap: RANDOM_MIX_SIZE, indexEnabled: indexEnabled(serverId),
     }).catch(() => []);
-    if (inGenre.length >= GENRE_MIX_MIN) {
-      usePlayerStore.getState().playTrack(inGenre[0], inGenre);
-      return;
-    }
+    if (inGenre.length >= GENRE_MIX_MIN) return inGenre;
   }
   const scopes = getLibraryBrowseScope().pairs;
   const local = await runLocalRandomSongs(serverId, RANDOM_MIX_SIZE, scopes);
@@ -560,21 +557,35 @@ async function playRandomMix(): Promise<void> {
     : await getRandomSongsForServer(
       serverId, RANDOM_MIX_SIZE, undefined, undefined, browseScopeLibraryIdsForServer(scopes, serverId),
     );
-  const tracks = songs.map(songToTrack);
+  return songs.map(songToTrack);
+}
+
+async function playRandomMix(): Promise<void> {
+  const tracks = await carPlayRandomMixTracks();
   if (tracks.length > 0) usePlayerStore.getState().playTrack(tracks[0], tracks);
+}
+
+/** The tracks of the downloads list's card at `index`, with the server key they play from. */
+export async function carPlayOfflineTracks(index: number): Promise<{ tracks: Track[]; serverKey: string } | null> {
+  const card = shownOfflineCards[index];
+  if (!card || !(await ensureServerForOfflineCard(card))) return null;
+  return { tracks: await buildTracksForOfflineCard(card), serverKey: offlineQueueServerKeyForCard(card) };
 }
 
 async function playOfflineCard(index: number): Promise<void> {
-  const card = shownOfflineCards[index];
-  if (!card || !(await ensureServerForOfflineCard(card))) return;
-  usePlayerStore.setState({ queueServerId: offlineQueueServerKeyForCard(card) });
-  const tracks = await buildTracksForOfflineCard(card);
-  if (tracks.length > 0) usePlayerStore.getState().playTrack(tracks[0], tracks);
+  const offline = await carPlayOfflineTracks(index);
+  if (!offline) return;
+  usePlayerStore.setState({ queueServerId: offline.serverKey });
+  if (offline.tracks.length > 0) usePlayerStore.getState().playTrack(offline.tracks[0], offline.tracks);
+}
+
+export async function carPlayFavoriteTracks(): Promise<Track[]> {
+  const starred = await loadStarredFromAllLibraryIndexes();
+  return starred.songs.map(songToTrack);
 }
 
 async function playFavorites(): Promise<void> {
-  const starred = await loadStarredFromAllLibraryIndexes();
-  const tracks = shuffleTracks(starred.songs.map(songToTrack));
+  const tracks = shuffleTracks(await carPlayFavoriteTracks());
   if (tracks.length > 0) usePlayerStore.getState().playTrack(tracks[0], tracks);
 }
 
@@ -586,6 +597,16 @@ function resumePlayback(): void {
 function playStation(index: number): void {
   const station = shownStations[index];
   if (station) usePlayerStore.getState().playRadio(station);
+}
+
+/** The tracks a shown list plays (an album, a playlist), as it was listed. */
+export function carPlayShownTracks(listNode: string): Track[] | undefined {
+  return shownTracks.get(listNode)?.tracks;
+}
+
+/** The station the radio list shows at `index`. */
+export function carPlayShownStation(index: number): InternetRadioStation | undefined {
+  return shownStations[index];
 }
 
 /** Plays what a CarPlay row stands for. */

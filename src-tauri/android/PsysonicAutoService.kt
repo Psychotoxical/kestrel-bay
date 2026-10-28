@@ -91,9 +91,15 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
   override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaItem>>) {
     if (!PsysonicMedia.webReady()) {
       // Started by the car with no Psysonic open on the phone: there is no web view yet to
-      // build the lists. The tabs come from the last run, so the car keeps real tabs; their
-      // content says to open the app instead of showing an empty screen.
+      // build the lists. Without a copy (an app that never ran this far), the tabs come from
+      // the last run, so the car keeps real tabs; their content says to open the app instead
+      // of showing an empty screen.
       waiting += parentId
+      // The copy the app left (androidAutoSnapshot.ts): its lists, played by PsysonicCarPlayer.
+      PsysonicCarSnapshot.list(this, parentId)?.let { json ->
+        result.sendResult(PsysonicMedia.carItems(json).toMutableList())
+        return
+      }
       val tabs = if (parentId == ROOT) PsysonicMedia.cachedCarTabs() else null
       result.sendResult((tabs ?: listOf(openOnPhoneItem())).toMutableList())
       return

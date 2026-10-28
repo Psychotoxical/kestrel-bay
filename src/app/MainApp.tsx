@@ -34,6 +34,7 @@ import { runAdvancedModeMigration } from '@/app/migrations/advancedModeMigration
 import { bootstrapAllIndexedServers } from '@/lib/library/librarySession';
 import { hydrateQueueFromIndex } from '@/features/playback/store/queueRestore';
 import { reconcileStartupPlayQueues } from '@/features/playback/store/startupPlayQueueReconcile';
+import { markStartupQueueSettled } from '@/features/playback/store/startupQueueSettled';
 import { useLibraryAnalysisBackfill } from '@/lib/library/hooks/useLibraryAnalysisBackfill';
 import { useCoverArtPrefetch } from '../cover/useCoverArtPrefetch';
 import { useLibraryCoverBackfill } from '@/cover/useLibraryCoverBackfill';
@@ -83,10 +84,14 @@ export default function MainApp() {
     const shouldReconcileStartupQueue = !startupQueueReconcileStartedRef.current;
     if (shouldReconcileStartupQueue) startupQueueReconcileStartedRef.current = true;
     void (async () => {
-      await bootstrapAllIndexedServers();
-      await hydrateQueueFromIndex();
-      if (shouldReconcileStartupQueue) {
-        await reconcileStartupPlayQueues();
+      try {
+        await bootstrapAllIndexedServers();
+        await hydrateQueueFromIndex();
+        if (shouldReconcileStartupQueue) {
+          await reconcileStartupPlayQueues();
+        }
+      } finally {
+        markStartupQueueSettled();
       }
     })();
   }, [activeServerId, serverIdsKey, masterEnabled, migrationReady]);

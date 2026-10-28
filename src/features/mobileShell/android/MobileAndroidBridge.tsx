@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { installAndroidAuto } from '@/features/mobileShell/android/androidAuto';
+import { installAndroidAutoSnapshot } from '@/features/mobileShell/android/androidAutoSnapshot';
 import { installAndroidBack } from '@/features/mobileShell/android/androidBack';
 import { installAndroidMediaCommands } from '@/features/mobileShell/android/androidMedia';
 import { installAndroidSystemBars } from '@/features/mobileShell/android/androidSystemBars';
@@ -23,6 +24,7 @@ export default function MobileAndroidBridge() {
   useEffect(() => installAndroidSystemBars(), []);
   useEffect(() => watchAndroidMeteredNetwork(), []);
   useEffect(() => installAndroidAuto(), []);
+  useEffect(() => installAndroidAutoSnapshot(), []);
   useEffect(() => installAndroidBack(), []);
   useEffect(() => watchInfiniteQueue(), []);
   useEffect(() => installAndroidAlarm(), []);

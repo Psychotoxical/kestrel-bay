@@ -93,6 +93,12 @@ object PsysonicMedia {
   private fun setCarListsReady() {
     carListsReady = true
     PsysonicAutoService.listsReady()
+    refreshPlaybackState()
+    // The car player plays on until the app takes its queue (`takeCarPlayer`).
+    if (PsysonicCarPlayer.active) {
+      playWhenReady = false
+      return
+    }
     if (playWhenReady) {
       playWhenReady = false
       command("play")
@@ -163,7 +169,7 @@ object PsysonicMedia {
   private const val CAR_PREFS = "psysonic_car"
   private const val CAR_TABS_KEY = "tabs"
 
-  private fun carItems(json: String): List<MediaBrowserCompat.MediaItem> {
+  fun carItems(json: String): List<MediaBrowserCompat.MediaItem> {
     val items = ArrayList<MediaBrowserCompat.MediaItem>()
     val sections = JSONObject(json).optJSONArray("sections")
     for (s in 0 until (sections?.length() ?: 0)) {
@@ -269,7 +275,8 @@ object PsysonicMedia {
   private fun playbackState(state: Int, positionMs: Long, speed: Float, updatedAt: Long): PlaybackStateCompat {
     val builder = PlaybackStateCompat.Builder().setActions(ACTIONS).setState(state, positionMs, speed, updatedAt)
     val ctx = appContext
-    if (carConnected && ctx != null) {
+    // The app's own buttons; the car player (app closed) has none of their state.
+    if (carConnected && ctx != null && webReady()) {
       builder.addCustomAction(carAction(ctx, "shuffle", R.string.car_shuffle,
         if (carShuffle) R.drawable.ic_car_shuffle_on else R.drawable.ic_car_shuffle_off))
       builder.addCustomAction(carAction(ctx, "repeat", R.string.car_repeat, when (carRepeat) {
@@ -309,7 +316,18 @@ object PsysonicMedia {
   fun command(name: String, seconds: Double = 0.0) {
     android.util.Log.i("PsysonicMedia", "command $name (web ready: ${webReady()})")
     main.post {
+      val ctx = appContext
+      // The car player plays (the app is closed, or still starting up): the buttons are its.
+      if (ctx != null && PsysonicCarPlayer.active) {
+        PsysonicCarPlayer.command(ctx, name, seconds)
+        return@post
+      }
       if (!webReady()) {
+        // The app is closed: the car player plays the copy the app left, if there is one.
+        if (ctx != null && name == "play" && PsysonicCarSnapshot.resume(ctx) != null) {
+          PsysonicCarPlayer.command(ctx, name, seconds)
+          return@post
+        }
         playWhenReady = name == "play" || (playWhenReady && name != "pause" && name != "stop")
         return@post
       }
@@ -335,15 +353,25 @@ object PsysonicMedia {
         }
         // Android Auto: a list row, or "Play … on Psysonic" by voice.
         override fun onPlayFromMediaId(mediaId: String?, extras: android.os.Bundle?) {
-          when (mediaId) {
-            null -> {}
-            PsysonicAutoService.OPEN_ON_PHONE -> command("play")
-            else -> js("window.__psyAutoPlay && window.__psyAutoPlay(${JSONObject.quote(mediaId)})")
+          when {
+            mediaId == null -> {}
+            !webReady() && PsysonicCarPlayer.playNode(ctx, mediaId) -> {}
+            mediaId == PsysonicAutoService.OPEN_ON_PHONE -> command("play")
+            else -> {
+              // The app is up and plays the row itself; the car player gives way.
+              PsysonicCarPlayer.stop()
+              js("window.__psyAutoPlay && window.__psyAutoPlay(${JSONObject.quote(mediaId)})")
+            }
           }
         }
         // "Play … on Psysonic": the spoken text, plus what the assistant made of it (a song,
         // album, artist or playlist and its fields), handed on like a Siri request.
         override fun onPlayFromSearch(query: String?, extras: android.os.Bundle?) {
+          if (!webReady() && PsysonicCarSnapshot.exists(ctx)) {
+            PsysonicCarPlayer.search(ctx, query, extras)
+            return
+          }
+          PsysonicCarPlayer.stop()
           val request = JSONObject()
             .put("query", query ?: "")
             .put("focus", extras?.getString(MediaStore.EXTRA_MEDIA_FOCUS) ?: "")
@@ -373,6 +401,16 @@ object PsysonicMedia {
   private fun js(script: String) {
     main.post { webView?.evaluateJavascript(script, null) }
   }
+
+  /** What the car player (app closed) plays, shown as the web view's songs are. */
+  fun showNative(title: String, artist: String, album: String, durationSecs: Double, coverPath: String) {
+    setMetadata(
+      JSONObject().put("title", title).put("artist", artist).put("album", album)
+        .put("durationSecs", durationSecs).put("coverPath", coverPath).toString(),
+    )
+  }
+
+  fun reportNative(isPlaying: Boolean, positionMs: Long) = setPlayback(isPlaying, positionMs)
 
   private fun setMetadata(json: String) {
     val ctx = appContext ?: return
@@ -576,6 +614,32 @@ object PsysonicMedia {
     @JavascriptInterface
     fun setCarState(json: String) {
       main.post { runCatching { PsysonicMedia.setCarState(json) } }
+    }
+
+    /** The copy of the car's lists for a car start with the app closed (androidAutoSnapshot.ts). */
+    @JavascriptInterface
+    fun saveCarSnapshot(json: String) {
+      appContext?.let { PsysonicCarSnapshot.saveSnapshot(it, json) }
+    }
+
+    @JavascriptInterface
+    fun saveCarResume(json: String) {
+      appContext?.let { PsysonicCarSnapshot.saveResume(it, json) }
+    }
+
+    /** The app is up: it takes the car player's queue (`PsysonicCarPlayer.handover`), or ''. */
+    @JavascriptInterface
+    fun takeCarPlayer(): String {
+      val result = java.util.concurrent.atomic.AtomicReference("")
+      val done = java.util.concurrent.CountDownLatch(1)
+      // The player lives on the main thread; this call comes on the web view's own.
+      main.post {
+        runCatching { PsysonicCarPlayer.handover()?.let(result::set) }
+        done.countDown()
+      }
+      done.await(2, java.util.concurrent.TimeUnit.SECONDS)
+      if (result.get().isNotEmpty()) android.util.Log.i("PsysonicAuto", "car player hands its queue to the app")
+      return result.get()
     }
 
     @JavascriptInterface

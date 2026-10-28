@@ -7,7 +7,8 @@
 //   PsysonicAutoService: Android Auto; PsysonicDownloadService: whole-library downloads
 //   in the background), and everything under `res/` into the app's res/;
 // - the manifest entries those need (services, Android Auto, permissions);
-// - Gradle dependencies: `androidx.media` (MediaSession, media notification) and the
+// - Gradle dependencies: `androidx.media` (MediaSession, media notification), Media3's
+//   ExoPlayer (PsysonicCarPlayer: Android Auto with the app closed) and the
 //   Kotlin half of `rustls-platform-verifier` (reqwest checks certificates through
 //   Android's trust store). The verifier ships it as a local Maven repository; its path
 //   comes from `cargo metadata`, so the version always matches Cargo.lock.
@@ -25,6 +26,7 @@ const manifestFile = join(appDir, 'src', 'main', 'AndroidManifest.xml');
 const packageDir = join(appDir, 'src', 'main', 'java', 'dev', 'psysonic', 'player');
 
 const ANDROIDX_MEDIA = 'androidx.media:media:1.7.0';
+const MEDIA3_EXOPLAYER = 'androidx.media3:media3-exoplayer:1.11.1';
 
 // ── Kotlin sources
 for (const file of readdirSync(here).filter(f => f.endsWith('.kt'))) {
@@ -177,5 +179,19 @@ dependencies {
 if (!gradle.includes(ANDROIDX_MEDIA)) {
   gradle = gradle.replace(depsOpen, `dependencies {\n    implementation("${ANDROIDX_MEDIA}")\n`);
   console.log(`[patch-gen] gradle: ${ANDROIDX_MEDIA}`);
+}
+if (!gradle.includes(MEDIA3_EXOPLAYER)) {
+  gradle = gradle.replace(depsOpen, `dependencies {
+    implementation("${MEDIA3_EXOPLAYER}")
+`);
+  console.log(`[patch-gen] gradle: ${MEDIA3_EXOPLAYER}`);
+}
+// The car player streams through Android's own HTTP stack, which refuses plain http in a
+// release build; a server on the home network often has no certificate. The app's own
+// player (Rust) never asked Android, so this only brings the car player level with it.
+const cleartextOff = 'manifestPlaceholders["usesCleartextTraffic"] = "false"';
+if (gradle.includes(cleartextOff)) {
+  gradle = gradle.replace(cleartextOff, 'manifestPlaceholders["usesCleartextTraffic"] = "true"');
+  console.log('[patch-gen] gradle: plain http allowed in release (car player)');
 }
 writeFileSync(gradleFile, gradle);
