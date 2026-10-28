@@ -51,7 +51,6 @@ const PERMISSIONS = [
   'android.permission.WAKE_LOCK',
   'android.permission.ACCESS_NETWORK_STATE',
   'android.permission.POST_NOTIFICATIONS',
-  'android.permission.VIBRATE',
 ];
 // The music alarm's permissions (PsysonicAlarm): exact alarms, set again after a reboot,
 // shown over the lock screen, opened over a phone in use, exempt from battery saving. Play
@@ -66,6 +65,8 @@ const RETIRED_PERMISSIONS = [
   'android.permission.USE_FULL_SCREEN_INTENT',
   'android.permission.SYSTEM_ALERT_WINDOW',
   'android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS',
+  // Only the alarm vibrates.
+  'android.permission.VIBRATE',
 ];
 const serviceMarker = '<!-- psysonic: media service -->';
 // `[ \t]`, not `\s`: in a CRLF file `^` also matches after the `\r`.
