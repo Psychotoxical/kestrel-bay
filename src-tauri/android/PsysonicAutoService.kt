@@ -56,21 +56,9 @@ class PsysonicAutoService : MediaBrowserServiceCompat() {
     current = this
     sessionToken = PsysonicMedia.sessionTokenFor(applicationContext)
     PsysonicMedia.onCarConnected(true)
-    // Started by the car with Psysonic closed: open the app so the web view can build the
-    // lists. Android only lets a background app do that with "display over other apps"
-    // (S22 28.10.: BAL_BLOCK without it, the full lists after 2 s with it); without the
-    // permission the car keeps the "open on phone" lists below.
-    if (!PsysonicMedia.webReady()) {
-      try {
-        startActivity(
-          android.content.Intent(this, MainActivity::class.java)
-            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_NO_ANIMATION),
-        )
-        android.util.Log.i("PsysonicAuto", "car start: startActivity sent")
-      } catch (e: Exception) {
-        android.util.Log.w("PsysonicAuto", "car start: startActivity threw $e")
-      }
-    }
+    // No opening the app from here: starting the activity from this service (Android allows
+    // it with "display over other apps") made Play Protect block the APK as harmful (Honor,
+    // 28.10.). With the app closed the car plays the copy the app left (PsysonicCarPlayer).
   }
 
   override fun onDestroy() {
