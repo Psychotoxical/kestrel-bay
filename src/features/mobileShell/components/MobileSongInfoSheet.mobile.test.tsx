@@ -64,6 +64,7 @@ describe('MobileSongInfoSheet', () => {
     renderWithProviders(<MobileSongInfoSheet />);
     await screen.findByText('Chaos');
     fireEvent.click(screen.getByRole('button', { name: 'Close' }));
-    expect(usePlayerStore.getState().songInfoModal.isOpen).toBe(false);
+    // The sheet slides out before it reports the close.
+    await waitFor(() => expect(usePlayerStore.getState().songInfoModal.isOpen).toBe(false));
   });
 });
